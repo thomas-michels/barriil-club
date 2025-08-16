@@ -6,6 +6,8 @@ from app.api.dependencies.response import build_response
 from app.api.middleware.rate_limiting import RateLimitMiddleware
 from app.api.routers import (
     user_router,
+    extractor_router,
+    company_router,
 )
 from app.api.routers.exception_handlers import (
     unprocessable_entity_error_422,
@@ -51,6 +53,8 @@ app.add_middleware(CorrelationIdMiddleware)
 app.add_middleware(RateLimitMiddleware, limit=150, window=60)
 
 app.include_router(user_router, prefix="/api")
+app.include_router(extractor_router, prefix="/api")
+app.include_router(company_router, prefix="/api")
 
 app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(UnprocessableEntity, unprocessable_entity_error_422)
