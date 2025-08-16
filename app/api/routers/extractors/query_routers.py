@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, Response
 
 from app.api.composers.extractor_composite import extractor_composer
-from app.api.dependencies import build_response
+from app.api.dependencies import build_response, require_company_member
 from app.api.shared_schemas.responses import MessageResponse
 from .schemas import ExtractorResponse, ExtractorListResponse
 from app.crud.extractors import ExtractorServices
+from app.crud.companies.schemas import CompanyInDB
 
 router = APIRouter(tags=["Extractors"])
 
@@ -17,6 +18,7 @@ async def get_extractor_by_id(
     extractor_id: str,
     company_id: str,
     extractor_services: ExtractorServices = Depends(extractor_composer),
+    _: CompanyInDB = Depends(require_company_member),
 ):
     extractor_in_db = await extractor_services.search_by_id(
         id=extractor_id, company_id=company_id
@@ -33,6 +35,7 @@ async def get_extractor_by_id(
 async def get_extractors(
     company_id: str,
     extractor_services: ExtractorServices = Depends(extractor_composer),
+    _: CompanyInDB = Depends(require_company_member),
 ):
     extractors = await extractor_services.search_all(company_id=company_id)
     if extractors:

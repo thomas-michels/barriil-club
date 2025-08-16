@@ -105,6 +105,20 @@ class TestCompanyRepository(unittest.TestCase):
         with self.assertRaises(UnprocessableEntity):
             asyncio.run(repository.add_member(c2.id, member))
 
+    def test_select_by_user(self):
+        doc = CompanyModel(**self._build_company().model_dump())
+        doc.save()
+        repository = CompanyRepository()
+        member = CompanyMember(user_id="usr1", role="owner")
+        asyncio.run(repository.add_member(doc.id, member))
+        res = asyncio.run(repository.select_by_user("usr1"))
+        self.assertEqual(res.id, doc.id)
+
+    def test_select_by_user_not_found(self):
+        repository = CompanyRepository()
+        with self.assertRaises(NotFoundError):
+            asyncio.run(repository.select_by_user("usr1"))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -124,3 +124,21 @@ class CompanyRepository(Repository):
         except Exception as error:
             _logger.error(f"Error on add_member: {str(error)}")
             raise NotFoundError(message=f"Company {company_id} not found")
+
+    async def select_by_user(self, user_id: str) -> CompanyInDB:
+        try:
+            company_model = CompanyModel.objects(
+                members__user_id=user_id, is_active=True
+            ).first()
+            if not company_model:
+                raise NotFoundError(
+                    message=f"Company for user {user_id} not found"
+                )
+            return CompanyInDB.model_validate(company_model)
+        except NotFoundError:
+            raise
+        except Exception as error:
+            _logger.error(f"Error on select_by_user: {str(error)}")
+            raise NotFoundError(
+                message=f"Company for user {user_id} not found"
+            )
