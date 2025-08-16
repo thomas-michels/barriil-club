@@ -25,7 +25,9 @@ class TestAddressServices(unittest.TestCase):
     def tearDown(self) -> None:
         disconnect()
 
-    def _build_address(self, postal_code: str = "12345") -> Address:
+    def _build_address(
+        self, postal_code: str = "12345", company_id: str = "com1"
+    ) -> Address:
         return Address(
             postal_code=postal_code,
             street="Main",
@@ -35,6 +37,7 @@ class TestAddressServices(unittest.TestCase):
             city="City",
             state="ST",
             reference="Near",
+            company_id=company_id,
         )
 
     def test_create_address(self):
@@ -45,40 +48,42 @@ class TestAddressServices(unittest.TestCase):
     def test_search_by_id(self):
         doc = AddressModel(**self._build_address().model_dump())
         doc.save()
-        res = asyncio.run(self.services.search_by_id(doc.id))
+        res = asyncio.run(self.services.search_by_id(doc.id, doc.company_id))
         self.assertEqual(res.id, doc.id)
 
     def test_search_all(self):
         AddressModel(**self._build_address("1").model_dump()).save()
-        res = asyncio.run(self.services.search_all())
+        res = asyncio.run(self.services.search_all("com1"))
         self.assertEqual(len(res), 1)
 
     def test_update_address(self):
         doc = AddressModel(**self._build_address().model_dump())
         doc.save()
         updated = asyncio.run(
-            self.services.update(doc.id, UpdateAddress(city="New City"))
+            self.services.update(
+                doc.id, doc.company_id, UpdateAddress(city="New City")
+            )
         )
         self.assertEqual(updated.city, "New City")
 
     def test_delete_address(self):
         doc = AddressModel(**self._build_address().model_dump())
         doc.save()
-        res = asyncio.run(self.services.delete_by_id(doc.id))
+        res = asyncio.run(self.services.delete_by_id(doc.id, doc.company_id))
         self.assertEqual(res.id, doc.id)
 
     def test_search_by_id_not_found(self):
         with self.assertRaises(NotFoundError):
-            asyncio.run(self.services.search_by_id("invalid"))
+            asyncio.run(self.services.search_by_id("invalid", "com1"))
 
     def test_delete_not_found(self):
         with self.assertRaises(NotFoundError):
-            asyncio.run(self.services.delete_by_id("invalid"))
+            asyncio.run(self.services.delete_by_id("invalid", "com1"))
 
     def test_search_by_zip_code_existing(self):
         doc = AddressModel(**self._build_address("12345").model_dump())
         doc.save()
-        res = asyncio.run(self.services.search_by_zip_code("12345"))
+        res = asyncio.run(self.services.search_by_zip_code("12345", "com1"))
         self.assertEqual(res.id, doc.id)
 
     @patch("app.api.dependencies.get_address_by_zip_code.get_address_by_zip_code")
@@ -91,7 +96,7 @@ class TestAddressServices(unittest.TestCase):
             "localidade": "City",
             "uf": "ST",
         }
-        res = asyncio.run(self.services.search_by_zip_code("99999000"))
+        res = asyncio.run(self.services.search_by_zip_code("99999000", "com1"))
         self.assertEqual(res.postal_code, "99999-000")
 
 

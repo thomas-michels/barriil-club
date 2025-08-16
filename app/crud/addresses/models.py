@@ -12,11 +12,13 @@ class AddressModel(BaseDocument):
     city = StringField(required=True)
     state = StringField(required=True)
     reference = StringField()
+    company_id = StringField(required=True)
 
     meta = {
         "collection": "addresses",
         "indexes": [
             "postal_code",
+            "company_id",
             {"fields": ["city", "state"]},
         ],
     }

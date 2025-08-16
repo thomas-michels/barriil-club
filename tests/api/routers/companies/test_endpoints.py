@@ -37,6 +37,15 @@ class TestCompanyEndpoints(unittest.TestCase):
         self.app = FastAPI()
         self.app.include_router(company_router, prefix="/api")
 
+        company = Company(
+            name="ACME",
+            address_id="add1",
+            phone_number="9999-9999",
+            ddd="11",
+            email="info@acme.com",
+        )
+        self.company = asyncio.run(self.services.create(company))
+
         address = Address(
             postal_code="12345",
             street="Main",
@@ -44,17 +53,9 @@ class TestCompanyEndpoints(unittest.TestCase):
             district="Center",
             city="City",
             state="ST",
+            company_id=str(self.company.id),
         )
         self.address = asyncio.run(self.address_services.create(address))
-
-        company = Company(
-            name="ACME",
-            address_id=self.address.id,
-            phone_number="9999-9999",
-            ddd="11",
-            email="info@acme.com",
-        )
-        self.company = asyncio.run(self.services.create(company))
         self.user = UserInDB(
             user_id="usr1",
             email="u@t.com",

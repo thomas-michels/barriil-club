@@ -36,10 +36,12 @@ class CustomerRepository(Repository):
             _logger.error(f"Error on create_customer: {str(error)}")
             raise UnprocessableEntity(message="Error on create new customer")
 
-    async def update(self, customer_id: str, customer: dict) -> CustomerInDB:
+    async def update(
+        self, customer_id: str, company_id: str, customer: dict
+    ) -> CustomerInDB:
         try:
             customer_model: CustomerModel = CustomerModel.objects(
-                id=customer_id, is_active=True
+                id=customer_id, company_id=company_id, is_active=True
             ).first()
             if not customer_model:
                 raise NotFoundError(message=f"Customer #{customer_id} not found")
@@ -47,17 +49,17 @@ class CustomerRepository(Repository):
             customer_model.update(**customer)
             customer_model.save()
 
-            return await self.select_by_id(customer_id)
+            return await self.select_by_id(customer_id, company_id)
         except NotFoundError:
             raise
         except Exception as error:
             _logger.error(f"Error on update_customer: {str(error)}")
             raise UnprocessableEntity(message="Error on update customer")
 
-    async def select_by_id(self, id: str) -> CustomerInDB:
+    async def select_by_id(self, id: str, company_id: str) -> CustomerInDB:
         try:
             customer_model: CustomerModel = CustomerModel.objects(
-                id=id, is_active=True
+                id=id, company_id=company_id, is_active=True
             ).first()
 
             return CustomerInDB.model_validate(customer_model)
@@ -67,20 +69,22 @@ class CustomerRepository(Repository):
             _logger.error(f"Error on select_by_id: {str(error)}")
             raise NotFoundError(message=f"Customer #{id} not found")
 
-    async def select_all(self) -> List[CustomerInDB]:
+    async def select_all(self, company_id: str) -> List[CustomerInDB]:
         try:
             customers: List[CustomerInDB] = []
-            for customer_model in CustomerModel.objects(is_active=True).order_by("name"):
+            for customer_model in CustomerModel.objects(
+                company_id=company_id, is_active=True
+            ).order_by("name"):
                 customers.append(CustomerInDB.model_validate(customer_model))
             return customers
         except Exception as error:
             _logger.error(f"Error on select_all: {str(error)}")
             raise NotFoundError(message="Customers not found")
 
-    async def delete_by_id(self, id: str) -> CustomerInDB:
+    async def delete_by_id(self, id: str, company_id: str) -> CustomerInDB:
         try:
             customer_model: CustomerModel = CustomerModel.objects(
-                id=id, is_active=True
+                id=id, company_id=company_id, is_active=True
             ).first()
             if not customer_model:
                 raise NotFoundError(message=f"Customer #{id} not found")

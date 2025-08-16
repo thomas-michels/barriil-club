@@ -15,22 +15,26 @@ class AddressServices:
     async def create(self, address: Address) -> AddressInDB:
         return await self.__repository.create(address=address)
 
-    async def update(self, id: str, address: UpdateAddress) -> AddressInDB:
+    async def update(
+        self, id: str, company_id: str, address: UpdateAddress
+    ) -> AddressInDB:
         data = address.model_dump(exclude_unset=True, exclude_none=True)
-        return await self.__repository.update(address_id=id, address=data)
+        return await self.__repository.update(
+            address_id=id, company_id=company_id, address=data
+        )
 
-    async def search_by_id(self, id: str) -> AddressInDB:
-        return await self.__repository.select_by_id(id=id)
+    async def search_by_id(self, id: str, company_id: str) -> AddressInDB:
+        return await self.__repository.select_by_id(id=id, company_id=company_id)
 
-    async def search_all(self) -> List[AddressInDB]:
-        return await self.__repository.select_all()
+    async def search_all(self, company_id: str) -> List[AddressInDB]:
+        return await self.__repository.select_all(company_id=company_id)
 
-    async def delete_by_id(self, id: str) -> AddressInDB:
-        return await self.__repository.delete_by_id(id=id)
+    async def delete_by_id(self, id: str, company_id: str) -> AddressInDB:
+        return await self.__repository.delete_by_id(id=id, company_id=company_id)
 
-    async def search_by_zip_code(self, zip_code: str) -> AddressInDB:
+    async def search_by_zip_code(self, zip_code: str, company_id: str) -> AddressInDB:
         address_in_db = await self.__repository.select_by_zip_code(
-            zip_code=zip_code, raise_404=False
+            zip_code=zip_code, company_id=company_id, raise_404=False
         )
         if address_in_db:
             return address_in_db
@@ -49,6 +53,7 @@ class AddressServices:
             complement=data.get("complemento"),
             number="",
             state=data["uf"],
+            company_id=company_id,
         )
 
         try:

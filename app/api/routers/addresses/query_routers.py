@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, Response
 
 from app.api.composers.address_composite import address_composer
-from app.api.dependencies import build_response
+from app.api.dependencies import build_response, require_company_member
 from app.api.shared_schemas.responses import MessageResponse
 from .schemas import AddressResponse, AddressListResponse
 from app.crud.addresses import AddressServices
+from app.crud.companies.schemas import CompanyInDB
 
 router = APIRouter(tags=["Addresses"])
 
@@ -15,9 +16,13 @@ router = APIRouter(tags=["Addresses"])
 )
 async def get_address_by_id(
     address_id: str,
+    company_id: str,
     address_services: AddressServices = Depends(address_composer),
+    _: CompanyInDB = Depends(require_company_member),
 ):
-    address_in_db = await address_services.search_by_id(id=address_id)
+    address_in_db = await address_services.search_by_id(
+        id=address_id, company_id=company_id
+    )
     return build_response(
         status_code=200, message="Address found with success", data=address_in_db
     )
@@ -28,9 +33,11 @@ async def get_address_by_id(
     responses={200: {"model": AddressListResponse}, 204: {"description": "No Content"}},
 )
 async def get_addresses(
+    company_id: str,
     address_services: AddressServices = Depends(address_composer),
+    _: CompanyInDB = Depends(require_company_member),
 ):
-    addresses = await address_services.search_all()
+    addresses = await address_services.search_all(company_id=company_id)
     if addresses:
         return build_response(
             status_code=200, message="Addresses found with success", data=addresses
@@ -44,9 +51,13 @@ async def get_addresses(
 )
 async def get_address_by_zip_code(
     zip_code: str,
+    company_id: str,
     address_services: AddressServices = Depends(address_composer),
+    _: CompanyInDB = Depends(require_company_member),
 ):
-    address_in_db = await address_services.search_by_zip_code(zip_code=zip_code)
+    address_in_db = await address_services.search_by_zip_code(
+        zip_code=zip_code, company_id=company_id
+    )
     return build_response(
         status_code=200, message="Address found with success", data=address_in_db
     )
