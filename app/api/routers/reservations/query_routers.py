@@ -1,10 +1,9 @@
-from datetime import datetime
-
 from fastapi import APIRouter, Depends, Response
 
 from app.api.composers.reservation_composite import reservation_composer
 from app.api.dependencies import build_response, require_company_member
 from app.api.shared_schemas.responses import MessageResponse
+from app.core.utils.utc_datetime import UTCDateTimeType
 from .schemas import ReservationResponse, ReservationListResponse
 from app.crud.reservations import ReservationServices, ReservationStatus
 from app.crud.companies.schemas import CompanyInDB
@@ -34,8 +33,8 @@ async def get_reservation_by_id(
 )
 async def get_reservations(
     company_id: str,
-    start_date: datetime | None = None,
-    end_date: datetime | None = None,
+    start_date: UTCDateTimeType | None = None,
+    end_date: UTCDateTimeType | None = None,
     status: ReservationStatus | None = None,
     services: ReservationServices = Depends(reservation_composer),
     _: CompanyInDB = Depends(require_company_member),

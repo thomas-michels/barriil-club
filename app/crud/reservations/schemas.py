@@ -15,6 +15,8 @@ class ReservationStatus(str, Enum):
     DELIVERED = "DELIVERED"
     TO_PICKUP = "TO_PICKUP"
     COMPLETED = "COMPLETED"
+
+
 class Reservation(GenericModel):
     customer_id: str = Field(example="cus_123")
     address_id: str = Field(example="add_123")

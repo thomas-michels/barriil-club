@@ -1,6 +1,5 @@
 from typing import List
 from decimal import Decimal
-from datetime import datetime
 
 from app.core.exceptions import NotFoundError
 from app.core.utils.utc_datetime import UTCDateTime
@@ -85,7 +84,7 @@ class ReservationServices:
     async def search_by_id(self, id: str, company_id: str) -> ReservationInDB:
         return await self.__repository.select_by_id(id=id, company_id=company_id)
 
-    def _compute_status(self, delivery_date: datetime) -> ReservationStatus:
+    def _compute_status(self, delivery_date: UTCDateTime) -> ReservationStatus:
         now = UTCDateTime.now()
         if now < delivery_date:
             return ReservationStatus.RESERVED
@@ -96,8 +95,8 @@ class ReservationServices:
     async def search_all(
         self,
         company_id: str,
-        start_date: datetime | None = None,
-        end_date: datetime | None = None,
+        start_date: UTCDateTime | None = None,
+        end_date: UTCDateTime | None = None,
         status: ReservationStatus | None = None,
     ) -> List[ReservationInDB]:
         status_value = status.value if status else None

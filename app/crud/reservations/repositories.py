@@ -1,6 +1,4 @@
 from typing import List
-from datetime import datetime
-
 from app.core.configs import get_logger
 from app.core.exceptions import NotFoundError
 from app.core.repositories.base_repository import Repository
@@ -23,6 +21,7 @@ class ReservationRepository(Repository):
         try:
             payments = [PaymentModel(**p.model_dump()) for p in reservation.payments]
             json = reservation.model_dump(exclude={"payments"})
+
             model = ReservationModel(
                 **json,
                 payments=payments,
@@ -31,7 +30,9 @@ class ReservationRepository(Repository):
                 updated_at=UTCDateTime.now(),
             )
             model.save()
+
             return ReservationInDB.model_validate(model)
+
         except Exception as error:
             _logger.error(f"Error on create_reservation: {str(error)}")
             raise NotFoundError(message="Error on create reservation")
@@ -41,16 +42,22 @@ class ReservationRepository(Repository):
             model: ReservationModel = ReservationModel.objects(
                 id=id, company_id=company_id, is_active=True
             ).first()
+
             if not model:
                 raise NotFoundError(message=f"Reservation #{id} not found")
+
             if reservation.get("payments") is not None:
                 reservation["payments"] = [PaymentModel(**p) for p in reservation["payments"]]
+
             model.update(**reservation)
             model.save()
             model = ReservationModel.objects(id=id, company_id=company_id).first()
+
             return ReservationInDB.model_validate(model)
+
         except NotFoundError:
             raise
+
         except Exception as error:
             _logger.error(f"Error on update_reservation: {str(error)}")
             raise NotFoundError(message="Error on update reservation")
@@ -62,13 +69,18 @@ class ReservationRepository(Repository):
             model: ReservationModel = ReservationModel.objects(
                 id=id, company_id=company_id, is_active=True
             ).first()
+
             if not model:
                 raise NotFoundError(message=f"Reservation #{id} not found")
+
             model.payments.append(PaymentModel(**payment.model_dump()))
             model.save()
+
             return ReservationInDB.model_validate(model)
+
         except NotFoundError:
             raise
+
         except Exception as error:
             _logger.error(f"Error on add_payment: {str(error)}")
             raise NotFoundError(message="Error on add payment")
@@ -80,15 +92,21 @@ class ReservationRepository(Repository):
             model: ReservationModel = ReservationModel.objects(
                 id=id, company_id=company_id, is_active=True
             ).first()
+
             if not model:
                 raise NotFoundError(message=f"Reservation #{id} not found")
+
             if index < 0 or index >= len(model.payments):
                 raise NotFoundError(message=f"Payment #{index} not found")
+
             model.payments[index] = PaymentModel(**payment.model_dump())
             model.save()
+
             return ReservationInDB.model_validate(model)
+
         except NotFoundError:
             raise
+
         except Exception as error:
             _logger.error(f"Error on update_payment: {str(error)}")
             raise NotFoundError(message="Error on update payment")
@@ -100,15 +118,21 @@ class ReservationRepository(Repository):
             model: ReservationModel = ReservationModel.objects(
                 id=id, company_id=company_id, is_active=True
             ).first()
+
             if not model:
                 raise NotFoundError(message=f"Reservation #{id} not found")
+
             if index < 0 or index >= len(model.payments):
                 raise NotFoundError(message=f"Payment #{index} not found")
+
             model.payments.pop(index)
             model.save()
+
             return ReservationInDB.model_validate(model)
+
         except NotFoundError:
             raise
+
         except Exception as error:
             _logger.error(f"Error on delete_payment: {str(error)}")
             raise NotFoundError(message="Error on delete payment")
@@ -117,8 +141,8 @@ class ReservationRepository(Repository):
         self,
         company_id: str,
         beer_dispenser_id: str,
-        delivery_date: datetime,
-        pickup_date: datetime,
+        delivery_date: UTCDateTime,
+        pickup_date: UTCDateTime,
     ) -> ReservationInDB | None:
         try:
             model = ReservationModel.objects(
@@ -129,7 +153,9 @@ class ReservationRepository(Repository):
                 delivery_date__lte=pickup_date,
                 pickup_date__gte=delivery_date,
             ).first()
+
             return ReservationInDB.model_validate(model) if model else None
+
         except Exception as error:
             _logger.error(
                 f"Error on find_beer_dispenser_conflict: {str(error)}"
@@ -162,12 +188,16 @@ class ReservationRepository(Repository):
             model: ReservationModel = ReservationModel.objects(
                 id=id, company_id=company_id, is_active=True
             ).first()
+
             if not model:
                 raise NotFoundError(message=f"Reservation #{id} not found")
+
             self._auto_update_status(model)
             return ReservationInDB.model_validate(model)
+
         except NotFoundError:
             raise
+
         except Exception as error:
             _logger.error(f"Error on select_by_id: {str(error)}")
             raise NotFoundError(message=f"Reservation #{id} not found")
@@ -175,25 +205,32 @@ class ReservationRepository(Repository):
     async def select_all(
         self,
         company_id: str,
-        start_date: datetime | None = None,
-        end_date: datetime | None = None,
+        start_date: UTCDateTime | None = None,
+        end_date: UTCDateTime | None = None,
         status: str | None = None,
     ) -> List[ReservationInDB]:
         try:
             query = ReservationModel.objects(company_id=company_id, is_active=True)
+
             if start_date:
                 start_date = UTCDateTime.validate_datetime(start_date)
                 query = query.filter(delivery_date__gte=start_date)
+
             if end_date:
                 end_date = UTCDateTime.validate_datetime(end_date)
                 query = query.filter(pickup_date__lte=end_date)
+
             if status:
                 query = query.filter(status=status)
+
             reservations: List[ReservationInDB] = []
+
             for model in query.order_by("delivery_date"):
                 self._auto_update_status(model)
                 reservations.append(ReservationInDB.model_validate(model))
+
             return reservations
+
         except Exception as error:
             _logger.error(f"Error on select_all: {str(error)}")
             raise NotFoundError(message="Reservations not found")
@@ -203,13 +240,17 @@ class ReservationRepository(Repository):
             model: ReservationModel = ReservationModel.objects(
                 id=id, company_id=company_id, is_active=True
             ).first()
+
             if not model:
                 raise NotFoundError(message=f"Reservation #{id} not found")
+
             model.soft_delete()
             model.save()
             return ReservationInDB.model_validate(model)
+
         except NotFoundError:
             raise
+
         except Exception as error:
             _logger.error(f"Error on delete_by_id: {str(error)}")
             raise NotFoundError(message=f"Reservation #{id} not found")
