@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, Response
 
@@ -34,8 +34,8 @@ async def get_reservation_by_id(
 )
 async def get_reservations(
     company_id: str,
-    start_date: date | None = None,
-    end_date: date | None = None,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
     status: ReservationStatus | None = None,
     services: ReservationServices = Depends(reservation_composer),
     _: CompanyInDB = Depends(require_company_member),

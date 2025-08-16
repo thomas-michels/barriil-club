@@ -1,6 +1,6 @@
 import asyncio
 import unittest
-from datetime import date, timedelta
+from datetime import datetime, timedelta, date
 from decimal import Decimal
 
 import mongomock
@@ -78,8 +78,8 @@ class TestReservationServices(unittest.TestCase):
             keg_ids=[str(self.keg.id)],
             extractor_ids=[],
             pressure_gauge_ids=[str(self.pg.id)],
-            delivery_date=date.today() + timedelta(days=1),
-            pickup_date=date.today() + timedelta(days=2),
+            delivery_date=datetime.now() + timedelta(days=1),
+            pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
             company_id=self.company_id,
         )
@@ -107,8 +107,8 @@ class TestReservationServices(unittest.TestCase):
             keg_ids=[str(self.keg.id)],
             extractor_ids=[],
             pressure_gauge_ids=[str(self.pg.id)],
-            delivery_date=date.today() + timedelta(days=1),
-            pickup_date=date.today() + timedelta(days=2),
+            delivery_date=datetime.now() + timedelta(days=1),
+            pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
             company_id=self.company_id,
         )
@@ -130,8 +130,8 @@ class TestReservationServices(unittest.TestCase):
             keg_ids=[str(new_keg.id)],
             extractor_ids=[],
             pressure_gauge_ids=[str(self.pg.id)],
-            delivery_date=date.today() + timedelta(days=1),
-            pickup_date=date.today() + timedelta(days=2),
+            delivery_date=datetime.now() + timedelta(days=1),
+            pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
             company_id=self.company_id,
         )
@@ -146,8 +146,8 @@ class TestReservationServices(unittest.TestCase):
             keg_ids=[str(self.keg.id)],
             extractor_ids=[],
             pressure_gauge_ids=[str(self.pg.id)],
-            delivery_date=date.today() + timedelta(days=1),
-            pickup_date=date.today() + timedelta(days=2),
+            delivery_date=datetime.now() + timedelta(days=1),
+            pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
             company_id=self.company_id,
         )
@@ -160,8 +160,8 @@ class TestReservationServices(unittest.TestCase):
             keg_ids=[str(self.keg.id)],
             extractor_ids=[],
             pressure_gauge_ids=[str(self.pg.id)],
-            delivery_date=date.today() + timedelta(days=3),
-            pickup_date=date.today() + timedelta(days=4),
+            delivery_date=datetime.now() + timedelta(days=3),
+            pickup_date=datetime.now() + timedelta(days=4),
             payments=[],
             company_id=self.company_id,
         )
@@ -176,8 +176,8 @@ class TestReservationServices(unittest.TestCase):
             keg_ids=[str(self.keg.id)],
             extractor_ids=[],
             pressure_gauge_ids=[str(self.pg.id)],
-            delivery_date=date.today() + timedelta(days=1),
-            pickup_date=date.today() + timedelta(days=2),
+            delivery_date=datetime.now() + timedelta(days=1),
+            pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
             company_id=self.company_id,
         )

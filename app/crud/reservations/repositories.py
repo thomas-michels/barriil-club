@@ -1,5 +1,5 @@
 from typing import List
-from datetime import date
+from datetime import datetime
 
 from app.core.configs import get_logger
 from app.core.exceptions import NotFoundError
@@ -117,8 +117,8 @@ class ReservationRepository(Repository):
         self,
         company_id: str,
         beer_dispenser_id: str,
-        delivery_date: date,
-        pickup_date: date,
+        delivery_date: datetime,
+        pickup_date: datetime,
     ) -> ReservationInDB | None:
         try:
             model = ReservationModel.objects(
@@ -139,12 +139,19 @@ class ReservationRepository(Repository):
             )
 
     def _auto_update_status(self, model: ReservationModel) -> None:
-        today = date.today()
+        now = UTCDateTime.now()
         changed = False
-        if model.status == ReservationStatus.RESERVED.value and today >= model.delivery_date:
+        if (
+            model.status == ReservationStatus.RESERVED.value
+            and now >= model.delivery_date
+        ):
             model.status = ReservationStatus.TO_DELIVER.value
             changed = True
-        if model.status in [ReservationStatus.TO_DELIVER.value, ReservationStatus.DELIVERED.value] and today >= model.pickup_date:
+        if (
+            model.status
+            in [ReservationStatus.TO_DELIVER.value, ReservationStatus.DELIVERED.value]
+            and now >= model.pickup_date
+        ):
             model.status = ReservationStatus.TO_PICKUP.value
             changed = True
         if changed:
@@ -168,15 +175,17 @@ class ReservationRepository(Repository):
     async def select_all(
         self,
         company_id: str,
-        start_date: date | None = None,
-        end_date: date | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         status: str | None = None,
     ) -> List[ReservationInDB]:
         try:
             query = ReservationModel.objects(company_id=company_id, is_active=True)
             if start_date:
+                start_date = UTCDateTime.validate_datetime(start_date)
                 query = query.filter(delivery_date__gte=start_date)
             if end_date:
+                end_date = UTCDateTime.validate_datetime(end_date)
                 query = query.filter(pickup_date__lte=end_date)
             if status:
                 query = query.filter(status=status)

@@ -1,8 +1,9 @@
 from typing import List
 from decimal import Decimal
-from datetime import date
+from datetime import datetime
 
 from app.core.exceptions import NotFoundError
+from app.core.utils.utc_datetime import UTCDateTime
 from app.crud.kegs.repositories import KegRepository
 from app.crud.kegs.schemas import KegStatus
 from app.crud.pressure_gauges.repositories import PressureGaugeRepository
@@ -84,19 +85,19 @@ class ReservationServices:
     async def search_by_id(self, id: str, company_id: str) -> ReservationInDB:
         return await self.__repository.select_by_id(id=id, company_id=company_id)
 
-    def _compute_status(self, delivery_date: date) -> ReservationStatus:
-        today = date.today()
-        if today < delivery_date:
+    def _compute_status(self, delivery_date: datetime) -> ReservationStatus:
+        now = UTCDateTime.now()
+        if now < delivery_date:
             return ReservationStatus.RESERVED
-        if today == delivery_date:
+        if now.date() == delivery_date.date():
             return ReservationStatus.TO_DELIVER
         return ReservationStatus.DELIVERED
 
     async def search_all(
         self,
         company_id: str,
-        start_date: date | None = None,
-        end_date: date | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         status: ReservationStatus | None = None,
     ) -> List[ReservationInDB]:
         status_value = status.value if status else None

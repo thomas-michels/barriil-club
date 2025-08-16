@@ -1,6 +1,6 @@
 import asyncio
 import unittest
-from datetime import date, timedelta
+from datetime import datetime, timedelta, date
 
 import mongomock
 from fastapi import FastAPI
@@ -143,8 +143,8 @@ class TestReservationEndpoints(unittest.TestCase):
         self.app.dependency_overrides = {}
         disconnect()
 
-    def _payload(self, delivery: date | None = None) -> dict:
-        delivery = delivery or (date.today() + timedelta(days=1))
+    def _payload(self, delivery: datetime | None = None) -> dict:
+        delivery = delivery or (datetime.now() + timedelta(days=1))
         pickup = delivery + timedelta(days=1)
         return {
             "customerId": "cus1",
@@ -153,8 +153,8 @@ class TestReservationEndpoints(unittest.TestCase):
             "kegIds": [self.keg.id],
             "extractorIds": [self.extractor.id],
             "pressureGaugeIds": [self.pressure_gauge.id],
-            "deliveryDate": str(delivery),
-            "pickupDate": str(pickup),
+            "deliveryDate": delivery.isoformat(),
+            "pickupDate": pickup.isoformat(),
             "payments": [{"amount": 50.0, "method": "cash", "paidAt": str(date.today())}],
             "companyId": str(self.company.id),
         }
@@ -251,7 +251,7 @@ class TestReservationEndpoints(unittest.TestCase):
         resp1 = self.client.post("/api/reservations", json=self._payload())
         res_id1 = resp1.json()["data"]["id"]
         # second reservation far in future with different keg to avoid conflict
-        future_delivery = date.today() + timedelta(days=10)
+        future_delivery = datetime.now() + timedelta(days=10)
         new_keg = asyncio.run(
             self.keg_services.create(
                 Keg(
@@ -297,8 +297,8 @@ class TestReservationEndpoints(unittest.TestCase):
             "/api/reservations",
             params={
                 "company_id": str(self.company.id),
-                "start_date": str(start),
-                "end_date": str(end),
+                "start_date": start.isoformat(),
+                "end_date": end.isoformat(),
             },
         )
         self.assertEqual(resp.status_code, 200)

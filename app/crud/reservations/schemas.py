@@ -1,11 +1,11 @@
 from decimal import Decimal
-from datetime import date
 from enum import Enum
 from typing import List
 from pydantic import Field
 
 from app.core.models.base_schema import GenericModel
 from app.core.models.base_model import DatabaseModel
+from app.core.utils.utc_datetime import UTCDateTime, UTCDateTimeType
 from app.crud.payments.schemas import Payment
 
 
@@ -22,8 +22,8 @@ class Reservation(GenericModel):
     keg_ids: List[str] = Field(default_factory=list, example=["keg_1"])
     extractor_ids: List[str] = Field(default_factory=list, example=["ext_1"])
     pressure_gauge_ids: List[str] = Field(default_factory=list, example=["prg_1"])
-    delivery_date: date = Field(example=str(date.today()))
-    pickup_date: date = Field(example=str(date.today()))
+    delivery_date: UTCDateTimeType = Field(example=str(UTCDateTime.now()))
+    pickup_date: UTCDateTimeType = Field(example=str(UTCDateTime.now()))
     payments: List[Payment] = Field(default_factory=list)
     total_value: Decimal | None = Field(default=None, example=200.0)
     status: ReservationStatus | None = Field(default=None, example=ReservationStatus.RESERVED)
@@ -37,8 +37,8 @@ class ReservationInDB(DatabaseModel):
     keg_ids: List[str] = Field(default_factory=list, example=["keg_1"])
     extractor_ids: List[str] = Field(default_factory=list, example=["ext_1"])
     pressure_gauge_ids: List[str] = Field(default_factory=list, example=["prg_1"])
-    delivery_date: date = Field(example=str(date.today()))
-    pickup_date: date = Field(example=str(date.today()))
+    delivery_date: UTCDateTimeType = Field(example=str(UTCDateTime.now()))
+    pickup_date: UTCDateTimeType = Field(example=str(UTCDateTime.now()))
     payments: List[Payment] = Field(default_factory=list)
     total_value: Decimal = Field(example=200.0)
     status: ReservationStatus = Field(example=ReservationStatus.RESERVED)
@@ -50,8 +50,8 @@ class UpdateReservation(GenericModel):
     keg_ids: List[str] | None = Field(default=None)
     extractor_ids: List[str] | None = Field(default=None)
     pressure_gauge_ids: List[str] | None = Field(default=None)
-    delivery_date: date | None = Field(default=None)
-    pickup_date: date | None = Field(default=None)
+    delivery_date: UTCDateTimeType | None = Field(default=None)
+    pickup_date: UTCDateTimeType | None = Field(default=None)
     payments: List[Payment] | None = Field(default=None)
     status: ReservationStatus | None = Field(default=None)
     total_value: Decimal | None = Field(default=None)
