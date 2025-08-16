@@ -15,6 +15,7 @@ class PressureGaugeStatus(str, Enum):
     ACTIVE = "ACTIVE"
     INACTIVE = "INACTIVE"
     MAINTENANCE = "MAINTENANCE"
+    TO_VERIFY = "TO_VERIFY"
 
 
 class PressureGauge(GenericModel):
