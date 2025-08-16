@@ -1,0 +1,31 @@
+from typing import List
+
+from .repositories import CompanyRepository
+from .schemas import Company, CompanyInDB, UpdateCompany, CompanyMember
+
+
+class CompanyServices:
+    def __init__(self, company_repository: CompanyRepository) -> None:
+        self.__repository = company_repository
+
+    async def create(self, company: Company) -> CompanyInDB:
+        return await self.__repository.create(company=company)
+
+    async def update(self, id: str, company: UpdateCompany) -> CompanyInDB:
+        data = company.model_dump(exclude_unset=True, exclude_none=True)
+        return await self.__repository.update(company_id=id, company=data)
+
+    async def search_by_id(self, id: str) -> CompanyInDB:
+        return await self.__repository.select_by_id(id=id)
+
+    async def search_all(self) -> List[CompanyInDB]:
+        return await self.__repository.select_all()
+
+    async def delete_by_id(self, id: str) -> CompanyInDB:
+        return await self.__repository.delete_by_id(id=id)
+
+    async def add_member(self, company_id: str, member: CompanyMember) -> CompanyInDB:
+        return await self.__repository.add_member(company_id=company_id, member=member)
+
+    async def search_by_user(self, user_id: str) -> CompanyInDB:
+        return await self.__repository.select_by_user(user_id=user_id)
