@@ -15,6 +15,7 @@ from app.api.routers import (
     beer_dispenser_router,
     pressure_gauge_router,
     reservation_router,
+    dashboard_router,
 )
 from app.api.routers.exception_handlers import (
     unprocessable_entity_error_422,
@@ -69,6 +70,7 @@ app.include_router(keg_router, prefix="/api")
 app.include_router(beer_dispenser_router, prefix="/api")
 app.include_router(pressure_gauge_router, prefix="/api")
 app.include_router(reservation_router, prefix="/api")
+app.include_router(dashboard_router, prefix="/api")
 
 app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(UnprocessableEntity, unprocessable_entity_error_422)

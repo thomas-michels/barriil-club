@@ -8,3 +8,4 @@ from .kegs import keg_router
 from .beer_dispensers import beer_dispenser_router
 from .pressure_gauges import pressure_gauge_router
 from .reservations import reservation_router
+from .dashboard import dashboard_router
