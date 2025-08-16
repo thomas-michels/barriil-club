@@ -28,7 +28,7 @@ class TestCustomerRepository(unittest.TestCase):
             email="john@example.com",
             mobile="999",
             birth_date="1990-01-01",
-            address_id="add1",
+            address_ids=["add1"],
             notes="VIP",
         )
 
@@ -44,6 +44,13 @@ class TestCustomerRepository(unittest.TestCase):
         asyncio.run(repository.create(self._build_customer("10000000019")))
         with self.assertRaises(UnprocessableEntity):
             asyncio.run(repository.create(self._build_customer("10000000019")))
+
+    def test_create_customer_more_than_five_addresses(self):
+        repository = CustomerRepository()
+        customer = self._build_customer()
+        customer.address_ids = [f"add{i}" for i in range(6)]
+        with self.assertRaises(UnprocessableEntity):
+            asyncio.run(repository.create(customer))
 
     def test_select_by_id_found(self):
         doc = CustomerModel(**self._build_customer().model_dump())

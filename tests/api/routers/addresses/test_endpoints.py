@@ -1,5 +1,6 @@
 import asyncio
 import unittest
+from unittest.mock import patch
 
 import mongomock
 from fastapi import FastAPI
@@ -87,6 +88,25 @@ class TestAddressEndpoints(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         with self.assertRaises(NotFoundError):
             asyncio.run(self.services.search_by_id(self.address.id))
+
+    def test_get_address_by_zip_existing(self):
+        resp = self.client.get(f"/api/addresses/zip/{self.address.postal_code}")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["data"]["id"], self.address.id)
+
+    @patch("app.api.dependencies.get_address_by_zip_code.get_address_by_zip_code")
+    def test_get_address_by_zip_via_cep(self, mock_get):
+        mock_get.return_value = {
+            "cep": "99999-000",
+            "logradouro": "Street",
+            "complemento": "",
+            "bairro": "Neighborhood",
+            "localidade": "City",
+            "uf": "ST",
+        }
+        resp = self.client.get("/api/addresses/zip/99999000")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["data"]["postal_code"], "99999-000")
 
     def test_create_address_returns_400_when_not_created(self):
         async def fake_create(address):

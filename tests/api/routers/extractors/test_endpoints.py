@@ -32,8 +32,7 @@ class TestExtractorEndpoints(unittest.TestCase):
 
         company = Company(
             name="ACME",
-            address_line1="Street 1",
-            address_line2="Apt 2",
+            address_id="add1",
             phone_number="9999-9999",
             ddd="11",
             email="info@acme.com",

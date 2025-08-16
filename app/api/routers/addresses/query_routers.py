@@ -36,3 +36,17 @@ async def get_addresses(
             status_code=200, message="Addresses found with success", data=addresses
         )
     return Response(status_code=204)
+
+
+@router.get(
+    "/addresses/zip/{zip_code}",
+    responses={200: {"model": AddressResponse}, 404: {"model": MessageResponse}},
+)
+async def get_address_by_zip_code(
+    zip_code: str,
+    address_services: AddressServices = Depends(address_composer),
+):
+    address_in_db = await address_services.search_by_zip_code(zip_code=zip_code)
+    return build_response(
+        status_code=200, message="Address found with success", data=address_in_db
+    )

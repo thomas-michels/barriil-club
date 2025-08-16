@@ -79,6 +79,18 @@ class TestAddressRepository(unittest.TestCase):
         with self.assertRaises(NotFoundError):
             asyncio.run(repository.delete_by_id("invalid"))
 
+    def test_select_by_zip_code(self):
+        doc = AddressModel(**self._build_address("12345").model_dump())
+        doc.save()
+        repository = AddressRepository()
+        res = asyncio.run(repository.select_by_zip_code("12345"))
+        self.assertEqual(res.id, doc.id)
+
+    def test_select_by_zip_code_not_found(self):
+        repository = AddressRepository()
+        with self.assertRaises(NotFoundError):
+            asyncio.run(repository.select_by_zip_code("00000"))
+
 
 if __name__ == "__main__":
     unittest.main()

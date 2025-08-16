@@ -89,3 +89,30 @@ class AddressRepository(Repository):
         except Exception as error:
             _logger.error(f"Error on delete_by_id: {str(error)}")
             raise NotFoundError(message=f"Address #{id} not found")
+
+    async def select_by_zip_code(
+        self, zip_code: str, *, raise_404: bool = True
+    ) -> AddressInDB | None:
+        try:
+            sanitized = zip_code.replace("-", "")
+            formatted = (
+                f"{sanitized[:5]}-{sanitized[5:]}" if len(sanitized) > 5 else sanitized
+            )
+            address_model: AddressModel | None = AddressModel.objects(
+                postal_code__in=[zip_code, sanitized, formatted],
+                is_active=True,
+            ).first()
+            if not address_model and raise_404:
+                raise NotFoundError(
+                    message=f"Address with zip code {zip_code} not found"
+                )
+            if not address_model:
+                return None
+            return AddressInDB.model_validate(address_model)
+        except NotFoundError:
+            raise
+        except Exception as error:
+            _logger.error(f"Error on select_by_zip_code: {str(error)}")
+            raise NotFoundError(
+                message=f"Address with zip code {zip_code} not found"
+            )

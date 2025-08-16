@@ -8,8 +8,7 @@ from app.crud.companies.schemas import CompanyInDB, CompanyMember
 EXAMPLE_COMPANY = {
     "id": "com_12345678",
     "name": "ACME",
-    "address_line1": "Street 1",
-    "address_line2": "Apt 2",
+    "addressId": "add_12345678",
     "phone_number": "9999-9999",
     "ddd": "11",
     "email": "info@acme.com",

@@ -16,6 +16,9 @@ from app.api.composers.company_composite import company_composer
 from app.crud.companies.repositories import CompanyRepository
 from app.crud.companies.services import CompanyServices
 from app.crud.companies.schemas import Company
+from app.crud.addresses.repositories import AddressRepository
+from app.crud.addresses.services import AddressServices
+from app.crud.addresses.schemas import Address
 from app.crud.users.schemas import UserInDB
 from app.core.exceptions import NotFoundError
 
@@ -29,13 +32,24 @@ class TestCompanyEndpoints(unittest.TestCase):
         )
         self.repository = CompanyRepository()
         self.services = CompanyServices(self.repository)
+        self.address_repo = AddressRepository()
+        self.address_services = AddressServices(self.address_repo)
         self.app = FastAPI()
         self.app.include_router(company_router, prefix="/api")
 
+        address = Address(
+            postal_code="12345",
+            street="Main",
+            number="1",
+            district="Center",
+            city="City",
+            state="ST",
+        )
+        self.address = asyncio.run(self.address_services.create(address))
+
         company = Company(
             name="ACME",
-            address_line1="Street 1",
-            address_line2="Apt 2",
+            address_id=self.address.id,
             phone_number="9999-9999",
             ddd="11",
             email="info@acme.com",
@@ -79,8 +93,7 @@ class TestCompanyEndpoints(unittest.TestCase):
     def _build_company_payload(self, name: str = "Beta") -> dict:
         return {
             "name": name,
-            "address_line1": "Street 1",
-            "address_line2": "Apt 2",
+            "addressId": self.address.id,
             "phone_number": "9999-9999",
             "ddd": "11",
             "email": "info@beta.com",

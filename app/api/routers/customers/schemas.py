@@ -12,7 +12,7 @@ EXAMPLE_CUSTOMER = {
     "email": "john@example.com",
     "mobile": "11999999999",
     "birth_date": "1990-01-01",
-    "address_id": "add_12345678",
+    "addressIds": ["add_12345678"],
     "notes": "VIP",
     "created_at": "2024-01-01T00:00:00Z",
     "updated_at": "2024-01-01T00:00:00Z",

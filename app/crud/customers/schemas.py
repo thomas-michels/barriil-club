@@ -1,3 +1,5 @@
+from typing import List
+
 from pydantic import Field, EmailStr, field_validator
 
 from app.core.models.base_schema import GenericModel
@@ -10,7 +12,9 @@ class Customer(GenericModel):
     email: EmailStr | None = Field(default=None, example="john@example.com")
     mobile: str | None = Field(default=None, example="11999999999")
     birth_date: str | None = Field(default=None, example="1990-01-01")
-    address_id: str | None = Field(default=None, example="add_12345678")
+    address_ids: List[str] | None = Field(
+        default=None, example=["add_12345678", "add_87654321"]
+    )
     notes: str | None = Field(default=None, example="VIP")
 
     @field_validator("document")
@@ -29,7 +33,9 @@ class CustomerInDB(DatabaseModel):
     email: EmailStr | None = Field(default=None, example="john@example.com")
     mobile: str | None = Field(default=None, example="11999999999")
     birth_date: str | None = Field(default=None, example="1990-01-01")
-    address_id: str | None = Field(default=None, example="add_12345678")
+    address_ids: List[str] | None = Field(
+        default=None, example=["add_12345678", "add_87654321"]
+    )
     notes: str | None = Field(default=None, example="VIP")
 
 
@@ -39,7 +45,7 @@ class UpdateCustomer(GenericModel):
     email: EmailStr | None = Field(default=None)
     mobile: str | None = Field(default=None)
     birth_date: str | None = Field(default=None)
-    address_id: str | None = Field(default=None)
+    address_ids: List[str] | None = Field(default=None)
     notes: str | None = Field(default=None)
 
     @field_validator("document")

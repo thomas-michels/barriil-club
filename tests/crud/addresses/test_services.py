@@ -9,6 +9,7 @@ from app.crud.addresses.services import AddressServices
 from app.crud.addresses.schemas import Address, UpdateAddress
 from app.crud.addresses.models import AddressModel
 from app.core.exceptions import NotFoundError
+from unittest.mock import patch
 
 
 class TestAddressServices(unittest.TestCase):
@@ -73,6 +74,25 @@ class TestAddressServices(unittest.TestCase):
     def test_delete_not_found(self):
         with self.assertRaises(NotFoundError):
             asyncio.run(self.services.delete_by_id("invalid"))
+
+    def test_search_by_zip_code_existing(self):
+        doc = AddressModel(**self._build_address("12345").model_dump())
+        doc.save()
+        res = asyncio.run(self.services.search_by_zip_code("12345"))
+        self.assertEqual(res.id, doc.id)
+
+    @patch("app.api.dependencies.get_address_by_zip_code.get_address_by_zip_code")
+    def test_search_by_zip_code_via_cep(self, mock_get):
+        mock_get.return_value = {
+            "cep": "99999-000",
+            "logradouro": "Street",
+            "complemento": "",
+            "bairro": "Neighborhood",
+            "localidade": "City",
+            "uf": "ST",
+        }
+        res = asyncio.run(self.services.search_by_zip_code("99999000"))
+        self.assertEqual(res.postal_code, "99999-000")
 
 
 if __name__ == "__main__":

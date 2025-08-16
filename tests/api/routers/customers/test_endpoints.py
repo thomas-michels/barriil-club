@@ -38,7 +38,7 @@ class TestCustomerEndpoints(unittest.TestCase):
             email="john@example.com",
             mobile="999",
             birth_date="1990-01-01",
-            address_id="add1",
+            address_ids=["add1"],
             notes="VIP",
         )
         self.customer = asyncio.run(self.services.create(customer))
@@ -54,7 +54,7 @@ class TestCustomerEndpoints(unittest.TestCase):
             "email": "jane@example.com",
             "mobile": "888",
             "birthDate": "1995-01-01",
-            "addressId": "add1",
+            "addressIds": ["add1"],
             "notes": "Note",
         }
 

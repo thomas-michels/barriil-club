@@ -31,7 +31,7 @@ class TestCustomerServices(unittest.TestCase):
             email="john@example.com",
             mobile="999",
             birth_date="1990-01-01",
-            address_id="add1",
+            address_ids=["add1"],
             notes="VIP",
         )
 
