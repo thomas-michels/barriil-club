@@ -17,6 +17,7 @@ from app.crud.pressure_gauges.schemas import (
     PressureGaugeStatus,
     PressureGaugeType,
 )
+from app.crud.payments.schemas import Payment
 
 
 class TestReservationRepository(unittest.TestCase):
@@ -73,6 +74,39 @@ class TestReservationRepository(unittest.TestCase):
         )
         res = asyncio.run(self.repository.create(reservation))
         self.assertIsNotNone(res.id)
+
+    def test_add_update_delete_payment(self):
+        reservation = Reservation(
+            customer_id="cus1",
+            address_id="add2",
+            beer_dispenser_id=str(self.dispenser.id),
+            keg_ids=[str(self.keg.id)],
+            extractor_ids=[],
+            pressure_gauge_ids=[str(self.pg.id)],
+            delivery_date=date.today() + timedelta(days=1),
+            pickup_date=date.today() + timedelta(days=2),
+            payments=[],
+            total_value=Decimal("400.00"),
+            status=ReservationStatus.RESERVED,
+            company_id=self.company_id,
+        )
+        res = asyncio.run(self.repository.create(reservation))
+        pay = Payment(amount=Decimal("50.00"), method="cash", paid_at=date.today())
+        updated = asyncio.run(
+            self.repository.add_payment(res.id, self.company_id, pay)
+        )
+        self.assertEqual(len(updated.payments), 1)
+        new_pay = Payment(
+            amount=Decimal("60.00"), method="card", paid_at=date.today()
+        )
+        updated = asyncio.run(
+            self.repository.update_payment(res.id, self.company_id, 0, new_pay)
+        )
+        self.assertEqual(updated.payments[0].amount, Decimal("60.00"))
+        updated = asyncio.run(
+            self.repository.delete_payment(res.id, self.company_id, 0)
+        )
+        self.assertEqual(len(updated.payments), 0)
 
 
 if __name__ == "__main__":

@@ -25,6 +25,7 @@ from app.crud.pressure_gauges.schemas import (
 )
 from app.crud.pressure_gauges.repositories import PressureGaugeRepository
 from app.core.exceptions import NotFoundError
+from app.crud.payments.schemas import Payment
 
 
 class TestReservationServices(unittest.TestCase):
@@ -166,6 +167,37 @@ class TestReservationServices(unittest.TestCase):
         )
         with self.assertRaises(NotFoundError):
             asyncio.run(self.services.create(reservation2))
+
+    def test_add_update_delete_payment(self):
+        reservation = Reservation(
+            customer_id="cus1",
+            address_id="add2",
+            beer_dispenser_id=str(self.dispenser.id),
+            keg_ids=[str(self.keg.id)],
+            extractor_ids=[],
+            pressure_gauge_ids=[str(self.pg.id)],
+            delivery_date=date.today() + timedelta(days=1),
+            pickup_date=date.today() + timedelta(days=2),
+            payments=[],
+            company_id=self.company_id,
+        )
+        res = asyncio.run(self.services.create(reservation))
+        pay = Payment(amount=Decimal("50.00"), method="cash", paid_at=date.today())
+        updated = asyncio.run(
+            self.services.add_payment(res.id, self.company_id, pay)
+        )
+        self.assertEqual(len(updated.payments), 1)
+        new_pay = Payment(
+            amount=Decimal("60.00"), method="card", paid_at=date.today()
+        )
+        updated = asyncio.run(
+            self.services.update_payment(res.id, self.company_id, 0, new_pay)
+        )
+        self.assertEqual(updated.payments[0].amount, Decimal("60.00"))
+        updated = asyncio.run(
+            self.services.delete_payment(res.id, self.company_id, 0)
+        )
+        self.assertEqual(len(updated.payments), 0)
 
 
 if __name__ == "__main__":

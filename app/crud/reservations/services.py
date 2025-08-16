@@ -7,6 +7,7 @@ from app.crud.kegs.repositories import KegRepository
 from app.crud.kegs.schemas import KegStatus
 from app.crud.pressure_gauges.repositories import PressureGaugeRepository
 from app.crud.pressure_gauges.schemas import PressureGaugeStatus
+from app.crud.payments.schemas import Payment
 
 from .repositories import ReservationRepository
 from .schemas import (
@@ -108,3 +109,24 @@ class ReservationServices:
 
     async def delete_by_id(self, id: str, company_id: str) -> ReservationInDB:
         return await self.__repository.delete_by_id(id=id, company_id=company_id)
+
+    async def add_payment(
+        self, id: str, company_id: str, payment: Payment
+    ) -> ReservationInDB:
+        return await self.__repository.add_payment(
+            id=id, company_id=company_id, payment=payment
+        )
+
+    async def update_payment(
+        self, id: str, company_id: str, index: int, payment: Payment
+    ) -> ReservationInDB:
+        return await self.__repository.update_payment(
+            id=id, company_id=company_id, index=index, payment=payment
+        )
+
+    async def delete_payment(
+        self, id: str, company_id: str, index: int
+    ) -> ReservationInDB:
+        return await self.__repository.delete_payment(
+            id=id, company_id=company_id, index=index
+        )

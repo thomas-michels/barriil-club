@@ -7,6 +7,7 @@ from app.core.repositories.base_repository import Repository
 from app.core.utils.utc_datetime import UTCDateTime
 
 from app.crud.payments.models import PaymentModel
+from app.crud.payments.schemas import Payment
 
 from .models import ReservationModel
 from .schemas import Reservation, ReservationInDB, ReservationStatus
@@ -53,6 +54,64 @@ class ReservationRepository(Repository):
         except Exception as error:
             _logger.error(f"Error on update_reservation: {str(error)}")
             raise NotFoundError(message="Error on update reservation")
+
+    async def add_payment(
+        self, id: str, company_id: str, payment: Payment
+    ) -> ReservationInDB:
+        try:
+            model: ReservationModel = ReservationModel.objects(
+                id=id, company_id=company_id, is_active=True
+            ).first()
+            if not model:
+                raise NotFoundError(message=f"Reservation #{id} not found")
+            model.payments.append(PaymentModel(**payment.model_dump()))
+            model.save()
+            return ReservationInDB.model_validate(model)
+        except NotFoundError:
+            raise
+        except Exception as error:
+            _logger.error(f"Error on add_payment: {str(error)}")
+            raise NotFoundError(message="Error on add payment")
+
+    async def update_payment(
+        self, id: str, company_id: str, index: int, payment: Payment
+    ) -> ReservationInDB:
+        try:
+            model: ReservationModel = ReservationModel.objects(
+                id=id, company_id=company_id, is_active=True
+            ).first()
+            if not model:
+                raise NotFoundError(message=f"Reservation #{id} not found")
+            if index < 0 or index >= len(model.payments):
+                raise NotFoundError(message=f"Payment #{index} not found")
+            model.payments[index] = PaymentModel(**payment.model_dump())
+            model.save()
+            return ReservationInDB.model_validate(model)
+        except NotFoundError:
+            raise
+        except Exception as error:
+            _logger.error(f"Error on update_payment: {str(error)}")
+            raise NotFoundError(message="Error on update payment")
+
+    async def delete_payment(
+        self, id: str, company_id: str, index: int
+    ) -> ReservationInDB:
+        try:
+            model: ReservationModel = ReservationModel.objects(
+                id=id, company_id=company_id, is_active=True
+            ).first()
+            if not model:
+                raise NotFoundError(message=f"Reservation #{id} not found")
+            if index < 0 or index >= len(model.payments):
+                raise NotFoundError(message=f"Payment #{index} not found")
+            model.payments.pop(index)
+            model.save()
+            return ReservationInDB.model_validate(model)
+        except NotFoundError:
+            raise
+        except Exception as error:
+            _logger.error(f"Error on delete_payment: {str(error)}")
+            raise NotFoundError(message="Error on delete payment")
 
     async def find_beer_dispenser_conflict(
         self,

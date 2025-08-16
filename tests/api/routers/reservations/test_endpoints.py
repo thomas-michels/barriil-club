@@ -218,6 +218,35 @@ class TestReservationEndpoints(unittest.TestCase):
         pg = asyncio.run(self.pressure_gauge_services.search_by_id(self.pressure_gauge.id, str(self.company.id)))
         self.assertEqual(pg.status, PressureGaugeStatus.TO_VERIFY)
 
+    def test_payment_endpoints(self):
+        resp = self.client.post("/api/reservations", json=self._payload())
+        res_id = resp.json()["data"]["id"]
+        pay_payload = {
+            "amount": 25.0,
+            "method": "card",
+            "paidAt": str(date.today()),
+        }
+        resp_add = self.client.post(
+            f"/api/reservations/{res_id}/payments",
+            params={"company_id": str(self.company.id)},
+            json=pay_payload,
+        )
+        self.assertEqual(resp_add.status_code, 200)
+        self.assertEqual(len(resp_add.json()["data"]["payments"]), 2)
+        resp_update = self.client.put(
+            f"/api/reservations/{res_id}/payments/1",
+            params={"company_id": str(self.company.id)},
+            json={"amount": 60.0, "method": "card", "paidAt": str(date.today())},
+        )
+        self.assertEqual(resp_update.status_code, 200)
+        self.assertEqual(resp_update.json()["data"]["payments"][1]["amount"], 60.0)
+        resp_delete = self.client.delete(
+            f"/api/reservations/{res_id}/payments/0",
+            params={"company_id": str(self.company.id)},
+        )
+        self.assertEqual(resp_delete.status_code, 200)
+        self.assertEqual(len(resp_delete.json()["data"]["payments"]), 1)
+
     def test_list_reservations_with_filters(self):
         resp1 = self.client.post("/api/reservations", json=self._payload())
         res_id1 = resp1.json()["data"]["id"]

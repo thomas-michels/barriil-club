@@ -9,6 +9,7 @@ from app.crud.reservations import (
     UpdateReservation,
     ReservationServices,
 )
+from app.crud.payments.schemas import Payment
 from app.crud.companies.schemas import CompanyInDB
 
 router = APIRouter(tags=["Reservations"])
@@ -74,4 +75,71 @@ async def delete_reservation(
         raise HTTPException(status_code=400, detail="Reservation not deleted")
     return build_response(
         status_code=200, message="Reservation deleted with success", data=reservation_in_db
+    )
+
+
+@router.post(
+    "/reservations/{reservation_id}/payments",
+    responses={200: {"model": ReservationResponse}, 404: {"model": MessageResponse}},
+)
+async def add_reservation_payment(
+    reservation_id: str,
+    company_id: str,
+    payment: Payment,
+    services: ReservationServices = Depends(reservation_composer),
+    _: CompanyInDB = Depends(require_company_member),
+):
+    reservation_in_db = await services.add_payment(
+        id=reservation_id, company_id=company_id, payment=payment
+    )
+    return build_response(
+        status_code=200,
+        message="Reservation payment added with success",
+        data=reservation_in_db,
+    )
+
+
+@router.put(
+    "/reservations/{reservation_id}/payments/{payment_index}",
+    responses={200: {"model": ReservationResponse}, 404: {"model": MessageResponse}},
+)
+async def update_reservation_payment(
+    reservation_id: str,
+    payment_index: int,
+    company_id: str,
+    payment: Payment,
+    services: ReservationServices = Depends(reservation_composer),
+    _: CompanyInDB = Depends(require_company_member),
+):
+    reservation_in_db = await services.update_payment(
+        id=reservation_id,
+        company_id=company_id,
+        index=payment_index,
+        payment=payment,
+    )
+    return build_response(
+        status_code=200,
+        message="Reservation payment updated with success",
+        data=reservation_in_db,
+    )
+
+
+@router.delete(
+    "/reservations/{reservation_id}/payments/{payment_index}",
+    responses={200: {"model": ReservationResponse}, 404: {"model": MessageResponse}},
+)
+async def delete_reservation_payment(
+    reservation_id: str,
+    payment_index: int,
+    company_id: str,
+    services: ReservationServices = Depends(reservation_composer),
+    _: CompanyInDB = Depends(require_company_member),
+):
+    reservation_in_db = await services.delete_payment(
+        id=reservation_id, company_id=company_id, index=payment_index
+    )
+    return build_response(
+        status_code=200,
+        message="Reservation payment deleted with success",
+        data=reservation_in_db,
     )
