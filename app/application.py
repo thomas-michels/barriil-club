@@ -8,6 +8,8 @@ from app.api.routers import (
     user_router,
     extractor_router,
     company_router,
+    address_router,
+    customer_router,
 )
 from app.api.routers.exception_handlers import (
     unprocessable_entity_error_422,
@@ -55,6 +57,8 @@ app.add_middleware(RateLimitMiddleware, limit=150, window=60)
 app.include_router(user_router, prefix="/api")
 app.include_router(extractor_router, prefix="/api")
 app.include_router(company_router, prefix="/api")
+app.include_router(address_router, prefix="/api")
+app.include_router(customer_router, prefix="/api")
 
 app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(UnprocessableEntity, unprocessable_entity_error_422)

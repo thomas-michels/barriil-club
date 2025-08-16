@@ -24,8 +24,7 @@ class TestCompanyRepository(unittest.TestCase):
     def _build_company(self, name: str = "ACME") -> Company:
         return Company(
             name=name,
-            address_line1="Street 1",
-            address_line2="Apt 2",
+            address_id="add1",
             phone_number="9999-9999",
             ddd="11",
             email="info@acme.com",
