@@ -27,7 +27,6 @@ class Environment(BaseSettings):
     AUTH0_ALGORITHMS: str | None = None
     AUTH0_CLIENT_ID: str | None = None
     AUTH0_CLIENT_SECRET: str | None = None
-    APP_SECRET_KEY: str | None = None
     AUTH0_MANAGEMENT_API_CLIENT_ID: str | None = None
     AUTH0_MANAGEMENT_API_CLIENT_SECRET: str | None = None
     AUTH0_MANAGEMENT_API_AUDIENCE: str | None = None
