@@ -14,8 +14,9 @@ class ExtractorServices:
     async def update(
         self, id: str, company_id: str, extractor: UpdateExtractor
     ) -> ExtractorInDB:
+        data = extractor.model_dump(exclude_unset=True, exclude_none=True)
         return await self.__repository.update(
-            id=id, company_id=company_id, extractor=extractor
+            extractor_id=id, company_id=company_id, extractor=data
         )
 
     async def search_by_id(self, id: str, company_id: str) -> ExtractorInDB:
@@ -24,5 +25,5 @@ class ExtractorServices:
     async def search_all(self, company_id: str) -> List[ExtractorInDB]:
         return await self.__repository.select_all(company_id=company_id)
 
-    async def delete_by_id(self, id: str, company_id: str) -> bool:
+    async def delete_by_id(self, id: str, company_id: str) -> ExtractorInDB:
         return await self.__repository.delete_by_id(id=id, company_id=company_id)

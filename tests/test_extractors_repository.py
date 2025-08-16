@@ -6,7 +6,7 @@ from mongoengine import connect, disconnect
 
 from app.crud.extractors.repositories import ExtractorRepository
 from app.crud.extractors.models import ExtractorModel
-from app.crud.extractors.schemas import Extractor, UpdateExtractor
+from app.crud.extractors.schemas import Extractor
 from app.core.exceptions import NotFoundError
 
 
@@ -58,7 +58,7 @@ class TestExtractorRepository(unittest.TestCase):
         doc.save()
         repository = ExtractorRepository()
         updated = asyncio.run(
-            repository.update(doc.id, "com1", UpdateExtractor(brand="New"))
+            repository.update(doc.id, "com1", {"brand": "New"})
         )
         self.assertEqual(updated.brand, "New")
 
@@ -66,7 +66,7 @@ class TestExtractorRepository(unittest.TestCase):
         repository = ExtractorRepository()
         with self.assertRaises(NotFoundError):
             asyncio.run(
-                repository.update("invalid", "com1", UpdateExtractor(brand="New"))
+                repository.update("invalid", "com1", {"brand": "New"})
             )
 
     def test_delete_extractor(self):
@@ -74,12 +74,13 @@ class TestExtractorRepository(unittest.TestCase):
         doc.save()
         repository = ExtractorRepository()
         result = asyncio.run(repository.delete_by_id(doc.id, "com1"))
-        self.assertTrue(result)
+        self.assertEqual(result.id, doc.id)
         self.assertFalse(ExtractorModel.objects(id=doc.id).first().is_active)
 
     def test_delete_extractor_not_found(self):
         repository = ExtractorRepository()
-        self.assertFalse(asyncio.run(repository.delete_by_id("invalid", "com1")))
+        with self.assertRaises(NotFoundError):
+            asyncio.run(repository.delete_by_id("invalid", "com1"))
 
 
 if __name__ == "__main__":

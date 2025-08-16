@@ -6,7 +6,7 @@ from mongoengine import connect, disconnect
 
 from app.crud.companies.repositories import CompanyRepository
 from app.crud.companies.models import CompanyModel
-from app.crud.companies.schemas import Company, UpdateCompany, CompanyMember
+from app.crud.companies.schemas import Company, CompanyMember
 from app.core.exceptions import NotFoundError, UnprocessableEntity
 
 
@@ -61,25 +61,28 @@ class TestCompanyRepository(unittest.TestCase):
         doc = CompanyModel(**self._build_company().model_dump())
         doc.save()
         repository = CompanyRepository()
-        updated = asyncio.run(repository.update(doc.id, UpdateCompany(name="New ACME")))
+        updated = asyncio.run(
+            repository.update(doc.id, {"name": "New ACME"})
+        )
         self.assertEqual(updated.name, "New ACME")
 
     def test_update_company_not_found(self):
         repository = CompanyRepository()
         with self.assertRaises(NotFoundError):
-            asyncio.run(repository.update("invalid", UpdateCompany(name="New")))
+            asyncio.run(repository.update("invalid", {"name": "New"}))
 
     def test_delete_company(self):
         doc = CompanyModel(**self._build_company().model_dump())
         doc.save()
         repository = CompanyRepository()
         result = asyncio.run(repository.delete_by_id(doc.id))
-        self.assertTrue(result)
+        self.assertEqual(result.id, doc.id)
         self.assertFalse(CompanyModel.objects(id=doc.id).first().is_active)
 
     def test_delete_company_not_found(self):
         repository = CompanyRepository()
-        self.assertFalse(asyncio.run(repository.delete_by_id("invalid")))
+        with self.assertRaises(NotFoundError):
+            asyncio.run(repository.delete_by_id("invalid"))
 
     def test_add_member(self):
         doc = CompanyModel(**self._build_company().model_dump())

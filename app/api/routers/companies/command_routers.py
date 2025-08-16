@@ -40,21 +40,16 @@ async def update_company(
 
 @router.delete(
     "/companies/{company_id}",
-    responses={200: {"model": MessageResponse}, 404: {"model": MessageResponse}},
+    responses={200: {"model": CompanyResponse}, 404: {"model": MessageResponse}},
 )
 async def delete_company(
     company_id: str,
     company_services: CompanyServices = Depends(company_composer),
 ):
-    deleted = await company_services.delete_by_id(id=company_id)
-    if deleted:
-        return build_response(
-            status_code=200, message="Company deleted with success", data=None
-        )
-    else:
-        return build_response(
-            status_code=404, message=f"Company {company_id} not found", data=None
-        )
+    company_in_db = await company_services.delete_by_id(id=company_id)
+    return build_response(
+        status_code=200, message="Company deleted with success", data=company_in_db
+    )
 
 
 @router.post(

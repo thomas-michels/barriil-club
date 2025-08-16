@@ -43,19 +43,16 @@ async def update_extractor(
 
 @router.delete(
     "/extractors/{extractor_id}",
-    responses={200: {"model": MessageResponse}, 404: {"model": MessageResponse}},
+    responses={200: {"model": ExtractorResponse}, 404: {"model": MessageResponse}},
 )
 async def delete_extractor(
     extractor_id: str,
     company_id: str,
     extractor_services: ExtractorServices = Depends(extractor_composer),
 ):
-    deleted = await extractor_services.delete_by_id(id=extractor_id, company_id=company_id)
-    if deleted:
-        return build_response(
-            status_code=200, message="Extractor deleted with success", data=None
-        )
-    else:
-        return build_response(
-            status_code=404, message=f"Extractor {extractor_id} not found", data=None
-        )
+    extractor_in_db = await extractor_services.delete_by_id(
+        id=extractor_id, company_id=company_id
+    )
+    return build_response(
+        status_code=200, message="Extractor deleted with success", data=extractor_in_db
+    )

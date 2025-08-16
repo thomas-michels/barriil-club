@@ -12,7 +12,8 @@ class CompanyServices:
         return await self.__repository.create(company=company)
 
     async def update(self, id: str, company: UpdateCompany) -> CompanyInDB:
-        return await self.__repository.update(id=id, company=company)
+        data = company.model_dump(exclude_unset=True, exclude_none=True)
+        return await self.__repository.update(company_id=id, company=data)
 
     async def search_by_id(self, id: str) -> CompanyInDB:
         return await self.__repository.select_by_id(id=id)
@@ -20,7 +21,7 @@ class CompanyServices:
     async def search_all(self) -> List[CompanyInDB]:
         return await self.__repository.select_all()
 
-    async def delete_by_id(self, id: str) -> bool:
+    async def delete_by_id(self, id: str) -> CompanyInDB:
         return await self.__repository.delete_by_id(id=id)
 
     async def add_member(self, company_id: str, member: CompanyMember) -> CompanyInDB:
