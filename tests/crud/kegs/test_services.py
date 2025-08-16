@@ -1,0 +1,88 @@
+import asyncio
+import unittest
+
+import mongomock
+from mongoengine import connect, disconnect
+
+from app.crud.kegs.repositories import KegRepository
+from app.crud.kegs.services import KegServices
+from app.crud.kegs.schemas import Keg, UpdateKeg, KegStatus
+from app.crud.kegs.models import KegModel
+from app.crud.beer_types.models import BeerTypeModel
+from app.core.exceptions import NotFoundError
+
+
+class TestKegServices(unittest.TestCase):
+    def setUp(self) -> None:
+        connect(
+            "mongoenginetest",
+            host="mongodb://localhost",
+            mongo_client_class=mongomock.MongoClient,
+        )
+        self.repository = KegRepository()
+        self.services = KegServices(self.repository)
+        self.beer_type = BeerTypeModel(
+            name="Pale Ale",
+            default_sale_price_per_l=10.0,
+            company_id="com1",
+        )
+        self.beer_type.save()
+
+    def tearDown(self) -> None:
+        disconnect()
+
+    def _build_keg(self, number: str = "1", company_id: str = "com1") -> Keg:
+        return Keg(
+            number=number,
+            size_l=50,
+            beer_type_id=str(self.beer_type.id),
+            cost_price_per_l=5.0,
+            sale_price_per_l=8.0,
+            lot="L1",
+            expiration_date=None,
+            current_volume_l=25.0,
+            status=KegStatus.AVAILABLE,
+            notes="",
+            company_id=company_id,
+        )
+
+    def test_create_keg(self):
+        result = asyncio.run(self.services.create(self._build_keg()))
+        self.assertEqual(result.number, "1")
+
+    def test_search_by_id(self):
+        doc = KegModel(**self._build_keg().model_dump())
+        doc.save()
+        res = asyncio.run(self.services.search_by_id(doc.id, doc.company_id))
+        self.assertEqual(res.id, doc.id)
+
+    def test_search_all(self):
+        KegModel(**self._build_keg().model_dump()).save()
+        res = asyncio.run(self.services.search_all("com1"))
+        self.assertEqual(len(res), 1)
+
+    def test_update_keg(self):
+        doc = KegModel(**self._build_keg().model_dump())
+        doc.save()
+        updated = asyncio.run(
+            self.services.update(doc.id, doc.company_id, UpdateKeg(number="2"))
+        )
+        self.assertEqual(updated.number, "2")
+
+    def test_delete_keg(self):
+        doc = KegModel(**self._build_keg().model_dump())
+        doc.save()
+        res = asyncio.run(self.services.delete_by_id(doc.id, doc.company_id))
+        self.assertEqual(res.id, doc.id)
+
+    def test_search_by_id_not_found(self):
+        with self.assertRaises(NotFoundError):
+            asyncio.run(self.services.search_by_id("invalid", "com1"))
+
+    def test_delete_not_found(self):
+        with self.assertRaises(NotFoundError):
+            asyncio.run(self.services.delete_by_id("invalid", "com1"))
+
+
+if __name__ == "__main__":
+    unittest.main()
