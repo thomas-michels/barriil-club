@@ -4,6 +4,11 @@ from app.core.models.base_schema import GenericModel
 from app.core.models.base_model import DatabaseModel
 
 
+class CompanyMember(GenericModel):
+    user_id: str = Field(example="usr_12345678")
+    role: str = Field(example="owner")
+
+
 class Company(GenericModel):
     name: str = Field(example="ACME")
     address_line1: str = Field(example="Street 1")
@@ -11,6 +16,7 @@ class Company(GenericModel):
     phone_number: str = Field(example="9999-9999")
     ddd: str = Field(example="11")
     email: EmailStr = Field(example="info@acme.com")
+    members: list[CompanyMember] = Field(default_factory=list)
 
 
 class CompanyInDB(DatabaseModel):
@@ -20,6 +26,7 @@ class CompanyInDB(DatabaseModel):
     phone_number: str = Field(example="9999-9999")
     ddd: str = Field(example="11")
     email: EmailStr = Field(example="info@acme.com")
+    members: list[CompanyMember] = Field(default_factory=list)
 
 
 class UpdateCompany(GenericModel):

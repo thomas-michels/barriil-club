@@ -8,6 +8,7 @@ from app.crud.extractors.schemas import ExtractorInDB
 EXAMPLE_EXTRACTOR = {
     "id": "ext_12345678",
     "brand": "Acme",
+    "company_id": "com_123",
     "created_at": "2024-01-01T00:00:00Z",
     "updated_at": "2024-01-01T00:00:00Z",
 }

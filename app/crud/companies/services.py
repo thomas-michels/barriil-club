@@ -1,7 +1,7 @@
 from typing import List
 
 from .repositories import CompanyRepository
-from .schemas import Company, CompanyInDB, UpdateCompany
+from .schemas import Company, CompanyInDB, UpdateCompany, CompanyMember
 
 
 class CompanyServices:
@@ -22,3 +22,6 @@ class CompanyServices:
 
     async def delete_by_id(self, id: str) -> bool:
         return await self.__repository.delete_by_id(id=id)
+
+    async def add_member(self, company_id: str, member: CompanyMember) -> CompanyInDB:
+        return await self.__repository.add_member(company_id=company_id, member=member)

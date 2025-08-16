@@ -29,10 +29,13 @@ async def create_extractor(
 )
 async def update_extractor(
     extractor_id: str,
+    company_id: str,
     extractor: UpdateExtractor,
     extractor_services: ExtractorServices = Depends(extractor_composer),
 ):
-    extractor_in_db = await extractor_services.update(id=extractor_id, extractor=extractor)
+    extractor_in_db = await extractor_services.update(
+        id=extractor_id, company_id=company_id, extractor=extractor
+    )
     return build_response(
         status_code=200, message="Extractor updated with success", data=extractor_in_db
     )
@@ -44,9 +47,10 @@ async def update_extractor(
 )
 async def delete_extractor(
     extractor_id: str,
+    company_id: str,
     extractor_services: ExtractorServices = Depends(extractor_composer),
 ):
-    deleted = await extractor_services.delete_by_id(id=extractor_id)
+    deleted = await extractor_services.delete_by_id(id=extractor_id, company_id=company_id)
     if deleted:
         return build_response(
             status_code=200, message="Extractor deleted with success", data=None

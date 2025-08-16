@@ -4,7 +4,7 @@ from app.api.composers.company_composite import company_composer
 from app.api.dependencies import build_response
 from app.api.shared_schemas.responses import MessageResponse
 from .schemas import CompanyResponse
-from app.crud.companies import Company, UpdateCompany, CompanyServices
+from app.crud.companies import Company, UpdateCompany, CompanyServices, CompanyMember
 
 router = APIRouter(tags=["Companies"])
 
@@ -55,3 +55,18 @@ async def delete_company(
         return build_response(
             status_code=404, message=f"Company {company_id} not found", data=None
         )
+
+
+@router.post(
+    "/companies/{company_id}/members",
+    responses={200: {"model": CompanyResponse}, 404: {"model": MessageResponse}},
+)
+async def add_member(
+    company_id: str,
+    member: CompanyMember,
+    company_services: CompanyServices = Depends(company_composer),
+):
+    company_in_db = await company_services.add_member(company_id=company_id, member=member)
+    return build_response(
+        status_code=200, message="Member added with success", data=company_in_db
+    )

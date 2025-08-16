@@ -3,7 +3,7 @@ from typing import List
 from pydantic import Field, ConfigDict
 
 from app.api.shared_schemas.responses import Response
-from app.crud.companies.schemas import CompanyInDB
+from app.crud.companies.schemas import CompanyInDB, CompanyMember
 
 EXAMPLE_COMPANY = {
     "id": "com_12345678",
@@ -13,6 +13,7 @@ EXAMPLE_COMPANY = {
     "phone_number": "9999-9999",
     "ddd": "11",
     "email": "info@acme.com",
+    "members": [{"user_id": "usr_1", "role": "owner"}],
     "created_at": "2024-01-01T00:00:00Z",
     "updated_at": "2024-01-01T00:00:00Z",
 }
