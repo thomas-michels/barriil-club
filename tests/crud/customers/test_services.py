@@ -24,7 +24,9 @@ class TestCustomerServices(unittest.TestCase):
     def tearDown(self) -> None:
         disconnect()
 
-    def _build_customer(self, document: str = "10000000019") -> Customer:
+    def _build_customer(
+        self, document: str = "10000000019", company_id: str = "com1"
+    ) -> Customer:
         return Customer(
             name="John Doe",
             document=document,
@@ -33,6 +35,7 @@ class TestCustomerServices(unittest.TestCase):
             birth_date="1990-01-01",
             address_ids=["add1"],
             notes="VIP",
+            company_id=company_id,
         )
 
     def test_create_customer(self):
@@ -48,33 +51,35 @@ class TestCustomerServices(unittest.TestCase):
     def test_search_by_id(self):
         doc = CustomerModel(**self._build_customer().model_dump())
         doc.save()
-        res = asyncio.run(self.services.search_by_id(doc.id))
+        res = asyncio.run(self.services.search_by_id(doc.id, doc.company_id))
         self.assertEqual(res.id, doc.id)
 
     def test_search_all(self):
         CustomerModel(**self._build_customer("10000000108").model_dump()).save()
-        res = asyncio.run(self.services.search_all())
+        res = asyncio.run(self.services.search_all("com1"))
         self.assertEqual(len(res), 1)
 
     def test_update_customer(self):
         doc = CustomerModel(**self._build_customer().model_dump())
         doc.save()
-        updated = asyncio.run(self.services.update(doc.id, UpdateCustomer(name="New")))
+        updated = asyncio.run(
+            self.services.update(doc.id, doc.company_id, UpdateCustomer(name="New"))
+        )
         self.assertEqual(updated.name, "New")
 
     def test_delete_customer(self):
         doc = CustomerModel(**self._build_customer().model_dump())
         doc.save()
-        res = asyncio.run(self.services.delete_by_id(doc.id))
+        res = asyncio.run(self.services.delete_by_id(doc.id, doc.company_id))
         self.assertEqual(res.id, doc.id)
 
     def test_search_by_id_not_found(self):
         with self.assertRaises(NotFoundError):
-            asyncio.run(self.services.search_by_id("invalid"))
+            asyncio.run(self.services.search_by_id("invalid", "com1"))
 
     def test_delete_not_found(self):
         with self.assertRaises(NotFoundError):
-            asyncio.run(self.services.delete_by_id("invalid"))
+            asyncio.run(self.services.delete_by_id("invalid", "com1"))
 
 
 if __name__ == "__main__":

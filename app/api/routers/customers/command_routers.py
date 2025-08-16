@@ -1,10 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.composers.customer_composite import customer_composer
-from app.api.dependencies import build_response
+from app.api.dependencies import (
+    build_response,
+    require_company_member,
+    require_user_company,
+)
 from app.api.shared_schemas.responses import MessageResponse
 from .schemas import CustomerResponse
 from app.crud.customers import Customer, UpdateCustomer, CustomerServices
+from app.crud.companies.schemas import CompanyInDB
 
 router = APIRouter(tags=["Customers"])
 
@@ -15,8 +20,14 @@ router = APIRouter(tags=["Customers"])
 )
 async def create_customer(
     customer: Customer,
+    company: CompanyInDB = Depends(require_user_company),
     customer_services: CustomerServices = Depends(customer_composer),
 ):
+    if customer.company_id != company.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User not allowed to use this company",
+        )
     customer_in_db = await customer_services.create(customer=customer)
     if not customer_in_db:
         raise HTTPException(status_code=400, detail="Customer not created")
@@ -31,10 +42,14 @@ async def create_customer(
 )
 async def update_customer(
     customer_id: str,
+    company_id: str,
     customer: UpdateCustomer,
     customer_services: CustomerServices = Depends(customer_composer),
+    _: CompanyInDB = Depends(require_company_member),
 ):
-    customer_in_db = await customer_services.update(id=customer_id, customer=customer)
+    customer_in_db = await customer_services.update(
+        id=customer_id, company_id=company_id, customer=customer
+    )
     if not customer_in_db:
         raise HTTPException(status_code=400, detail="Customer not updated")
     return build_response(
@@ -48,9 +63,13 @@ async def update_customer(
 )
 async def delete_customer(
     customer_id: str,
+    company_id: str,
     customer_services: CustomerServices = Depends(customer_composer),
+    _: CompanyInDB = Depends(require_company_member),
 ):
-    customer_in_db = await customer_services.delete_by_id(id=customer_id)
+    customer_in_db = await customer_services.delete_by_id(
+        id=customer_id, company_id=company_id
+    )
     if not customer_in_db:
         raise HTTPException(status_code=400, detail="Customer not deleted")
     return build_response(

@@ -21,7 +21,9 @@ class TestCustomerRepository(unittest.TestCase):
     def tearDown(self) -> None:
         disconnect()
 
-    def _build_customer(self, document: str = "10000000019") -> Customer:
+    def _build_customer(
+        self, document: str = "10000000019", company_id: str = "com1"
+    ) -> Customer:
         return Customer(
             name="John Doe",
             document=document,
@@ -30,6 +32,7 @@ class TestCustomerRepository(unittest.TestCase):
             birth_date="1990-01-01",
             address_ids=["add1"],
             notes="VIP",
+            company_id=company_id,
         )
 
     def test_create_customer(self):
@@ -56,40 +59,42 @@ class TestCustomerRepository(unittest.TestCase):
         doc = CustomerModel(**self._build_customer().model_dump())
         doc.save()
         repository = CustomerRepository()
-        res = asyncio.run(repository.select_by_id(doc.id))
+        res = asyncio.run(repository.select_by_id(doc.id, doc.company_id))
         self.assertEqual(res.id, doc.id)
 
     def test_select_by_id_not_found(self):
         repository = CustomerRepository()
         with self.assertRaises(NotFoundError):
-            asyncio.run(repository.select_by_id("invalid"))
+            asyncio.run(repository.select_by_id("invalid", "com1"))
 
     def test_select_all(self):
         CustomerModel(**self._build_customer("10000000108").model_dump()).save()
         CustomerModel(**self._build_customer("10000000280").model_dump()).save()
         repository = CustomerRepository()
-        res = asyncio.run(repository.select_all())
+        res = asyncio.run(repository.select_all("com1"))
         self.assertEqual(len(res), 2)
 
     def test_update_customer(self):
         doc = CustomerModel(**self._build_customer().model_dump())
         doc.save()
         repository = CustomerRepository()
-        updated = asyncio.run(repository.update(doc.id, {"name": "New"}))
+        updated = asyncio.run(
+            repository.update(doc.id, doc.company_id, {"name": "New"})
+        )
         self.assertEqual(updated.name, "New")
 
     def test_delete_customer(self):
         doc = CustomerModel(**self._build_customer().model_dump())
         doc.save()
         repository = CustomerRepository()
-        result = asyncio.run(repository.delete_by_id(doc.id))
+        result = asyncio.run(repository.delete_by_id(doc.id, doc.company_id))
         self.assertEqual(result.id, doc.id)
         self.assertFalse(CustomerModel.objects(id=doc.id).first().is_active)
 
     def test_delete_customer_not_found(self):
         repository = CustomerRepository()
         with self.assertRaises(NotFoundError):
-            asyncio.run(repository.delete_by_id("invalid"))
+            asyncio.run(repository.delete_by_id("invalid", "com1"))
 
 
 if __name__ == "__main__":

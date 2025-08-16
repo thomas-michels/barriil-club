@@ -13,6 +13,7 @@ class CustomerModel(BaseDocument):
     birth_date = StringField()
     address_ids = ListField(StringField())
     notes = StringField()
+    company_id = StringField(required=True)
 
     def clean(self):
         if self.document and not (

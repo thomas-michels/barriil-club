@@ -13,6 +13,7 @@ class Address(GenericModel):
     city: str = Field(example="Metropolis")
     state: str = Field(example="SP")
     reference: str | None = Field(default=None, example="Near park")
+    company_id: str = Field(example="com_123")
 
 
 class AddressInDB(DatabaseModel):
@@ -24,6 +25,7 @@ class AddressInDB(DatabaseModel):
     city: str = Field(example="Metropolis")
     state: str = Field(example="SP")
     reference: str | None = Field(default=None, example="Near park")
+    company_id: str = Field(example="com_123")
 
 
 class UpdateAddress(GenericModel):

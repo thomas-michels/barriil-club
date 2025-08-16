@@ -8,7 +8,11 @@ from fastapi.testclient import TestClient
 from mongoengine import connect, disconnect
 
 from app.api.routers.addresses import address_router
+from app.api.dependencies.company import require_company_member, require_user_company
 from app.api.composers.address_composite import address_composer
+from app.crud.companies.repositories import CompanyRepository
+from app.crud.companies.services import CompanyServices
+from app.crud.companies.schemas import Company
 from app.crud.addresses.repositories import AddressRepository
 from app.crud.addresses.services import AddressServices
 from app.crud.addresses.schemas import Address
@@ -22,16 +26,39 @@ class TestAddressEndpoints(unittest.TestCase):
             host="mongodb://localhost",
             mongo_client_class=mongomock.MongoClient,
         )
+        self.company_repo = CompanyRepository()
+        self.company_services = CompanyServices(self.company_repo)
         self.repository = AddressRepository()
         self.services = AddressServices(self.repository)
         self.app = FastAPI()
         self.app.include_router(address_router, prefix="/api")
 
+        async def override_require_user_company():
+            return self.company
+
+        async def override_require_company_member(company_id: str):
+            return self.company
+
         async def override_address_composer():
             return self.services
 
+        self.app.dependency_overrides[require_user_company] = (
+            override_require_user_company
+        )
+        self.app.dependency_overrides[require_company_member] = (
+            override_require_company_member
+        )
         self.app.dependency_overrides[address_composer] = override_address_composer
         self.client = TestClient(self.app)
+
+        company = Company(
+            name="ACME",
+            address_id="add1",
+            phone_number="9999-9999",
+            ddd="11",
+            email="info@acme.com",
+        )
+        self.company = asyncio.run(self.company_services.create(company))
 
         address = Address(
             postal_code="12345",
@@ -42,6 +69,7 @@ class TestAddressEndpoints(unittest.TestCase):
             city="City",
             state="ST",
             reference="Near",
+            company_id=str(self.company.id),
         )
         self.address = asyncio.run(self.services.create(address))
 
@@ -59,6 +87,7 @@ class TestAddressEndpoints(unittest.TestCase):
             "city": "Metropolis",
             "state": "ST",
             "reference": "Ref",
+            "companyId": str(self.company.id),
         }
 
     def test_create_address_endpoint(self):
@@ -67,30 +96,45 @@ class TestAddressEndpoints(unittest.TestCase):
         self.assertEqual(resp.json()["data"]["postal_code"], "11111")
 
     def test_get_address_by_id(self):
-        resp = self.client.get(f"/api/addresses/{self.address.id}")
+        resp = self.client.get(
+            f"/api/addresses/{self.address.id}",
+            params={"company_id": str(self.company.id)},
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["data"]["id"], self.address.id)
 
     def test_list_addresses(self):
-        resp = self.client.get("/api/addresses")
+        resp = self.client.get(
+            "/api/addresses", params={"company_id": str(self.company.id)}
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertGreaterEqual(len(resp.json()["data"]), 1)
 
     def test_update_address_endpoint(self):
         resp = self.client.put(
-            f"/api/addresses/{self.address.id}", json={"city": "New"}
+            f"/api/addresses/{self.address.id}",
+            params={"company_id": str(self.company.id)},
+            json={"city": "New"},
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["data"]["city"], "New")
 
     def test_delete_address_endpoint(self):
-        resp = self.client.delete(f"/api/addresses/{self.address.id}")
+        resp = self.client.delete(
+            f"/api/addresses/{self.address.id}",
+            params={"company_id": str(self.company.id)},
+        )
         self.assertEqual(resp.status_code, 200)
         with self.assertRaises(NotFoundError):
-            asyncio.run(self.services.search_by_id(self.address.id))
+            asyncio.run(
+                self.services.search_by_id(self.address.id, str(self.company.id))
+            )
 
     def test_get_address_by_zip_existing(self):
-        resp = self.client.get(f"/api/addresses/zip/{self.address.postal_code}")
+        resp = self.client.get(
+            f"/api/addresses/zip/{self.address.postal_code}",
+            params={"company_id": str(self.company.id)},
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["data"]["id"], self.address.id)
 
@@ -104,7 +148,10 @@ class TestAddressEndpoints(unittest.TestCase):
             "localidade": "City",
             "uf": "ST",
         }
-        resp = self.client.get("/api/addresses/zip/99999000")
+        resp = self.client.get(
+            "/api/addresses/zip/99999000",
+            params={"company_id": str(self.company.id)},
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["data"]["postal_code"], "99999-000")
 
@@ -117,21 +164,26 @@ class TestAddressEndpoints(unittest.TestCase):
         self.assertEqual(resp.status_code, 400)
 
     def test_update_address_returns_400_when_not_updated(self):
-        async def fake_update(id, address):
+        async def fake_update(id, company_id, address):
             return None
 
         self.services.update = fake_update
         resp = self.client.put(
-            f"/api/addresses/{self.address.id}", json={"city": "Fail"}
+            f"/api/addresses/{self.address.id}",
+            params={"company_id": str(self.company.id)},
+            json={"city": "Fail"},
         )
         self.assertEqual(resp.status_code, 400)
 
     def test_delete_address_returns_400_when_not_deleted(self):
-        async def fake_delete(id):
+        async def fake_delete(id, company_id):
             return None
 
         self.services.delete_by_id = fake_delete
-        resp = self.client.delete(f"/api/addresses/{self.address.id}")
+        resp = self.client.delete(
+            f"/api/addresses/{self.address.id}",
+            params={"company_id": str(self.company.id)},
+        )
         self.assertEqual(resp.status_code, 400)
 
 

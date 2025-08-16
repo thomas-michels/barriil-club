@@ -14,6 +14,7 @@ EXAMPLE_CUSTOMER = {
     "birth_date": "1990-01-01",
     "addressIds": ["add_12345678"],
     "notes": "VIP",
+    "company_id": "com_123",
     "created_at": "2024-01-01T00:00:00Z",
     "updated_at": "2024-01-01T00:00:00Z",
 }

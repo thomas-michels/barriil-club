@@ -15,6 +15,7 @@ EXAMPLE_ADDRESS = {
     "city": "Metropolis",
     "state": "SP",
     "reference": "Near park",
+    "company_id": "com_123",
     "created_at": "2024-01-01T00:00:00Z",
     "updated_at": "2024-01-01T00:00:00Z",
 }
