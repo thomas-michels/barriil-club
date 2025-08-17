@@ -39,6 +39,16 @@ class GetUserByIdResponse(Response):
     )
 
 
+class GetUserByEmailResponse(Response):
+    data: UserInDB | None = Field()
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {"message": "User found with success", "data": EXAMPLE_USER}
+        }
+    )
+
+
 class GetUsersResponse(Response):
     data: List[UserInDB] = Field()
 
