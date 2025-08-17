@@ -15,6 +15,7 @@ from app.api.routers import (
     keg_router,
     beer_dispenser_router,
     pressure_gauge_router,
+    cylinder_router,
     reservation_router,
     dashboard_router,
 )
@@ -70,6 +71,7 @@ app.include_router(beer_type_router, prefix="/api")
 app.include_router(keg_router, prefix="/api")
 app.include_router(beer_dispenser_router, prefix="/api")
 app.include_router(pressure_gauge_router, prefix="/api")
+app.include_router(cylinder_router, prefix="/api")
 app.include_router(reservation_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api")
 

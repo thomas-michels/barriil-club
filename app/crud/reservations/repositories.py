@@ -164,6 +164,29 @@ class ReservationRepository(Repository):
                 message="Error on find beer dispenser conflict"
             )
 
+    async def find_cylinder_conflict(
+        self,
+        company_id: str,
+        cylinder_ids: List[str],
+        delivery_date: UTCDateTime,
+        pickup_date: UTCDateTime,
+    ) -> ReservationInDB | None:
+        try:
+            model = ReservationModel.objects(
+                cylinder_ids__in=cylinder_ids,
+                company_id=company_id,
+                is_active=True,
+                status__ne=ReservationStatus.COMPLETED.value,
+                delivery_date__lte=pickup_date,
+                pickup_date__gte=delivery_date,
+            ).first()
+
+            return ReservationInDB.model_validate(model) if model else None
+
+        except Exception as error:
+            _logger.error(f"Error on find_cylinder_conflict: {str(error)}")
+            raise NotFoundError(message="Error on find cylinder conflict")
+
     def _auto_update_status(self, model: ReservationModel) -> None:
         now = UTCDateTime.now()
         changed = False

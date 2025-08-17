@@ -17,6 +17,8 @@ from app.crud.pressure_gauges.schemas import (
     PressureGaugeStatus,
     PressureGaugeType,
 )
+from app.crud.cylinders.models import CylinderModel
+from app.crud.cylinders.schemas import CylinderStatus
 from app.crud.payments.schemas import Payment
 
 
@@ -53,6 +55,14 @@ class TestReservationRepository(unittest.TestCase):
             company_id=self.company_id,
         )
         self.pg.save()
+        self.cylinder = CylinderModel(
+            brand="Acme",
+            weight_kg=10,
+            number="C1",
+            status=CylinderStatus.AVAILABLE.value,
+            company_id=self.company_id,
+        )
+        self.cylinder.save()
 
     def tearDown(self) -> None:
         disconnect()
@@ -65,6 +75,7 @@ class TestReservationRepository(unittest.TestCase):
             keg_ids=[str(self.keg.id)],
             extractor_ids=[],
             pressure_gauge_ids=[str(self.pg.id)],
+            cylinder_ids=[str(self.cylinder.id)],
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
@@ -83,6 +94,7 @@ class TestReservationRepository(unittest.TestCase):
             keg_ids=[str(self.keg.id)],
             extractor_ids=[],
             pressure_gauge_ids=[str(self.pg.id)],
+            cylinder_ids=[str(self.cylinder.id)],
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],

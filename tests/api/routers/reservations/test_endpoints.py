@@ -34,6 +34,9 @@ from app.crud.pressure_gauges.schemas import (
 )
 from app.crud.reservations.repositories import ReservationRepository
 from app.crud.reservations.services import ReservationServices
+from app.crud.cylinders.repositories import CylinderRepository
+from app.crud.cylinders.services import CylinderServices
+from app.crud.cylinders.schemas import Cylinder, CylinderStatus, UpdateCylinder
 from app.core.exceptions import NotFoundError
 
 
@@ -49,15 +52,17 @@ class TestReservationEndpoints(unittest.TestCase):
         self.company_services = CompanyServices(self.company_repo, self.address_repo)
         self.keg_repo = KegRepository()
         self.pg_repo = PressureGaugeRepository()
+        self.cyl_repo = CylinderRepository()
         self.reservation_repo = ReservationRepository()
         self.reservation_services = ReservationServices(
-            self.reservation_repo, self.keg_repo, self.pg_repo
+            self.reservation_repo, self.keg_repo, self.pg_repo, self.cyl_repo
         )
         self.keg_services = KegServices(self.keg_repo)
         self.dispenser_repo = BeerDispenserRepository()
         self.dispenser_services = BeerDispenserServices(self.dispenser_repo)
         self.extractor_services = ExtractorServices(ExtractorRepository())
         self.pressure_gauge_services = PressureGaugeServices(self.pg_repo)
+        self.cylinder_services = CylinderServices(self.cyl_repo)
 
         self.app = FastAPI()
         self.app.include_router(reservation_router, prefix="/api")
@@ -164,6 +169,18 @@ class TestReservationEndpoints(unittest.TestCase):
             )
         )
 
+        self.cylinder = asyncio.run(
+            self.cylinder_services.create(
+                Cylinder(
+                    brand="Acme",
+                    weight_kg=10,
+                    number="C1",
+                    status=CylinderStatus.AVAILABLE,
+                    company_id=str(self.company.id),
+                )
+            )
+        )
+
     def tearDown(self) -> None:
         self.app.dependency_overrides = {}
         disconnect()
@@ -178,6 +195,7 @@ class TestReservationEndpoints(unittest.TestCase):
             "kegIds": [self.keg.id],
             "extractorIds": [self.extractor.id],
             "pressureGaugeIds": [self.pressure_gauge.id],
+            "cylinderIds": [self.cylinder.id],
             "deliveryDate": delivery.isoformat(),
             "pickupDate": pickup.isoformat(),
             "payments": [{"amount": 50.0, "method": "cash", "paidAt": str(date.today())}],
@@ -212,8 +230,20 @@ class TestReservationEndpoints(unittest.TestCase):
                 )
             )
         )
+        new_cyl = asyncio.run(
+            self.cylinder_services.create(
+                Cylinder(
+                    brand="Acme",
+                    weight_kg=10,
+                    number="C2",
+                    status=CylinderStatus.AVAILABLE,
+                    company_id=str(self.company.id),
+                )
+            )
+        )
         payload = self._payload()
         payload["kegIds"] = [new_keg.id]
+        payload["cylinderIds"] = [new_cyl.id]
         resp2 = self.client.post("/api/reservations", json=payload)
         self.assertEqual(resp2.status_code, 404)
 
@@ -224,6 +254,43 @@ class TestReservationEndpoints(unittest.TestCase):
                 self.keg.id,
                 str(self.company.id),
                 UpdateKeg(status=KegStatus.EMPTY),
+            )
+        )
+        resp = self.client.post("/api/reservations", json=self._payload())
+        self.assertEqual(resp.status_code, 404)
+
+    def test_create_reservation_cylinder_conflict(self):
+        resp1 = self.client.post("/api/reservations", json=self._payload())
+        self.assertEqual(resp1.status_code, 201)
+        new_keg = asyncio.run(
+            self.keg_services.create(
+                Keg(
+                    number="3",
+                    size_l=50,
+                    beer_type_id="bty1",
+                    cost_price_per_l=5.0,
+                    sale_price_per_l=8.0,
+                    lot="L1",
+                    expiration_date=None,
+                    current_volume_l=25.0,
+                    status=KegStatus.AVAILABLE,
+                    notes="",
+                    company_id=str(self.company.id),
+                )
+            )
+        )
+        payload = self._payload()
+        payload["kegIds"] = [new_keg.id]
+        payload["beerDispenserId"] = None
+        resp2 = self.client.post("/api/reservations", json=payload)
+        self.assertEqual(resp2.status_code, 404)
+
+    def test_create_reservation_with_unavailable_cylinder(self):
+        asyncio.run(
+            self.cylinder_services.update(
+                self.cylinder.id,
+                str(self.company.id),
+                UpdateCylinder(status=CylinderStatus.TO_VERIFY),
             )
         )
         resp = self.client.post("/api/reservations", json=self._payload())
@@ -242,6 +309,8 @@ class TestReservationEndpoints(unittest.TestCase):
         self.assertEqual(keg.status, KegStatus.EMPTY)
         pg = asyncio.run(self.pressure_gauge_services.search_by_id(self.pressure_gauge.id, str(self.company.id)))
         self.assertEqual(pg.status, PressureGaugeStatus.TO_VERIFY)
+        cyl = asyncio.run(self.cylinder_services.search_by_id(self.cylinder.id, str(self.company.id)))
+        self.assertEqual(cyl.status, CylinderStatus.TO_VERIFY)
 
     def test_payment_endpoints(self):
         resp = self.client.post("/api/reservations", json=self._payload())
@@ -294,8 +363,20 @@ class TestReservationEndpoints(unittest.TestCase):
                 )
             )
         )
+        new_cyl = asyncio.run(
+            self.cylinder_services.create(
+                Cylinder(
+                    brand="Acme",
+                    weight_kg=10,
+                    number="C99",
+                    status=CylinderStatus.AVAILABLE,
+                    company_id=str(self.company.id),
+                )
+            )
+        )
         payload = self._payload(future_delivery)
         payload["kegIds"] = [new_keg.id]
+        payload["cylinderIds"] = [new_cyl.id]
         resp2 = self.client.post("/api/reservations", json=payload)
         res_id2 = resp2.json()["data"]["id"]
         # complete first reservation

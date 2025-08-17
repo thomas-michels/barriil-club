@@ -21,6 +21,7 @@ from app.crud.kegs.repositories import KegRepository
 from app.crud.kegs.services import KegServices
 from app.crud.kegs.schemas import Keg, KegStatus
 from app.crud.pressure_gauges.repositories import PressureGaugeRepository
+from app.crud.cylinders.repositories import CylinderRepository
 from app.core.utils.utc_datetime import UTCDateTime
 from app.core.exceptions import NotFoundError
 
@@ -39,8 +40,9 @@ class TestDashboardEndpoints(unittest.TestCase):
         self.reservation_repo = ReservationRepository()
         self.keg_repo = KegRepository()
         self.pg_repo = PressureGaugeRepository()
+        self.cyl_repo = CylinderRepository()
         self.reservation_services = ReservationServices(
-            self.reservation_repo, self.keg_repo, self.pg_repo
+            self.reservation_repo, self.keg_repo, self.pg_repo, self.cyl_repo
         )
         self.keg_services = KegServices(self.keg_repo)
         self.dashboard_services = DashboardServices(
