@@ -20,3 +20,7 @@ class CompanyModel(BaseDocument):
     ddd = StringField(required=True)
     email = StringField(required=True)
     members = ListField(EmbeddedDocumentField(CompanyMember))
+
+    meta = {
+        "collection": "companies",
+    }

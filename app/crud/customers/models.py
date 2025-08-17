@@ -15,6 +15,10 @@ class CustomerModel(BaseDocument):
     notes = StringField()
     company_id = StringField(required=True)
 
+    meta = {
+        "collection": "customers",
+    }
+
     def clean(self):
         if self.document and not (
             validate_cpf(self.document) or validate_cnpj(self.document)
