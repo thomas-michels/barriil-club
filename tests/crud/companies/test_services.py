@@ -4,6 +4,8 @@ import unittest
 import mongomock
 from mongoengine import connect, disconnect
 
+from app.crud.addresses.models import AddressModel
+from app.crud.addresses.repositories import AddressRepository
 from app.crud.companies.repositories import CompanyRepository
 from app.crud.companies.services import CompanyServices
 from app.crud.companies.schemas import Company, UpdateCompany, CompanyMember
@@ -19,15 +21,27 @@ class TestCompanyServices(unittest.TestCase):
             mongo_client_class=mongomock.MongoClient,
         )
         self.repository = CompanyRepository()
-        self.services = CompanyServices(self.repository)
+        self.address_repository = AddressRepository()
+        self.services = CompanyServices(self.repository, self.address_repository)
+        address = AddressModel(
+            postal_code="12345",
+            street="Main",
+            number="1",
+            district="Center",
+            city="City",
+            state="ST",
+            company_id="dummy",
+        )
+        address.save()
+        self.address_id = address.id
 
     def tearDown(self) -> None:
         disconnect()
 
-    def _build_company(self, name: str = "ACME") -> Company:
+    def _build_company(self, name: str = "ACME", use_address: bool = True) -> Company:
         return Company(
             name=name,
-            address_id="add1",
+            address_id=self.address_id if use_address else None,
             phone_number="9999-9999",
             ddd="11",
             email="info@acme.com",
@@ -38,6 +52,22 @@ class TestCompanyServices(unittest.TestCase):
         result = asyncio.run(self.services.create(company))
         self.assertEqual(result.name, "ACME")
         self.assertEqual(CompanyModel.objects.count(), 1)
+
+    def test_create_company_without_address(self):
+        company = self._build_company(use_address=False)
+        result = asyncio.run(self.services.create(company))
+        self.assertEqual(result.address_id, None)
+
+    def test_create_company_invalid_address(self):
+        company = Company(
+            name="Invalid",
+            address_id="invalid",
+            phone_number="9999-9999",
+            ddd="11",
+            email="info@acme.com",
+        )
+        with self.assertRaises(NotFoundError):
+            asyncio.run(self.services.create(company))
 
     def test_search_by_id(self):
         doc = CompanyModel(**self._build_company().model_dump())
@@ -62,6 +92,14 @@ class TestCompanyServices(unittest.TestCase):
             self.services.update(doc.id, UpdateCompany(name="New ACME"))
         )
         self.assertEqual(updated.name, "New ACME")
+
+    def test_update_company_invalid_address(self):
+        doc = CompanyModel(**self._build_company().model_dump())
+        doc.save()
+        with self.assertRaises(NotFoundError):
+            asyncio.run(
+                self.services.update(doc.id, UpdateCompany(address_id="invalid"))
+            )
 
     def test_update_company_not_found(self):
         with self.assertRaises(NotFoundError):

@@ -16,6 +16,7 @@ from app.crud.companies.schemas import Company
 from app.crud.addresses.repositories import AddressRepository
 from app.crud.addresses.services import AddressServices
 from app.crud.addresses.schemas import Address
+from app.crud.addresses.models import AddressModel
 from app.core.exceptions import NotFoundError
 
 
@@ -27,8 +28,9 @@ class TestAddressEndpoints(unittest.TestCase):
             mongo_client_class=mongomock.MongoClient,
         )
         self.company_repo = CompanyRepository()
-        self.company_services = CompanyServices(self.company_repo)
-        self.repository = AddressRepository()
+        self.address_repo = AddressRepository()
+        self.company_services = CompanyServices(self.company_repo, self.address_repo)
+        self.repository = self.address_repo
         self.services = AddressServices(self.repository)
         self.app = FastAPI()
         self.app.include_router(address_router, prefix="/api")
@@ -51,9 +53,19 @@ class TestAddressEndpoints(unittest.TestCase):
         self.app.dependency_overrides[address_composer] = override_address_composer
         self.client = TestClient(self.app)
 
+        seed_address = AddressModel(
+            postal_code="00000",
+            street="Seed",
+            number="1",
+            district="Seed",
+            city="Seed",
+            state="SS",
+            company_id="seed",
+        )
+        seed_address.save()
         company = Company(
             name="ACME",
-            address_id="add1",
+            address_id=str(seed_address.id),
             phone_number="9999-9999",
             ddd="11",
             email="info@acme.com",

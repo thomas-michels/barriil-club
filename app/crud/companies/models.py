@@ -15,7 +15,7 @@ class CompanyMember(EmbeddedDocument):
 
 class CompanyModel(BaseDocument):
     name = StringField(required=True)
-    address_id = StringField(required=True)
+    address_id = StringField()
     phone_number = StringField(required=True)
     ddd = StringField(required=True)
     email = StringField(required=True)

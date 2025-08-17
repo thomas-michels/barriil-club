@@ -10,6 +10,7 @@ from app.api.dependencies.company import (
     require_company_member,
     require_user_company,
 )
+from app.crud.addresses.repositories import AddressRepository
 from app.crud.companies.repositories import CompanyRepository
 from app.crud.companies.services import CompanyServices
 from app.crud.companies.models import CompanyModel, CompanyMember
@@ -49,7 +50,7 @@ class TestCompanyDependencies(unittest.TestCase):
         )
 
     def test_ensure_user_without_company_allows(self):
-        services = CompanyServices(CompanyRepository())
+        services = CompanyServices(CompanyRepository(), AddressRepository())
         user = self._build_user()
         res = asyncio.run(ensure_user_without_company(user, services))
         self.assertEqual(res.user_id, user.user_id)
@@ -58,7 +59,7 @@ class TestCompanyDependencies(unittest.TestCase):
         company = CompanyModel(**self._build_company().model_dump())
         company.members.append(CompanyMember(user_id="usr1", role="owner"))
         company.save()
-        services = CompanyServices(CompanyRepository())
+        services = CompanyServices(CompanyRepository(), AddressRepository())
         user = self._build_user()
         with self.assertRaises(HTTPException):
             asyncio.run(ensure_user_without_company(user, services))
@@ -67,7 +68,7 @@ class TestCompanyDependencies(unittest.TestCase):
         company = CompanyModel(**self._build_company().model_dump())
         company.members.append(CompanyMember(user_id="usr1", role="owner"))
         company.save()
-        services = CompanyServices(CompanyRepository())
+        services = CompanyServices(CompanyRepository(), AddressRepository())
         user = self._build_user()
         res = asyncio.run(require_user_company(user, services))
         self.assertEqual(res.id, company.id)
@@ -75,7 +76,7 @@ class TestCompanyDependencies(unittest.TestCase):
     def test_require_company_member_denies(self):
         company = CompanyModel(**self._build_company().model_dump())
         company.save()
-        services = CompanyServices(CompanyRepository())
+        services = CompanyServices(CompanyRepository(), AddressRepository())
         user = self._build_user()
         with self.assertRaises(HTTPException):
             asyncio.run(require_company_member(company.id, user, services))
@@ -84,7 +85,7 @@ class TestCompanyDependencies(unittest.TestCase):
         company = CompanyModel(**self._build_company().model_dump())
         company.members.append(CompanyMember(user_id="usr1", role="owner"))
         company.save()
-        services = CompanyServices(CompanyRepository())
+        services = CompanyServices(CompanyRepository(), AddressRepository())
         user = self._build_user()
         res = asyncio.run(require_company_member(company.id, user, services))
         self.assertEqual(res.id, company.id)
