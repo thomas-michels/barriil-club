@@ -105,7 +105,11 @@ class TestCompanyEndpoints(unittest.TestCase):
             "/api/companies", json=self._build_company_payload("NewCo")
         )
         self.assertEqual(resp.status_code, 201)
-        self.assertEqual(resp.json()["data"]["name"], "NewCo")
+        data = resp.json()["data"]
+        self.assertEqual(data["name"], "NewCo")
+        self.assertEqual(len(data["members"]), 1)
+        self.assertEqual(data["members"][0]["userId"], self.user.user_id)
+        self.assertEqual(data["members"][0]["role"], "owner")
 
     def test_get_company_by_id(self):
         resp = self.client.get(f"/api/companies/{self.company.id}")

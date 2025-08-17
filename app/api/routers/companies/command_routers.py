@@ -21,9 +21,13 @@ router = APIRouter(tags=["Companies"])
 )
 async def create_company(
     company: Company,
-    _: UserInDB = Depends(ensure_user_without_company),
+    user: UserInDB = Depends(ensure_user_without_company),
     company_services: CompanyServices = Depends(company_composer),
 ):
+    company.members = [
+        member for member in company.members if member.user_id != user.user_id
+    ]
+    company.members.append(CompanyMember(user_id=user.user_id, role="owner"))
     company_in_db = await company_services.create(company=company)
     return build_response(
         status_code=201, message="Company created with success", data=company_in_db
