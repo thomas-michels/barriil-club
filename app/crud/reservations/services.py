@@ -7,6 +7,8 @@ from app.crud.kegs.repositories import KegRepository
 from app.crud.kegs.schemas import KegStatus
 from app.crud.pressure_gauges.repositories import PressureGaugeRepository
 from app.crud.pressure_gauges.schemas import PressureGaugeStatus
+from app.crud.cylinders.repositories import CylinderRepository
+from app.crud.cylinders.schemas import CylinderStatus
 from app.crud.payments.schemas import Payment
 
 from .repositories import ReservationRepository
@@ -24,10 +26,12 @@ class ReservationServices:
         reservation_repository: ReservationRepository,
         keg_repository: KegRepository,
         pressure_gauge_repository: PressureGaugeRepository,
+        cylinder_repository: CylinderRepository,
     ) -> None:
         self.__repository = reservation_repository
         self.__keg_repository = keg_repository
         self.__pg_repository = pressure_gauge_repository
+        self.__cylinder_repository = cylinder_repository
 
     async def create(self, reservation: Reservation) -> ReservationInDB:
         total = Decimal("0")
@@ -40,6 +44,15 @@ class ReservationServices:
             price = keg.sale_price_per_l or Decimal("0")
             total += price * Decimal(keg.size_l)
 
+        for cylinder_id in reservation.cylinder_ids:
+            cylinder = await self.__cylinder_repository.select_by_id(
+                cylinder_id, reservation.company_id
+            )
+            if cylinder.status != CylinderStatus.AVAILABLE:
+                raise NotFoundError(
+                    message=f"Cylinder #{cylinder_id} not available"
+                )
+
         if reservation.beer_dispenser_id:
             conflict = await self.__repository.find_beer_dispenser_conflict(
                 company_id=reservation.company_id,
@@ -50,6 +63,18 @@ class ReservationServices:
             if conflict:
                 raise NotFoundError(
                     message="Beer dispenser already reserved for this period"
+                )
+
+        if reservation.cylinder_ids:
+            conflict = await self.__repository.find_cylinder_conflict(
+                company_id=reservation.company_id,
+                cylinder_ids=reservation.cylinder_ids,
+                delivery_date=reservation.delivery_date,
+                pickup_date=reservation.pickup_date,
+            )
+            if conflict:
+                raise NotFoundError(
+                    message="Cylinder already reserved for this period"
                 )
 
         status = reservation.status or self._compute_status(reservation.delivery_date)
@@ -78,6 +103,10 @@ class ReservationServices:
             for pg_id in updated.pressure_gauge_ids:
                 await self.__pg_repository.update(
                     pg_id, company_id, {"status": PressureGaugeStatus.TO_VERIFY.value}
+                )
+            for cyl_id in updated.cylinder_ids:
+                await self.__cylinder_repository.update(
+                    cyl_id, company_id, {"status": CylinderStatus.TO_VERIFY.value}
                 )
         return updated
 

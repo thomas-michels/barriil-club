@@ -12,6 +12,7 @@ EXAMPLE_RESERVATION = {
     "keg_ids": ["keg_1"],
     "extractor_ids": ["ext_1"],
     "pressure_gauge_ids": ["prg_1"],
+    "cylinder_ids": ["cyl_1"],
     "delivery_date": "2024-01-01T10:00:00Z",
     "pickup_date": "2024-01-02T10:00:00Z",
     "payments": [],

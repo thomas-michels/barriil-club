@@ -18,6 +18,7 @@ class ReservationModel(BaseDocument):
     keg_ids = ListField(StringField())
     extractor_ids = ListField(StringField())
     pressure_gauge_ids = ListField(StringField())
+    cylinder_ids = ListField(StringField())
     delivery_date = DateTimeField(required=True)
     pickup_date = DateTimeField(required=True)
     payments = EmbeddedDocumentListField(PaymentModel, default=list)

@@ -24,6 +24,9 @@ from app.crud.pressure_gauges.schemas import (
     PressureGaugeType,
 )
 from app.crud.pressure_gauges.repositories import PressureGaugeRepository
+from app.crud.cylinders.models import CylinderModel
+from app.crud.cylinders.schemas import CylinderStatus
+from app.crud.cylinders.repositories import CylinderRepository
 from app.core.exceptions import NotFoundError
 from app.crud.payments.schemas import Payment
 
@@ -38,8 +41,9 @@ class TestReservationServices(unittest.TestCase):
         reservation_repo = ReservationRepository()
         self.keg_repo = KegRepository()
         self.pg_repo = PressureGaugeRepository()
+        self.cyl_repo = CylinderRepository()
         self.services = ReservationServices(
-            reservation_repo, self.keg_repo, self.pg_repo
+            reservation_repo, self.keg_repo, self.pg_repo, self.cyl_repo
         )
         self.company_id = "com1"
         self.dispenser = BeerDispenserModel(
@@ -66,6 +70,14 @@ class TestReservationServices(unittest.TestCase):
             company_id=self.company_id,
         )
         self.pg.save()
+        self.cylinder = CylinderModel(
+            brand="Acme",
+            weight_kg=10,
+            number="C1",
+            status=CylinderStatus.AVAILABLE.value,
+            company_id=self.company_id,
+        )
+        self.cylinder.save()
 
     def tearDown(self) -> None:
         disconnect()
@@ -78,6 +90,7 @@ class TestReservationServices(unittest.TestCase):
             keg_ids=[str(self.keg.id)],
             extractor_ids=[],
             pressure_gauge_ids=[str(self.pg.id)],
+            cylinder_ids=[str(self.cylinder.id)],
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
@@ -98,6 +111,8 @@ class TestReservationServices(unittest.TestCase):
         self.assertEqual(keg.status, KegStatus.EMPTY.value)
         pg = PressureGaugeModel.objects(id=self.pg.id).first()
         self.assertEqual(pg.status, PressureGaugeStatus.TO_VERIFY.value)
+        cyl = CylinderModel.objects(id=self.cylinder.id).first()
+        self.assertEqual(cyl.status, CylinderStatus.TO_VERIFY.value)
 
     def test_create_reservation_conflict(self):
         reservation = Reservation(
@@ -107,6 +122,7 @@ class TestReservationServices(unittest.TestCase):
             keg_ids=[str(self.keg.id)],
             extractor_ids=[],
             pressure_gauge_ids=[str(self.pg.id)],
+            cylinder_ids=[str(self.cylinder.id)],
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
@@ -123,6 +139,14 @@ class TestReservationServices(unittest.TestCase):
             company_id=self.company_id,
         )
         new_keg.save()
+        new_cylinder = CylinderModel(
+            brand="Acme",
+            weight_kg=10,
+            number="C2",
+            status=CylinderStatus.AVAILABLE.value,
+            company_id=self.company_id,
+        )
+        new_cylinder.save()
         reservation2 = Reservation(
             customer_id="cus2",
             address_id="add3",
@@ -130,6 +154,7 @@ class TestReservationServices(unittest.TestCase):
             keg_ids=[str(new_keg.id)],
             extractor_ids=[],
             pressure_gauge_ids=[str(self.pg.id)],
+            cylinder_ids=[str(new_cylinder.id)],
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
@@ -137,6 +162,66 @@ class TestReservationServices(unittest.TestCase):
         )
         with self.assertRaises(NotFoundError):
             asyncio.run(self.services.create(reservation2))
+
+    def test_create_reservation_cylinder_conflict(self):
+        reservation = Reservation(
+            customer_id="cus1",
+            address_id="add2",
+            beer_dispenser_id=None,
+            keg_ids=[str(self.keg.id)],
+            extractor_ids=[],
+            pressure_gauge_ids=[str(self.pg.id)],
+            cylinder_ids=[str(self.cylinder.id)],
+            delivery_date=datetime.now() + timedelta(days=1),
+            pickup_date=datetime.now() + timedelta(days=2),
+            payments=[],
+            company_id=self.company_id,
+        )
+        asyncio.run(self.services.create(reservation))
+        new_keg = KegModel(
+            number="3",
+            size_l=50,
+            beer_type_id="bty1",
+            cost_price_per_l=5.0,
+            sale_price_per_l=8.0,
+            status=KegStatus.AVAILABLE.value,
+            company_id=self.company_id,
+        )
+        new_keg.save()
+        reservation2 = Reservation(
+            customer_id="cus2",
+            address_id="add3",
+            beer_dispenser_id=None,
+            keg_ids=[str(new_keg.id)],
+            extractor_ids=[],
+            pressure_gauge_ids=[str(self.pg.id)],
+            cylinder_ids=[str(self.cylinder.id)],
+            delivery_date=datetime.now() + timedelta(days=1),
+            pickup_date=datetime.now() + timedelta(days=2),
+            payments=[],
+            company_id=self.company_id,
+        )
+        with self.assertRaises(NotFoundError):
+            asyncio.run(self.services.create(reservation2))
+
+    def test_create_reservation_with_unavailable_cylinder(self):
+        self.cylinder.status = CylinderStatus.TO_VERIFY.value
+        self.cylinder.save()
+        reservation = Reservation(
+            customer_id="cus1",
+            address_id="add2",
+            beer_dispenser_id=str(self.dispenser.id),
+            keg_ids=[str(self.keg.id)],
+            extractor_ids=[],
+            pressure_gauge_ids=[str(self.pg.id)],
+            cylinder_ids=[str(self.cylinder.id)],
+            delivery_date=datetime.now() + timedelta(days=1),
+            pickup_date=datetime.now() + timedelta(days=2),
+            payments=[],
+            company_id=self.company_id,
+        )
+        with self.assertRaises(NotFoundError):
+            asyncio.run(self.services.create(reservation))
 
     def test_create_reservation_with_unavailable_keg(self):
         reservation = Reservation(
@@ -146,6 +231,7 @@ class TestReservationServices(unittest.TestCase):
             keg_ids=[str(self.keg.id)],
             extractor_ids=[],
             pressure_gauge_ids=[str(self.pg.id)],
+            cylinder_ids=[str(self.cylinder.id)],
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
@@ -160,6 +246,7 @@ class TestReservationServices(unittest.TestCase):
             keg_ids=[str(self.keg.id)],
             extractor_ids=[],
             pressure_gauge_ids=[str(self.pg.id)],
+            cylinder_ids=[str(self.cylinder.id)],
             delivery_date=datetime.now() + timedelta(days=3),
             pickup_date=datetime.now() + timedelta(days=4),
             payments=[],
@@ -176,6 +263,7 @@ class TestReservationServices(unittest.TestCase):
             keg_ids=[str(self.keg.id)],
             extractor_ids=[],
             pressure_gauge_ids=[str(self.pg.id)],
+            cylinder_ids=[str(self.cylinder.id)],
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
