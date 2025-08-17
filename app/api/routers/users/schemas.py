@@ -3,7 +3,9 @@ from typing import List
 from pydantic import Field, ConfigDict
 
 from app.api.shared_schemas.responses import Response
+from app.core.models.base_schema import GenericModel
 from app.crud.users.schemas import UserInDB
+from app.crud.companies.schemas import CompanyInDB
 
 EXAMPLE_USER = {
     "user_id": "id-123",
@@ -18,13 +20,33 @@ EXAMPLE_USER = {
     "updated_at": "2024-01-01T00:00:00Z",
 }
 
+EXAMPLE_COMPANY = {
+    "id": "cmp-123",
+    "name": "ACME",
+    "address_id": "add-123",
+    "phone_number": "9999-9999",
+    "ddd": "11",
+    "email": "info@acme.com",
+    "members": [],
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z",
+}
+
+
+class CurrentUserWithCompany(GenericModel):
+    user_id: str = Field(example="id-123")
+    company: CompanyInDB | None = Field(default=None)
+
 
 class GetCurrentUserResponse(Response):
-    data: UserInDB | None = Field()
+    data: CurrentUserWithCompany | None = Field()
 
     model_config = ConfigDict(
         json_schema_extra={
-            "example": {"message": "User found with success", "data": EXAMPLE_USER}
+            "example": {
+                "message": "User found with success",
+                "data": {"user_id": "id-123", "company": EXAMPLE_COMPANY},
+            }
         }
     )
 
