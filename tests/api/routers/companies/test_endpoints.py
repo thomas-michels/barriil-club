@@ -1,5 +1,6 @@
 import asyncio
 import unittest
+from datetime import timedelta
 
 import mongomock
 from fastapi import FastAPI
@@ -21,6 +22,7 @@ from app.crud.addresses.services import AddressServices
 from app.crud.addresses.schemas import Address
 from app.crud.addresses.models import AddressModel
 from app.crud.users.schemas import UserInDB
+from app.core.utils.utc_datetime import UTCDateTime
 from app.core.exceptions import NotFoundError
 
 
@@ -123,6 +125,7 @@ class TestCompanyEndpoints(unittest.TestCase):
         self.assertEqual(len(data["members"]), 1)
         self.assertEqual(data["members"][0]["userId"], self.user.user_id)
         self.assertEqual(data["members"][0]["role"], "owner")
+        self.assertIn("subscription", data)
 
     def test_create_company_endpoint_without_address(self):
         resp = self.client.post(
@@ -164,6 +167,22 @@ class TestCompanyEndpoints(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.json()["data"]["members"]), 1)
         self.assertEqual(resp.json()["data"]["members"][0]["userId"], "usr2")
+
+    def test_get_subscription_endpoint(self):
+        resp = self.client.get(f"/api/companies/{self.company.id}/subscription")
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.json()["data"]["isActive"])
+
+    def test_update_subscription_endpoint(self):
+        new_date = UTCDateTime.now() + timedelta(days=15)
+        resp = self.client.put(
+            f"/api/companies/{self.company.id}/subscription",
+            json={"isActive": False, "expiresAt": str(new_date)},
+        )
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()["data"]
+        self.assertFalse(data["isActive"])
+        self.assertEqual(data["expiresAt"], str(new_date))
 
 
 if __name__ == "__main__":

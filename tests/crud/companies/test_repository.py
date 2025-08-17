@@ -6,7 +6,14 @@ from mongoengine import connect, disconnect
 
 from app.crud.companies.repositories import CompanyRepository
 from app.crud.companies.models import CompanyModel
-from app.crud.companies.schemas import Company, CompanyMember
+from datetime import timedelta
+
+from app.core.utils.utc_datetime import UTCDateTime
+from app.crud.companies.schemas import (
+    Company,
+    CompanyMember,
+    UpdateCompanySubscription,
+)
 from app.core.exceptions import NotFoundError, UnprocessableEntity
 
 
@@ -117,6 +124,38 @@ class TestCompanyRepository(unittest.TestCase):
         repository = CompanyRepository()
         with self.assertRaises(NotFoundError):
             asyncio.run(repository.select_by_user("usr1"))
+
+    def test_default_subscription_on_create(self):
+        repository = CompanyRepository()
+        company = self._build_company()
+        result = asyncio.run(repository.create(company))
+        self.assertTrue(result.subscription.is_active)
+        expected = UTCDateTime.now() + timedelta(days=7)
+        delta = result.subscription.expires_at - expected
+        self.assertLess(abs(delta.total_seconds()), 5)
+
+    def test_update_subscription(self):
+        repository = CompanyRepository()
+        company = self._build_company()
+        created = asyncio.run(repository.create(company))
+        new_date = UTCDateTime.now() + timedelta(days=30)
+        updated = asyncio.run(
+            repository.update_subscription(
+                created.id,
+                UpdateCompanySubscription(is_active=False, expires_at=new_date),
+            )
+        )
+        self.assertFalse(updated.subscription.is_active)
+        self.assertEqual(updated.subscription.expires_at, new_date)
+
+    def test_update_subscription_not_found(self):
+        repository = CompanyRepository()
+        with self.assertRaises(NotFoundError):
+            asyncio.run(
+                repository.update_subscription(
+                    "invalid", UpdateCompanySubscription(is_active=False)
+                )
+            )
 
 
 if __name__ == "__main__":

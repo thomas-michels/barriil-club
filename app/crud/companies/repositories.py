@@ -15,6 +15,7 @@ from .schemas import (
     CompanyInDB,
     UpdateCompany,
     CompanyMember as CompanyMemberSchema,
+    UpdateCompanySubscription,
 )
 
 _logger = get_logger(__name__)
@@ -124,6 +125,29 @@ class CompanyRepository(Repository):
         except Exception as error:
             _logger.error(f"Error on add_member: {str(error)}")
             raise NotFoundError(message=f"Company {company_id} not found")
+
+    async def update_subscription(
+        self, company_id: str, subscription: UpdateCompanySubscription
+    ) -> CompanyInDB:
+        try:
+            company_model: CompanyModel = CompanyModel.objects(
+                id=company_id, is_active=True
+            ).first()
+            if not company_model:
+                raise NotFoundError(message=f"Company #{company_id} not found")
+
+            data = subscription.model_dump(exclude_unset=True, exclude_none=True)
+            for key, value in data.items():
+                setattr(company_model.subscription, key, value)
+
+            company_model.base_update()
+            company_model.save()
+            return CompanyInDB.model_validate(company_model)
+        except NotFoundError:
+            raise
+        except Exception as error:
+            _logger.error(f"Error on update_subscription: {str(error)}")
+            raise UnprocessableEntity(message="Error on update subscription")
 
     async def select_by_user(self, user_id: str) -> CompanyInDB:
         try:

@@ -7,8 +7,14 @@ from app.api.dependencies import (
     require_company_member,
 )
 from app.api.shared_schemas.responses import MessageResponse
-from .schemas import CompanyResponse
-from app.crud.companies import Company, UpdateCompany, CompanyServices, CompanyMember
+from .schemas import CompanyResponse, SubscriptionResponse
+from app.crud.companies import (
+    Company,
+    UpdateCompany,
+    CompanyServices,
+    CompanyMember,
+    UpdateCompanySubscription,
+)
 from app.crud.users.schemas import UserInDB
 from app.crud.companies.schemas import CompanyInDB
 
@@ -78,4 +84,24 @@ async def add_member(
     company_in_db = await company_services.add_member(company_id=company_id, member=member)
     return build_response(
         status_code=200, message="Member added with success", data=company_in_db
+    )
+
+
+@router.put(
+    "/companies/{company_id}/subscription",
+    responses={200: {"model": SubscriptionResponse}, 404: {"model": MessageResponse}},
+)
+async def update_company_subscription(
+    company_id: str,
+    subscription: UpdateCompanySubscription,
+    company_services: CompanyServices = Depends(company_composer),
+    _: CompanyInDB = Depends(require_company_member),
+):
+    company_in_db = await company_services.update_subscription(
+        id=company_id, subscription=subscription
+    )
+    return build_response(
+        status_code=200,
+        message="Subscription updated with success",
+        data=company_in_db.subscription,
     )
