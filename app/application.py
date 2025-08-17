@@ -2,6 +2,7 @@ from asgi_correlation_id import CorrelationIdMiddleware
 import sentry_sdk
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.api.dependencies.response import build_response
 from app.api.middleware.rate_limiting import RateLimitMiddleware
 from app.api.routers import (
@@ -73,6 +74,7 @@ app.include_router(reservation_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api")
 
 app.add_exception_handler(HTTPException, http_exception_handler)
+app.add_exception_handler(StarletteHTTPException, http_exception_handler)
 app.add_exception_handler(UnprocessableEntity, unprocessable_entity_error_422)
 app.add_exception_handler(NotFoundError, not_found_error_404)
 app.add_exception_handler(InvalidPassword, generic_error_400)
