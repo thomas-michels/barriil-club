@@ -11,10 +11,10 @@ from .schemas import CompanyResponse, SubscriptionResponse
 from app.crud.companies import (
     Company,
     UpdateCompany,
-    CompanyServices,
     CompanyMember,
     UpdateCompanySubscription,
 )
+from app.crud.companies.services import CompanyServices
 from app.crud.users.schemas import UserInDB
 from app.crud.companies.schemas import CompanyInDB
 

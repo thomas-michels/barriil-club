@@ -20,8 +20,17 @@ class Company(GenericModel):
 
 
 class CompanySubscription(GenericModel):
-    is_active: bool = Field(example=True)
-    expires_at: UTCDateTimeType = Field(example=str(UTCDateTime.now()))
+    """Subscription information attached to a company."""
+
+    # A company should always have a subscription object, even if the
+    # information has not been explicitly provided.  Tests instantiate
+    # ``CompanyInDB`` without specifying a subscription, therefore we supply
+    # sensible defaults here using ``default`` and ``default_factory``.
+    is_active: bool = Field(default=True, example=True)
+    expires_at: UTCDateTimeType = Field(
+        default_factory=UTCDateTime.now,
+        example=str(UTCDateTime.now()),
+    )
 
 
 class CompanyInDB(DatabaseModel):
@@ -31,7 +40,9 @@ class CompanyInDB(DatabaseModel):
     ddd: str = Field(example="11")
     email: EmailStr = Field(example="info@acme.com")
     members: list[CompanyMember] = Field(default_factory=list)
-    subscription: CompanySubscription = Field()
+    # Provide a default subscription so that instances can be created without
+    # explicitly supplying one, matching the expectations of the tests.
+    subscription: CompanySubscription = Field(default_factory=CompanySubscription)
 
 
 class UpdateCompany(GenericModel):
