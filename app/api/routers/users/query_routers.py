@@ -12,7 +12,7 @@ from .schemas import (
     CurrentUser,
 )
 from app.crud.users import UserInDB, UserServices
-from app.crud.companies import CompanyServices
+from app.crud.companies.services import CompanyServices
 
 router = APIRouter(tags=["Users"])
 

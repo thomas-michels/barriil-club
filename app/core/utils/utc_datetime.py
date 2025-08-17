@@ -27,6 +27,10 @@ class UTCDateTime(datetime):
     @classmethod
     def now(cls, tz=None):
         now_utc = datetime.now(pytz.UTC)
+        # MongoDB stores datetimes with millisecond precision.  By trimming the
+        # microseconds here we ensure consistent values when persisting and
+        # retrieving dates, avoiding subtle test failures due to rounding.
+        now_utc = now_utc.replace(microsecond=(now_utc.microsecond // 1000) * 1000)
         return cls(now_utc.year, now_utc.month,
                   now_utc.day, now_utc.hour,
                   now_utc.minute, now_utc.second,
@@ -76,6 +80,12 @@ class UTCDateTime(datetime):
 UTCDateTimeType = Annotated[
     UTCDateTime,
     BeforeValidator(UTCDateTime.validate_datetime),
-    PlainSerializer(lambda x: x, return_type=datetime),
+    # Ensure that values are serialized using the custom ``UTCDateTime.__str__``
+    # implementation which renders datetimes in ISO-8601 format with a trailing
+    # ``Z``.  Returning the object itself here caused Pydantic to fall back to
+    # its default serialisation, producing strings like
+    # ``"2025-09-01T18:31:47.914000+00:00"``.  The tests expect the compact
+    # ``Z`` form so we convert the value to ``str`` explicitly.
+    PlainSerializer(lambda x: str(x), return_type=str),
     WithJsonSchema({"type": "string", "format": "date-time"}, mode="serialization"),
 ]

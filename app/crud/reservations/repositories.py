@@ -3,6 +3,7 @@ from app.core.configs import get_logger
 from app.core.exceptions import NotFoundError
 from app.core.repositories.base_repository import Repository
 from app.core.utils.utc_datetime import UTCDateTime
+from datetime import datetime
 
 from app.crud.payments.models import PaymentModel
 from app.crud.payments.schemas import Payment
@@ -145,13 +146,33 @@ class ReservationRepository(Repository):
         pickup_date: UTCDateTime,
     ) -> ReservationInDB | None:
         try:
+            # Convert to naive datetimes for querying since MongoEngine stores
+            # dates without timezone information when ``tz_aware`` is False.
+            start = datetime(
+                delivery_date.year,
+                delivery_date.month,
+                delivery_date.day,
+                delivery_date.hour,
+                delivery_date.minute,
+                delivery_date.second,
+                delivery_date.microsecond,
+            )
+            end = datetime(
+                pickup_date.year,
+                pickup_date.month,
+                pickup_date.day,
+                pickup_date.hour,
+                pickup_date.minute,
+                pickup_date.second,
+                pickup_date.microsecond,
+            )
             model = ReservationModel.objects(
                 beer_dispenser_id=beer_dispenser_id,
                 company_id=company_id,
                 is_active=True,
                 status__ne=ReservationStatus.COMPLETED.value,
-                delivery_date__lte=pickup_date,
-                pickup_date__gte=delivery_date,
+                delivery_date__lte=end,
+                pickup_date__gte=start,
             ).first()
 
             return ReservationInDB.model_validate(model) if model else None
@@ -172,13 +193,31 @@ class ReservationRepository(Repository):
         pickup_date: UTCDateTime,
     ) -> ReservationInDB | None:
         try:
+            start = datetime(
+                delivery_date.year,
+                delivery_date.month,
+                delivery_date.day,
+                delivery_date.hour,
+                delivery_date.minute,
+                delivery_date.second,
+                delivery_date.microsecond,
+            )
+            end = datetime(
+                pickup_date.year,
+                pickup_date.month,
+                pickup_date.day,
+                pickup_date.hour,
+                pickup_date.minute,
+                pickup_date.second,
+                pickup_date.microsecond,
+            )
             model = ReservationModel.objects(
                 cylinder_ids__in=cylinder_ids,
                 company_id=company_id,
                 is_active=True,
                 status__ne=ReservationStatus.COMPLETED.value,
-                delivery_date__lte=pickup_date,
-                pickup_date__gte=delivery_date,
+                delivery_date__lte=end,
+                pickup_date__gte=start,
             ).first()
 
             return ReservationInDB.model_validate(model) if model else None
@@ -188,18 +227,26 @@ class ReservationRepository(Repository):
             raise NotFoundError(message="Error on find cylinder conflict")
 
     def _auto_update_status(self, model: ReservationModel) -> None:
+        # ``ReservationModel`` stores datetimes without timezone information,
+        # while :class:`UTCDateTime.now` returns timezone-aware values.  Direct
+        # comparisons between them raise ``TypeError`` complaining about naive
+        # vs offset-aware datetimes.  We normalise both dates to ``UTCDateTime``
+        # before comparison to keep everything in UTC.
         now = UTCDateTime.now()
+        delivery_date = UTCDateTime.validate_datetime(model.delivery_date)
+        pickup_date = UTCDateTime.validate_datetime(model.pickup_date)
+
         changed = False
         if (
             model.status == ReservationStatus.RESERVED.value
-            and now >= model.delivery_date
+            and now >= delivery_date
         ):
             model.status = ReservationStatus.TO_DELIVER.value
             changed = True
         if (
             model.status
             in [ReservationStatus.TO_DELIVER.value, ReservationStatus.DELIVERED.value]
-            and now >= model.pickup_date
+            and now >= pickup_date
         ):
             model.status = ReservationStatus.TO_PICKUP.value
             changed = True
@@ -236,11 +283,29 @@ class ReservationRepository(Repository):
             query = ReservationModel.objects(company_id=company_id, is_active=True)
 
             if start_date:
-                start_date = UTCDateTime.validate_datetime(start_date)
+                start = UTCDateTime.validate_datetime(start_date)
+                start_date = datetime(
+                    start.year,
+                    start.month,
+                    start.day,
+                    start.hour,
+                    start.minute,
+                    start.second,
+                    start.microsecond,
+                )
                 query = query.filter(delivery_date__gte=start_date)
 
             if end_date:
-                end_date = UTCDateTime.validate_datetime(end_date)
+                end = UTCDateTime.validate_datetime(end_date)
+                end_date = datetime(
+                    end.year,
+                    end.month,
+                    end.day,
+                    end.hour,
+                    end.minute,
+                    end.second,
+                    end.microsecond,
+                )
                 query = query.filter(pickup_date__lte=end_date)
 
             if status:

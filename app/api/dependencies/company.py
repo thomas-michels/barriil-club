@@ -2,7 +2,7 @@ from fastapi import Depends, HTTPException, status
 
 from app.api.dependencies.auth import decode_jwt
 from app.api.composers.company_composite import company_composer
-from app.crud.companies import CompanyServices
+from app.crud.companies.services import CompanyServices
 from app.crud.users.schemas import UserInDB
 from app.crud.companies.schemas import CompanyInDB
 from app.core.exceptions import NotFoundError

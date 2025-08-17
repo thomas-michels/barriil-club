@@ -4,7 +4,7 @@ from app.api.composers.company_composite import company_composer
 from app.api.dependencies import build_response, require_company_member, require_user_company
 from app.api.shared_schemas.responses import MessageResponse
 from .schemas import CompanyResponse, CompanyListResponse, SubscriptionResponse
-from app.crud.companies import CompanyServices
+from app.crud.companies.services import CompanyServices
 from app.crud.companies.schemas import CompanyInDB
 
 router = APIRouter(tags=["Companies"])
