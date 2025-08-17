@@ -12,6 +12,8 @@ from app.api.composers.beer_dispenser_composite import beer_dispenser_composer
 from app.crud.companies.repositories import CompanyRepository
 from app.crud.companies.services import CompanyServices
 from app.crud.companies.schemas import Company
+from app.crud.addresses.repositories import AddressRepository
+from app.crud.addresses.models import AddressModel
 from app.crud.beer_dispensers.repositories import BeerDispenserRepository
 from app.crud.beer_dispensers.services import BeerDispenserServices
 from app.crud.beer_dispensers.schemas import BeerDispenser, DispenserStatus, Voltage
@@ -26,7 +28,8 @@ class TestBeerDispenserEndpoints(unittest.TestCase):
             mongo_client_class=mongomock.MongoClient,
         )
         self.company_repo = CompanyRepository()
-        self.company_services = CompanyServices(self.company_repo)
+        self.address_repo = AddressRepository()
+        self.company_services = CompanyServices(self.company_repo, self.address_repo)
         self.repository = BeerDispenserRepository()
         self.services = BeerDispenserServices(self.repository)
         self.app = FastAPI()
@@ -52,9 +55,19 @@ class TestBeerDispenserEndpoints(unittest.TestCase):
         )
         self.client = TestClient(self.app)
 
+        seed_address = AddressModel(
+            postal_code="00000",
+            street="Seed",
+            number="1",
+            district="Seed",
+            city="Seed",
+            state="SS",
+            company_id="seed",
+        )
+        seed_address.save()
         company = Company(
             name="ACME",
-            address_id="add1",
+            address_id=str(seed_address.id),
             phone_number="9999-9999",
             ddd="11",
             email="info@acme.com",

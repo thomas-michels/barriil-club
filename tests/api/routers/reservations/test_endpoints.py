@@ -14,6 +14,8 @@ from app.api.composers.reservation_composite import reservation_composer
 from app.crud.companies.repositories import CompanyRepository
 from app.crud.companies.services import CompanyServices
 from app.crud.companies.schemas import Company
+from app.crud.addresses.repositories import AddressRepository
+from app.crud.addresses.models import AddressModel
 from app.crud.beer_dispensers.repositories import BeerDispenserRepository
 from app.crud.beer_dispensers.services import BeerDispenserServices
 from app.crud.beer_dispensers.schemas import BeerDispenser, DispenserStatus, Voltage
@@ -43,7 +45,8 @@ class TestReservationEndpoints(unittest.TestCase):
             mongo_client_class=mongomock.MongoClient,
         )
         self.company_repo = CompanyRepository()
-        self.company_services = CompanyServices(self.company_repo)
+        self.address_repo = AddressRepository()
+        self.company_services = CompanyServices(self.company_repo, self.address_repo)
         self.keg_repo = KegRepository()
         self.pg_repo = PressureGaugeRepository()
         self.reservation_repo = ReservationRepository()
@@ -80,14 +83,36 @@ class TestReservationEndpoints(unittest.TestCase):
         )
         self.client = TestClient(self.app)
 
+        seed_address = AddressModel(
+            postal_code="00000",
+            street="Seed",
+            number="1",
+            district="Seed",
+            city="Seed",
+            state="SS",
+            company_id="seed",
+        )
+        seed_address.save()
         company = Company(
             name="ACME",
-            address_id="add1",
+            address_id=str(seed_address.id),
             phone_number="9999-9999",
             ddd="11",
             email="info@acme.com",
         )
         self.company = asyncio.run(self.company_services.create(company))
+
+        reservation_address = AddressModel(
+            postal_code="12345",
+            street="Main",
+            number="1",
+            district="Center",
+            city="City",
+            state="ST",
+            company_id=str(self.company.id),
+        )
+        reservation_address.save()
+        self.reservation_address_id = str(reservation_address.id)
 
         self.dispenser = asyncio.run(
             self.dispenser_services.create(
@@ -148,7 +173,7 @@ class TestReservationEndpoints(unittest.TestCase):
         pickup = delivery + timedelta(days=1)
         return {
             "customerId": "cus1",
-            "addressId": "add2",
+            "addressId": self.reservation_address_id,
             "beerDispenserId": self.dispenser.id,
             "kegIds": [self.keg.id],
             "extractorIds": [self.extractor.id],

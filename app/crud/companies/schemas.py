@@ -11,7 +11,7 @@ class CompanyMember(GenericModel):
 
 class Company(GenericModel):
     name: str = Field(example="ACME")
-    address_id: str = Field(example="add_12345678")
+    address_id: str | None = Field(default=None, example="add_12345678")
     phone_number: str = Field(example="9999-9999")
     ddd: str = Field(example="11")
     email: EmailStr = Field(example="info@acme.com")
@@ -20,7 +20,7 @@ class Company(GenericModel):
 
 class CompanyInDB(DatabaseModel):
     name: str = Field(example="ACME")
-    address_id: str = Field(example="add_12345678")
+    address_id: str | None = Field(default=None, example="add_12345678")
     phone_number: str = Field(example="9999-9999")
     ddd: str = Field(example="11")
     email: EmailStr = Field(example="info@acme.com")

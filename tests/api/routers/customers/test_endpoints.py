@@ -12,6 +12,8 @@ from app.api.composers.customer_composite import customer_composer
 from app.crud.companies.repositories import CompanyRepository
 from app.crud.companies.services import CompanyServices
 from app.crud.companies.schemas import Company
+from app.crud.addresses.repositories import AddressRepository
+from app.crud.addresses.models import AddressModel
 from app.crud.customers.repositories import CustomerRepository
 from app.crud.customers.services import CustomerServices
 from app.crud.customers.schemas import Customer
@@ -26,7 +28,8 @@ class TestCustomerEndpoints(unittest.TestCase):
             mongo_client_class=mongomock.MongoClient,
         )
         self.company_repo = CompanyRepository()
-        self.company_services = CompanyServices(self.company_repo)
+        self.address_repo = AddressRepository()
+        self.company_services = CompanyServices(self.company_repo, self.address_repo)
         self.repository = CustomerRepository()
         self.services = CustomerServices(self.repository)
         self.app = FastAPI()
@@ -50,9 +53,20 @@ class TestCustomerEndpoints(unittest.TestCase):
         self.app.dependency_overrides[customer_composer] = override_customer_composer
         self.client = TestClient(self.app)
 
+        seed_address = AddressModel(
+            postal_code="00000",
+            street="Seed",
+            number="1",
+            district="Seed",
+            city="Seed",
+            state="SS",
+            company_id="seed",
+        )
+        seed_address.save()
+        self.address_id = str(seed_address.id)
         company = Company(
             name="ACME",
-            address_id="add1",
+            address_id=self.address_id,
             phone_number="9999-9999",
             ddd="11",
             email="info@acme.com",
@@ -65,7 +79,7 @@ class TestCustomerEndpoints(unittest.TestCase):
             email="john@example.com",
             mobile="999",
             birth_date="1990-01-01",
-            address_ids=["add1"],
+            address_ids=[self.address_id],
             notes="VIP",
             company_id=str(self.company.id),
         )
@@ -82,7 +96,7 @@ class TestCustomerEndpoints(unittest.TestCase):
             "email": "jane@example.com",
             "mobile": "888",
             "birthDate": "1995-01-01",
-            "addressIds": ["add1"],
+            "addressIds": [self.address_id],
             "notes": "Note",
             "companyId": str(self.company.id),
         }

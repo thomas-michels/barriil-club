@@ -51,6 +51,18 @@ class AddressRepository(Repository):
             _logger.error(f"Error on update_address: {str(error)}")
             raise NotFoundError(message="Error on update address")
 
+    async def select_active_by_id(self, id: str) -> AddressInDB:
+        try:
+            address_model: AddressModel = AddressModel.objects(
+                id=id, is_active=True
+            ).first()
+            return AddressInDB.model_validate(address_model)
+        except ValidationError:
+            raise NotFoundError(message=f"Address #{id} not found")
+        except Exception as error:
+            _logger.error(f"Error on select_active_by_id: {str(error)}")
+            raise NotFoundError(message=f"Address #{id} not found")
+
     async def select_by_id(self, id: str, company_id: str) -> AddressInDB:
         try:
             address_model: AddressModel = AddressModel.objects(

@@ -19,6 +19,7 @@ from app.crud.companies.schemas import Company
 from app.crud.addresses.repositories import AddressRepository
 from app.crud.addresses.services import AddressServices
 from app.crud.addresses.schemas import Address
+from app.crud.addresses.models import AddressModel
 from app.crud.users.schemas import UserInDB
 from app.core.exceptions import NotFoundError
 
@@ -31,15 +32,25 @@ class TestCompanyEndpoints(unittest.TestCase):
             mongo_client_class=mongomock.MongoClient,
         )
         self.repository = CompanyRepository()
-        self.services = CompanyServices(self.repository)
         self.address_repo = AddressRepository()
+        self.services = CompanyServices(self.repository, self.address_repo)
         self.address_services = AddressServices(self.address_repo)
         self.app = FastAPI()
         self.app.include_router(company_router, prefix="/api")
 
+        seed_address = AddressModel(
+            postal_code="00000",
+            street="Seed",
+            number="1",
+            district="Seed",
+            city="Seed",
+            state="SS",
+            company_id="seed",
+        )
+        seed_address.save()
         company = Company(
             name="ACME",
-            address_id="add1",
+            address_id=str(seed_address.id),
             phone_number="9999-9999",
             ddd="11",
             email="info@acme.com",
@@ -91,14 +102,16 @@ class TestCompanyEndpoints(unittest.TestCase):
         self.app.dependency_overrides = {}
         disconnect()
 
-    def _build_company_payload(self, name: str = "Beta") -> dict:
-        return {
+    def _build_company_payload(self, name: str = "Beta", use_address: bool = True) -> dict:
+        payload = {
             "name": name,
-            "addressId": self.address.id,
             "phone_number": "9999-9999",
             "ddd": "11",
             "email": "info@beta.com",
         }
+        if use_address:
+            payload["addressId"] = self.address.id
+        return payload
 
     def test_create_company_endpoint(self):
         resp = self.client.post(
@@ -110,6 +123,15 @@ class TestCompanyEndpoints(unittest.TestCase):
         self.assertEqual(len(data["members"]), 1)
         self.assertEqual(data["members"][0]["userId"], self.user.user_id)
         self.assertEqual(data["members"][0]["role"], "owner")
+
+    def test_create_company_endpoint_without_address(self):
+        resp = self.client.post(
+            "/api/companies", json=self._build_company_payload("NoAddr", use_address=False)
+        )
+        self.assertEqual(resp.status_code, 201)
+        data = resp.json()["data"]
+        self.assertEqual(data["name"], "NoAddr")
+        self.assertIsNone(data.get("addressId"))
 
     def test_get_company_by_id(self):
         resp = self.client.get(f"/api/companies/{self.company.id}")
