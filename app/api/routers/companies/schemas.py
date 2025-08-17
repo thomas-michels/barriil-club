@@ -3,7 +3,11 @@ from typing import List
 from pydantic import Field, ConfigDict
 
 from app.api.shared_schemas.responses import Response
-from app.crud.companies.schemas import CompanyInDB, CompanyMember
+from app.crud.companies.schemas import (
+    CompanyInDB,
+    CompanyMember,
+    CompanySubscription,
+)
 
 EXAMPLE_COMPANY = {
     "id": "com_12345678",
@@ -15,6 +19,12 @@ EXAMPLE_COMPANY = {
     "members": [{"user_id": "usr_1", "role": "owner"}],
     "created_at": "2024-01-01T00:00:00Z",
     "updated_at": "2024-01-01T00:00:00Z",
+    "subscription": {"is_active": True, "expires_at": "2024-01-08T00:00:00Z"},
+}
+
+EXAMPLE_SUBSCRIPTION = {
+    "is_active": True,
+    "expires_at": "2024-01-08T00:00:00Z",
 }
 
 
@@ -36,6 +46,19 @@ class CompanyListResponse(Response):
             "example": {
                 "message": "Companies found with success",
                 "data": [EXAMPLE_COMPANY],
+            }
+        }
+    )
+
+
+class SubscriptionResponse(Response):
+    data: CompanySubscription | None = Field()
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "message": "Subscription processed with success",
+                "data": EXAMPLE_SUBSCRIPTION,
             }
         }
     )

@@ -1,5 +1,6 @@
 import asyncio
 import unittest
+from datetime import timedelta
 
 import mongomock
 from mongoengine import connect, disconnect
@@ -8,8 +9,14 @@ from app.crud.addresses.models import AddressModel
 from app.crud.addresses.repositories import AddressRepository
 from app.crud.companies.repositories import CompanyRepository
 from app.crud.companies.services import CompanyServices
-from app.crud.companies.schemas import Company, UpdateCompany, CompanyMember
+from app.crud.companies.schemas import (
+    Company,
+    UpdateCompany,
+    CompanyMember,
+    UpdateCompanySubscription,
+)
 from app.crud.companies.models import CompanyModel, CompanyMember as CompanyMemberModel
+from app.core.utils.utc_datetime import UTCDateTime
 from app.core.exceptions import NotFoundError, UnprocessableEntity
 
 
@@ -144,6 +151,24 @@ class TestCompanyServices(unittest.TestCase):
     def test_search_by_user_not_found(self):
         with self.assertRaises(NotFoundError):
             asyncio.run(self.services.search_by_user("usr1"))
+
+    def test_update_subscription(self):
+        doc = CompanyModel(**self._build_company().model_dump())
+        doc.save()
+        new_date = UTCDateTime.now() + timedelta(days=10)
+        updated = asyncio.run(
+            self.services.update_subscription(
+                doc.id, UpdateCompanySubscription(is_active=False, expires_at=new_date)
+            )
+        )
+        self.assertFalse(updated.subscription.is_active)
+        self.assertEqual(updated.subscription.expires_at, new_date)
+
+    def test_get_subscription(self):
+        doc = CompanyModel(**self._build_company().model_dump())
+        doc.save()
+        subscription = asyncio.run(self.services.get_subscription(doc.id))
+        self.assertTrue(subscription.is_active)
 
 
 if __name__ == "__main__":

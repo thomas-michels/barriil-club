@@ -2,7 +2,14 @@ from typing import List
 
 from app.crud.addresses.repositories import AddressRepository
 from .repositories import CompanyRepository
-from .schemas import Company, CompanyInDB, UpdateCompany, CompanyMember
+from .schemas import (
+    Company,
+    CompanyInDB,
+    UpdateCompany,
+    CompanyMember,
+    UpdateCompanySubscription,
+    CompanySubscription,
+)
 
 
 class CompanyServices:
@@ -40,3 +47,14 @@ class CompanyServices:
 
     async def search_by_user(self, user_id: str) -> CompanyInDB:
         return await self.__repository.select_by_user(user_id=user_id)
+
+    async def update_subscription(
+        self, id: str, subscription: UpdateCompanySubscription
+    ) -> CompanyInDB:
+        return await self.__repository.update_subscription(
+            company_id=id, subscription=subscription
+        )
+
+    async def get_subscription(self, id: str) -> CompanySubscription:
+        company = await self.__repository.select_by_id(id=id)
+        return company.subscription
