@@ -1,14 +1,18 @@
 from fastapi import APIRouter, Depends, Security, Response
 
 from app.api.composers.user_composite import user_composer
+from app.api.composers.company_composite import company_composer
 from app.api.dependencies import build_response, decode_jwt
 from app.api.shared_schemas.responses import MessageResponse
+from app.core.exceptions import NotFoundError
 from .schemas import (
     GetCurrentUserResponse,
     GetUserByIdResponse,
     GetUsersResponse,
+    CurrentUser,
 )
 from app.crud.users import UserInDB, UserServices
+from app.crud.companies import CompanyServices
 
 router = APIRouter(tags=["Users"])
 
@@ -19,9 +23,17 @@ router = APIRouter(tags=["Users"])
 )
 async def current_user(
     current_user: UserInDB = Security(decode_jwt, scopes=["user:me"]),
+    company_services: CompanyServices = Depends(company_composer),
 ):
+    try:
+        company = await company_services.search_by_user(user_id=current_user.user_id)
+    except NotFoundError:
+        company = None
+
+    user_with_company = CurrentUser(**current_user.model_dump(), company=company)
+
     return build_response(
-        status_code=200, message="User found with success", data=current_user
+        status_code=200, message="User found with success", data=user_with_company
     )
 
 
