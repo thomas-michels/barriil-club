@@ -60,7 +60,7 @@ app.add_middleware(
 )
 
 app.add_middleware(CorrelationIdMiddleware)
-app.add_middleware(RateLimitMiddleware, limit=150, window=60)
+app.add_middleware(RateLimitMiddleware, limit=250, window=60)
 
 app.include_router(user_router, prefix="/api")
 app.include_router(extractor_router, prefix="/api")
