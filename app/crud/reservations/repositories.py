@@ -3,7 +3,6 @@ from app.core.configs import get_logger
 from app.core.exceptions import NotFoundError
 from app.core.repositories.base_repository import Repository
 from app.core.utils.utc_datetime import UTCDateTime
-from datetime import datetime
 
 from app.crud.payments.models import PaymentModel
 from app.crud.payments.schemas import Payment
@@ -153,26 +152,8 @@ class ReservationRepository(Repository):
         pickup_date: UTCDateTime,
     ) -> ReservationInDB | None:
         try:
-            # Convert to naive datetimes for querying since MongoEngine stores
-            # dates without timezone information when ``tz_aware`` is False.
-            start = datetime(
-                delivery_date.year,
-                delivery_date.month,
-                delivery_date.day,
-                delivery_date.hour,
-                delivery_date.minute,
-                delivery_date.second,
-                delivery_date.microsecond,
-            )
-            end = datetime(
-                pickup_date.year,
-                pickup_date.month,
-                pickup_date.day,
-                pickup_date.hour,
-                pickup_date.minute,
-                pickup_date.second,
-                pickup_date.microsecond,
-            )
+            start = UTCDateTime.validate_datetime(delivery_date)
+            end = UTCDateTime.validate_datetime(pickup_date)
             model = ReservationModel.objects(
                 beer_dispenser_ids__in=beer_dispenser_ids,
                 company_id=company_id,
@@ -200,24 +181,8 @@ class ReservationRepository(Repository):
         pickup_date: UTCDateTime,
     ) -> ReservationInDB | None:
         try:
-            start = datetime(
-                delivery_date.year,
-                delivery_date.month,
-                delivery_date.day,
-                delivery_date.hour,
-                delivery_date.minute,
-                delivery_date.second,
-                delivery_date.microsecond,
-            )
-            end = datetime(
-                pickup_date.year,
-                pickup_date.month,
-                pickup_date.day,
-                pickup_date.hour,
-                pickup_date.minute,
-                pickup_date.second,
-                pickup_date.microsecond,
-            )
+            start = UTCDateTime.validate_datetime(delivery_date)
+            end = UTCDateTime.validate_datetime(pickup_date)
             model = ReservationModel.objects(
                 cylinder_ids__in=cylinder_ids,
                 company_id=company_id,
@@ -291,29 +256,11 @@ class ReservationRepository(Repository):
 
             if start_date:
                 start = UTCDateTime.validate_datetime(start_date)
-                start_date = datetime(
-                    start.year,
-                    start.month,
-                    start.day,
-                    start.hour,
-                    start.minute,
-                    start.second,
-                    start.microsecond,
-                )
-                query = query.filter(delivery_date__gte=start_date)
+                query = query.filter(delivery_date__gte=start)
 
             if end_date:
                 end = UTCDateTime.validate_datetime(end_date)
-                end_date = datetime(
-                    end.year,
-                    end.month,
-                    end.day,
-                    end.hour,
-                    end.minute,
-                    end.second,
-                    end.microsecond,
-                )
-                query = query.filter(pickup_date__lte=end_date)
+                query = query.filter(pickup_date__lte=end)
 
             if status:
                 query = query.filter(status=status)
