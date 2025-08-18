@@ -45,6 +45,9 @@ class CompanyServices:
     async def add_member(self, company_id: str, member: CompanyMember) -> CompanyInDB:
         return await self.__repository.add_member(company_id=company_id, member=member)
 
+    async def remove_member(self, company_id: str, user_id: str) -> CompanyInDB:
+        return await self.__repository.remove_member(company_id=company_id, user_id=user_id)
+
     async def search_by_user(self, user_id: str) -> CompanyInDB:
         return await self.__repository.select_by_user(user_id=user_id)
 
