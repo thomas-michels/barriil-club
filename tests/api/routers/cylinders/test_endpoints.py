@@ -81,11 +81,11 @@ class TestCylinderEndpoints(unittest.TestCase):
         self.app.dependency_overrides = {}
         disconnect()
 
-    def _payload(self, brand: str = "NewBrand") -> dict:
+    def _payload(self, brand: str = "NewBrand", number: str = "CY2") -> dict:
         return {
             "brand": brand,
             "weightKg": 10.5,
-            "number": "CY2",
+            "number": number,
             "status": "AVAILABLE",
         }
 
@@ -154,6 +154,22 @@ class TestCylinderEndpoints(unittest.TestCase):
             f"/api/cylinders/{self.cylinder.id}"
         )
         self.assertEqual(resp.status_code, 400)
+
+    def test_list_cylinders_returns_204_when_not_found(self):
+        async def fake_search_all(company_id):
+            raise NotFoundError("Cylinders not found")
+
+        self.services.search_all = fake_search_all
+        resp = self.client.get("/api/cylinders")
+        self.assertEqual(resp.status_code, 204)
+
+    def test_create_cylinder_returns_400_when_duplicate(self):
+        resp = self.client.post(
+            "/api/cylinders",
+            json=self._payload(number=self.cylinder.number),
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("already exists", resp.json()["detail"])
 
 
 if __name__ == "__main__":
