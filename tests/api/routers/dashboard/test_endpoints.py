@@ -22,6 +22,13 @@ from app.crud.kegs.services import KegServices
 from app.crud.kegs.schemas import Keg, KegStatus
 from app.crud.pressure_gauges.repositories import PressureGaugeRepository
 from app.crud.cylinders.repositories import CylinderRepository
+from app.crud.extractors.models import ExtractorModel
+from app.crud.beer_dispensers.models import BeerDispenserModel
+from app.crud.pressure_gauges.models import PressureGaugeModel
+from app.crud.cylinders.models import CylinderModel
+from app.crud.beer_dispensers.schemas import DispenserStatus, Voltage
+from app.crud.pressure_gauges.schemas import PressureGaugeStatus, PressureGaugeType
+from app.crud.cylinders.schemas import CylinderStatus
 from app.core.utils.utc_datetime import UTCDateTime
 from app.core.exceptions import NotFoundError
 
@@ -98,14 +105,46 @@ class TestDashboardEndpoints(unittest.TestCase):
         )
         self.keg1 = asyncio.run(self.keg_repo.create(keg1))
         self.keg2 = asyncio.run(self.keg_repo.create(keg2))
+        self.disp1 = BeerDispenserModel(
+            brand="Acme",
+            status=DispenserStatus.ACTIVE.value,
+            voltage=Voltage.V110.value,
+            company_id=self.company.id,
+        )
+        self.disp1.save()
+        self.disp2 = BeerDispenserModel(
+            brand="Acme",
+            status=DispenserStatus.ACTIVE.value,
+            voltage=Voltage.V110.value,
+            company_id=self.company.id,
+        )
+        self.disp2.save()
+        self.pg_model = PressureGaugeModel(
+            brand="Acme",
+            type=PressureGaugeType.ANALOG.value,
+            status=PressureGaugeStatus.ACTIVE.value,
+            company_id=self.company.id,
+        )
+        self.pg_model.save()
+        self.cyl_model = CylinderModel(
+            brand="Acme",
+            weight_kg=10,
+            number="C1",
+            status=CylinderStatus.AVAILABLE.value,
+            company_id=self.company.id,
+        )
+        self.cyl_model.save()
+        self.ext_model = ExtractorModel(brand="Acme", company_id=self.company.id)
+        self.ext_model.save()
 
         res1 = Reservation(
             customer_id="cus1",
             address_id="add1",
-            beer_dispenser_id=None,
+            beer_dispenser_ids=[str(self.disp1.id)],
             keg_ids=[str(self.keg1.id)],
-            extractor_ids=[],
-            pressure_gauge_ids=[],
+            extractor_ids=[str(self.ext_model.id)],
+            pressure_gauge_ids=[str(self.pg_model.id)],
+            cylinder_ids=[str(self.cyl_model.id)],
             delivery_date=self.fixed_now + timedelta(days=1),
             pickup_date=self.fixed_now + timedelta(days=2),
             payments=[],
@@ -116,10 +155,11 @@ class TestDashboardEndpoints(unittest.TestCase):
         res2 = Reservation(
             customer_id="cus2",
             address_id="add1",
-            beer_dispenser_id=None,
+            beer_dispenser_ids=[str(self.disp2.id)],
             keg_ids=[str(self.keg2.id)],
-            extractor_ids=[],
-            pressure_gauge_ids=[],
+            extractor_ids=[str(self.ext_model.id)],
+            pressure_gauge_ids=[str(self.pg_model.id)],
+            cylinder_ids=[str(self.cyl_model.id)],
             delivery_date=self.fixed_now + timedelta(days=40),
             pickup_date=self.fixed_now + timedelta(days=41),
             payments=[],

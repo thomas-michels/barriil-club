@@ -141,7 +141,7 @@ class ReservationRepository(Repository):
     async def find_beer_dispenser_conflict(
         self,
         company_id: str,
-        beer_dispenser_id: str,
+        beer_dispenser_ids: List[str],
         delivery_date: UTCDateTime,
         pickup_date: UTCDateTime,
     ) -> ReservationInDB | None:
@@ -167,7 +167,7 @@ class ReservationRepository(Repository):
                 pickup_date.microsecond,
             )
             model = ReservationModel.objects(
-                beer_dispenser_id=beer_dispenser_id,
+                beer_dispenser_ids__in=beer_dispenser_ids,
                 company_id=company_id,
                 is_active=True,
                 status__ne=ReservationStatus.COMPLETED.value,

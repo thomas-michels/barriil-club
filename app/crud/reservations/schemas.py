@@ -1,6 +1,7 @@
 from decimal import Decimal
 from enum import Enum
 from typing import List
+from decimal import Decimal
 from pydantic import Field
 
 from app.core.models.base_schema import GenericModel
@@ -20,11 +21,14 @@ class ReservationStatus(str, Enum):
 class Reservation(GenericModel):
     customer_id: str = Field(example="cus_123")
     address_id: str = Field(example="add_123")
-    beer_dispenser_id: str | None = Field(default=None, example="bsd_123")
-    keg_ids: List[str] = Field(default_factory=list, example=["keg_1"])
-    extractor_ids: List[str] = Field(default_factory=list, example=["ext_1"])
-    pressure_gauge_ids: List[str] = Field(default_factory=list, example=["prg_1"])
-    cylinder_ids: List[str] = Field(default_factory=list, example=["cyl_1"])
+    beer_dispenser_ids: List[str] = Field(..., min_length=1, example=["bsd_123"])
+    keg_ids: List[str] = Field(..., min_length=1, example=["keg_1"])
+    extractor_ids: List[str] = Field(..., min_length=1, example=["ext_1"])
+    pressure_gauge_ids: List[str] = Field(..., min_length=1, example=["prg_1"])
+    cylinder_ids: List[str] = Field(..., min_length=1, example=["cyl_1"])
+    freight_value: Decimal = Field(default=0, example=10.0)
+    additional_value: Decimal = Field(default=0, example=0.0)
+    discount: Decimal = Field(default=0, example=0.0)
     delivery_date: UTCDateTimeType = Field(example=str(UTCDateTime.now()))
     pickup_date: UTCDateTimeType = Field(example=str(UTCDateTime.now()))
     payments: List[Payment] = Field(default_factory=list)
@@ -36,11 +40,14 @@ class Reservation(GenericModel):
 class ReservationInDB(DatabaseModel):
     customer_id: str = Field(example="cus_123")
     address_id: str = Field(example="add_123")
-    beer_dispenser_id: str | None = Field(default=None, example="bsd_123")
-    keg_ids: List[str] = Field(default_factory=list, example=["keg_1"])
-    extractor_ids: List[str] = Field(default_factory=list, example=["ext_1"])
-    pressure_gauge_ids: List[str] = Field(default_factory=list, example=["prg_1"])
-    cylinder_ids: List[str] = Field(default_factory=list, example=["cyl_1"])
+    beer_dispenser_ids: List[str] = Field(..., min_length=1, example=["bsd_123"])
+    keg_ids: List[str] = Field(..., min_length=1, example=["keg_1"])
+    extractor_ids: List[str] = Field(..., min_length=1, example=["ext_1"])
+    pressure_gauge_ids: List[str] = Field(..., min_length=1, example=["prg_1"])
+    cylinder_ids: List[str] = Field(..., min_length=1, example=["cyl_1"])
+    freight_value: Decimal = Field(example=10.0)
+    additional_value: Decimal = Field(example=0.0)
+    discount: Decimal = Field(example=0.0)
     delivery_date: UTCDateTimeType = Field(example=str(UTCDateTime.now()))
     pickup_date: UTCDateTimeType = Field(example=str(UTCDateTime.now()))
     payments: List[Payment] = Field(default_factory=list)
@@ -50,11 +57,14 @@ class ReservationInDB(DatabaseModel):
 
 
 class UpdateReservation(GenericModel):
-    beer_dispenser_id: str | None = Field(default=None)
+    beer_dispenser_ids: List[str] | None = Field(default=None)
     keg_ids: List[str] | None = Field(default=None)
     extractor_ids: List[str] | None = Field(default=None)
     pressure_gauge_ids: List[str] | None = Field(default=None)
     cylinder_ids: List[str] | None = Field(default=None)
+    freight_value: Decimal | None = Field(default=None)
+    additional_value: Decimal | None = Field(default=None)
+    discount: Decimal | None = Field(default=None)
     delivery_date: UTCDateTimeType | None = Field(default=None)
     pickup_date: UTCDateTimeType | None = Field(default=None)
     payments: List[Payment] | None = Field(default=None)

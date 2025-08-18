@@ -191,11 +191,14 @@ class TestReservationEndpoints(unittest.TestCase):
         return {
             "customerId": "cus1",
             "addressId": self.reservation_address_id,
-            "beerDispenserId": self.dispenser.id,
+            "beerDispenserIds": [self.dispenser.id],
             "kegIds": [self.keg.id],
             "extractorIds": [self.extractor.id],
             "pressureGaugeIds": [self.pressure_gauge.id],
             "cylinderIds": [self.cylinder.id],
+            "freightValue": 0.0,
+            "additionalValue": 0.0,
+            "discount": 0.0,
             "deliveryDate": delivery.isoformat(),
             "pickupDate": pickup.isoformat(),
             "payments": [{"amount": 50.0, "method": "cash", "paidAt": str(date.today())}],
@@ -208,6 +211,42 @@ class TestReservationEndpoints(unittest.TestCase):
         self.assertEqual(resp.json()["data"]["status"], "RESERVED")
         keg = asyncio.run(self.keg_services.search_by_id(self.keg.id, str(self.company.id)))
         self.assertEqual(keg.status, KegStatus.IN_USE)
+
+    def test_create_reservation_multiple_dispensers(self):
+        new_disp = asyncio.run(
+            self.dispenser_services.create(
+                BeerDispenser(
+                    brand="Acme",
+                    model="X2",
+                    serial_number="SN2",
+                    taps_count=4,
+                    voltage=Voltage.V110,
+                    status=DispenserStatus.ACTIVE,
+                    notes="",
+                    company_id=str(self.company.id),
+                )
+            )
+        )
+        payload = self._payload()
+        payload["beerDispenserIds"] = [self.dispenser.id, new_disp.id]
+        resp = self.client.post("/api/reservations", json=payload)
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(len(resp.json()["data"]["beer_dispenser_ids"]), 2)
+
+    def test_create_reservation_total_value_with_charges(self):
+        payload = self._payload()
+        payload["freightValue"] = 50.0
+        payload["additionalValue"] = 10.0
+        payload["discount"] = 20.0
+        resp = self.client.post("/api/reservations", json=payload)
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.json()["data"]["total_value"], 440.0)
+
+    def test_create_reservation_missing_extractor(self):
+        payload = self._payload()
+        payload["extractorIds"] = []
+        resp = self.client.post("/api/reservations", json=payload)
+        self.assertEqual(resp.status_code, 422)
 
     def test_create_reservation_dispenser_conflict(self):
         resp1 = self.client.post("/api/reservations", json=self._payload())
@@ -279,9 +318,23 @@ class TestReservationEndpoints(unittest.TestCase):
                 )
             )
         )
+        new_dispenser = asyncio.run(
+            self.dispenser_services.create(
+                BeerDispenser(
+                    brand="Acme",
+                    model="X2",
+                    serial_number="SN2",
+                    taps_count=4,
+                    voltage=Voltage.V110,
+                    status=DispenserStatus.ACTIVE,
+                    notes="",
+                    company_id=str(self.company.id),
+                )
+            )
+        )
         payload = self._payload()
         payload["kegIds"] = [new_keg.id]
-        payload["beerDispenserId"] = None
+        payload["beerDispenserIds"] = [new_dispenser.id]
         resp2 = self.client.post("/api/reservations", json=payload)
         self.assertEqual(resp2.status_code, 404)
 
@@ -294,6 +347,23 @@ class TestReservationEndpoints(unittest.TestCase):
             )
         )
         resp = self.client.post("/api/reservations", json=self._payload())
+        self.assertEqual(resp.status_code, 404)
+
+    def test_create_reservation_with_empty_cylinder(self):
+        empty_cyl = asyncio.run(
+            self.cylinder_services.create(
+                Cylinder(
+                    brand="Acme",
+                    weight_kg=0,
+                    number="C2",
+                    status=CylinderStatus.AVAILABLE,
+                    company_id=str(self.company.id),
+                )
+            )
+        )
+        payload = self._payload()
+        payload["cylinderIds"] = [empty_cyl.id]
+        resp = self.client.post("/api/reservations", json=payload)
         self.assertEqual(resp.status_code, 404)
 
     def test_complete_reservation_updates_items(self):

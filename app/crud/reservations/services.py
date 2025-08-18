@@ -34,6 +34,17 @@ class ReservationServices:
         self.__cylinder_repository = cylinder_repository
 
     async def create(self, reservation: Reservation) -> ReservationInDB:
+        if not reservation.beer_dispenser_ids:
+            raise NotFoundError(message="At least one beer dispenser is required")
+        if not reservation.keg_ids:
+            raise NotFoundError(message="At least one keg is required")
+        if not reservation.extractor_ids:
+            raise NotFoundError(message="At least one extractor is required")
+        if not reservation.pressure_gauge_ids:
+            raise NotFoundError(message="At least one pressure gauge is required")
+        if not reservation.cylinder_ids:
+            raise NotFoundError(message="At least one cylinder is required")
+
         total = Decimal("0")
         for keg_id in reservation.keg_ids:
             keg = await self.__keg_repository.select_by_id(
@@ -52,30 +63,36 @@ class ReservationServices:
                 raise NotFoundError(
                     message=f"Cylinder #{cylinder_id} not available"
                 )
-
-        if reservation.beer_dispenser_id:
-            conflict = await self.__repository.find_beer_dispenser_conflict(
-                company_id=reservation.company_id,
-                beer_dispenser_id=reservation.beer_dispenser_id,
-                delivery_date=reservation.delivery_date,
-                pickup_date=reservation.pickup_date,
-            )
-            if conflict:
+            if cylinder.weight_kg <= Decimal("0"):
                 raise NotFoundError(
-                    message="Beer dispenser already reserved for this period"
+                    message=f"Cylinder #{cylinder_id} empty"
                 )
 
-        if reservation.cylinder_ids:
-            conflict = await self.__repository.find_cylinder_conflict(
-                company_id=reservation.company_id,
-                cylinder_ids=reservation.cylinder_ids,
-                delivery_date=reservation.delivery_date,
-                pickup_date=reservation.pickup_date,
+        conflict = await self.__repository.find_beer_dispenser_conflict(
+            company_id=reservation.company_id,
+            beer_dispenser_ids=reservation.beer_dispenser_ids,
+            delivery_date=reservation.delivery_date,
+            pickup_date=reservation.pickup_date,
+        )
+        if conflict:
+            raise NotFoundError(
+                message="Beer dispenser already reserved for this period"
             )
-            if conflict:
-                raise NotFoundError(
-                    message="Cylinder already reserved for this period"
-                )
+
+        conflict = await self.__repository.find_cylinder_conflict(
+            company_id=reservation.company_id,
+            cylinder_ids=reservation.cylinder_ids,
+            delivery_date=reservation.delivery_date,
+            pickup_date=reservation.pickup_date,
+        )
+        if conflict:
+            raise NotFoundError(
+                message="Cylinder already reserved for this period"
+            )
+
+        total += reservation.freight_value
+        total += reservation.additional_value
+        total -= reservation.discount
 
         status = reservation.status or self._compute_status(reservation.delivery_date)
         data = reservation.model_dump()
