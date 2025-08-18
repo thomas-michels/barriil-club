@@ -19,6 +19,7 @@ from app.crud.pressure_gauges.schemas import (
 )
 from app.crud.cylinders.models import CylinderModel
 from app.crud.cylinders.schemas import CylinderStatus
+from app.crud.extractors.models import ExtractorModel
 from app.crud.payments.schemas import Payment
 
 
@@ -63,6 +64,8 @@ class TestReservationRepository(unittest.TestCase):
             company_id=self.company_id,
         )
         self.cylinder.save()
+        self.extractor = ExtractorModel(brand="Acme", company_id=self.company_id)
+        self.extractor.save()
 
     def tearDown(self) -> None:
         disconnect()
@@ -71,11 +74,14 @@ class TestReservationRepository(unittest.TestCase):
         reservation = Reservation(
             customer_id="cus1",
             address_id="add2",
-            beer_dispenser_id=str(self.dispenser.id),
+            beer_dispenser_ids=[str(self.dispenser.id)],
             keg_ids=[str(self.keg.id)],
-            extractor_ids=[],
+            extractor_ids=[str(self.extractor.id)],
             pressure_gauge_ids=[str(self.pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
+            freight_value=Decimal("0"),
+            additional_value=Decimal("0"),
+            discount=Decimal("0"),
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
@@ -90,11 +96,14 @@ class TestReservationRepository(unittest.TestCase):
         reservation = Reservation(
             customer_id="cus1",
             address_id="add2",
-            beer_dispenser_id=str(self.dispenser.id),
+            beer_dispenser_ids=[str(self.dispenser.id)],
             keg_ids=[str(self.keg.id)],
-            extractor_ids=[],
+            extractor_ids=[str(self.extractor.id)],
             pressure_gauge_ids=[str(self.pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
+            freight_value=Decimal("0"),
+            additional_value=Decimal("0"),
+            discount=Decimal("0"),
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],

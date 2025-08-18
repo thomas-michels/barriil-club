@@ -29,6 +29,7 @@ from app.crud.cylinders.schemas import CylinderStatus
 from app.crud.cylinders.repositories import CylinderRepository
 from app.core.exceptions import NotFoundError
 from app.crud.payments.schemas import Payment
+from app.crud.extractors.models import ExtractorModel
 
 
 class TestReservationServices(unittest.TestCase):
@@ -78,6 +79,8 @@ class TestReservationServices(unittest.TestCase):
             company_id=self.company_id,
         )
         self.cylinder.save()
+        self.extractor = ExtractorModel(brand="Acme", company_id=self.company_id)
+        self.extractor.save()
 
     def tearDown(self) -> None:
         disconnect()
@@ -86,11 +89,14 @@ class TestReservationServices(unittest.TestCase):
         reservation = Reservation(
             customer_id="cus1",
             address_id="add2",
-            beer_dispenser_id=str(self.dispenser.id),
+            beer_dispenser_ids=[str(self.dispenser.id)],
             keg_ids=[str(self.keg.id)],
-            extractor_ids=[],
+            extractor_ids=[str(self.extractor.id)],
             pressure_gauge_ids=[str(self.pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
+            freight_value=Decimal("0"),
+            additional_value=Decimal("0"),
+            discount=Decimal("0"),
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
@@ -118,11 +124,14 @@ class TestReservationServices(unittest.TestCase):
         reservation = Reservation(
             customer_id="cus1",
             address_id="add2",
-            beer_dispenser_id=str(self.dispenser.id),
+            beer_dispenser_ids=[str(self.dispenser.id)],
             keg_ids=[str(self.keg.id)],
-            extractor_ids=[],
+            extractor_ids=[str(self.extractor.id)],
             pressure_gauge_ids=[str(self.pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
+            freight_value=Decimal("0"),
+            additional_value=Decimal("0"),
+            discount=Decimal("0"),
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
@@ -150,11 +159,14 @@ class TestReservationServices(unittest.TestCase):
         reservation2 = Reservation(
             customer_id="cus2",
             address_id="add3",
-            beer_dispenser_id=str(self.dispenser.id),
+            beer_dispenser_ids=[str(self.dispenser.id)],
             keg_ids=[str(new_keg.id)],
-            extractor_ids=[],
+            extractor_ids=[str(self.extractor.id)],
             pressure_gauge_ids=[str(self.pg.id)],
             cylinder_ids=[str(new_cylinder.id)],
+            freight_value=Decimal("0"),
+            additional_value=Decimal("0"),
+            discount=Decimal("0"),
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
@@ -167,11 +179,14 @@ class TestReservationServices(unittest.TestCase):
         reservation = Reservation(
             customer_id="cus1",
             address_id="add2",
-            beer_dispenser_id=None,
+            beer_dispenser_ids=[str(self.dispenser.id)],
             keg_ids=[str(self.keg.id)],
-            extractor_ids=[],
+            extractor_ids=[str(self.extractor.id)],
             pressure_gauge_ids=[str(self.pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
+            freight_value=Decimal("0"),
+            additional_value=Decimal("0"),
+            discount=Decimal("0"),
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
@@ -188,14 +203,24 @@ class TestReservationServices(unittest.TestCase):
             company_id=self.company_id,
         )
         new_keg.save()
+        new_dispenser = BeerDispenserModel(
+            brand="Acme",
+            status=DispenserStatus.ACTIVE.value,
+            voltage=Voltage.V110.value,
+            company_id=self.company_id,
+        )
+        new_dispenser.save()
         reservation2 = Reservation(
             customer_id="cus2",
             address_id="add3",
-            beer_dispenser_id=None,
+            beer_dispenser_ids=[str(new_dispenser.id)],
             keg_ids=[str(new_keg.id)],
-            extractor_ids=[],
+            extractor_ids=[str(self.extractor.id)],
             pressure_gauge_ids=[str(self.pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
+            freight_value=Decimal("0"),
+            additional_value=Decimal("0"),
+            discount=Decimal("0"),
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
@@ -210,11 +235,42 @@ class TestReservationServices(unittest.TestCase):
         reservation = Reservation(
             customer_id="cus1",
             address_id="add2",
-            beer_dispenser_id=str(self.dispenser.id),
+            beer_dispenser_ids=[str(self.dispenser.id)],
             keg_ids=[str(self.keg.id)],
-            extractor_ids=[],
+            extractor_ids=[str(self.extractor.id)],
             pressure_gauge_ids=[str(self.pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
+            freight_value=Decimal("0"),
+            additional_value=Decimal("0"),
+            discount=Decimal("0"),
+            delivery_date=datetime.now() + timedelta(days=1),
+            pickup_date=datetime.now() + timedelta(days=2),
+            payments=[],
+            company_id=self.company_id,
+        )
+        with self.assertRaises(NotFoundError):
+            asyncio.run(self.services.create(reservation))
+
+    def test_create_reservation_with_empty_cylinder(self):
+        empty_cyl = CylinderModel(
+            brand="Acme",
+            weight_kg=0,
+            number="C2",
+            status=CylinderStatus.AVAILABLE.value,
+            company_id=self.company_id,
+        )
+        empty_cyl.save()
+        reservation = Reservation(
+            customer_id="cus1",
+            address_id="add2",
+            beer_dispenser_ids=[str(self.dispenser.id)],
+            keg_ids=[str(self.keg.id)],
+            extractor_ids=[str(self.extractor.id)],
+            pressure_gauge_ids=[str(self.pg.id)],
+            cylinder_ids=[str(empty_cyl.id)],
+            freight_value=Decimal("0"),
+            additional_value=Decimal("0"),
+            discount=Decimal("0"),
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
@@ -227,11 +283,14 @@ class TestReservationServices(unittest.TestCase):
         reservation = Reservation(
             customer_id="cus1",
             address_id="add2",
-            beer_dispenser_id=str(self.dispenser.id),
+            beer_dispenser_ids=[str(self.dispenser.id)],
             keg_ids=[str(self.keg.id)],
-            extractor_ids=[],
+            extractor_ids=[str(self.extractor.id)],
             pressure_gauge_ids=[str(self.pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
+            freight_value=Decimal("0"),
+            additional_value=Decimal("0"),
+            discount=Decimal("0"),
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
@@ -239,14 +298,24 @@ class TestReservationServices(unittest.TestCase):
         )
         asyncio.run(self.services.create(reservation))
         # second reservation with same keg but no dispenser conflict
+        new_dispenser = BeerDispenserModel(
+            brand="Acme",
+            status=DispenserStatus.ACTIVE.value,
+            voltage=Voltage.V110.value,
+            company_id=self.company_id,
+        )
+        new_dispenser.save()
         reservation2 = Reservation(
             customer_id="cus2",
             address_id="add3",
-            beer_dispenser_id=None,
+            beer_dispenser_ids=[str(new_dispenser.id)],
             keg_ids=[str(self.keg.id)],
-            extractor_ids=[],
+            extractor_ids=[str(self.extractor.id)],
             pressure_gauge_ids=[str(self.pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
+            freight_value=Decimal("0"),
+            additional_value=Decimal("0"),
+            discount=Decimal("0"),
             delivery_date=datetime.now() + timedelta(days=3),
             pickup_date=datetime.now() + timedelta(days=4),
             payments=[],
@@ -259,11 +328,14 @@ class TestReservationServices(unittest.TestCase):
         reservation = Reservation(
             customer_id="cus1",
             address_id="add2",
-            beer_dispenser_id=str(self.dispenser.id),
+            beer_dispenser_ids=[str(self.dispenser.id)],
             keg_ids=[str(self.keg.id)],
-            extractor_ids=[],
+            extractor_ids=[str(self.extractor.id)],
             pressure_gauge_ids=[str(self.pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
+            freight_value=Decimal("0"),
+            additional_value=Decimal("0"),
+            discount=Decimal("0"),
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
@@ -286,6 +358,81 @@ class TestReservationServices(unittest.TestCase):
             self.services.delete_payment(res.id, self.company_id, 0)
         )
         self.assertEqual(len(updated.payments), 0)
+
+    def test_total_value_with_charges(self):
+        reservation = Reservation(
+            customer_id="cus1",
+            address_id="add2",
+            beer_dispenser_ids=[str(self.dispenser.id)],
+            keg_ids=[str(self.keg.id)],
+            extractor_ids=[str(self.extractor.id)],
+            pressure_gauge_ids=[str(self.pg.id)],
+            cylinder_ids=[str(self.cylinder.id)],
+            freight_value=Decimal("50.00"),
+            additional_value=Decimal("10.00"),
+            discount=Decimal("20.00"),
+            delivery_date=datetime.now() + timedelta(days=1),
+            pickup_date=datetime.now() + timedelta(days=2),
+            payments=[],
+            company_id=self.company_id,
+        )
+        res = asyncio.run(self.services.create(reservation))
+        self.assertEqual(res.total_value, Decimal("440.00"))
+
+    def test_create_with_multiple_dispensers(self):
+        disp2 = BeerDispenserModel(
+            brand="Acme2",
+            status=DispenserStatus.ACTIVE.value,
+            voltage=Voltage.V110.value,
+            company_id=self.company_id,
+        )
+        disp2.save()
+        reservation = Reservation(
+            customer_id="cus1",
+            address_id="add2",
+            beer_dispenser_ids=[str(self.dispenser.id), str(disp2.id)],
+            keg_ids=[str(self.keg.id)],
+            extractor_ids=[str(self.extractor.id)],
+            pressure_gauge_ids=[str(self.pg.id)],
+            cylinder_ids=[str(self.cylinder.id)],
+            freight_value=Decimal("0"),
+            additional_value=Decimal("0"),
+            discount=Decimal("0"),
+            delivery_date=datetime.now() + timedelta(days=1),
+            pickup_date=datetime.now() + timedelta(days=2),
+            payments=[],
+            company_id=self.company_id,
+        )
+        res = asyncio.run(self.services.create(reservation))
+        self.assertEqual(len(res.beer_dispenser_ids), 2)
+        new_keg = KegModel(
+            number="77",
+            size_l=50,
+            beer_type_id="bty1",
+            cost_price_per_l=5.0,
+            sale_price_per_l=8.0,
+            status=KegStatus.AVAILABLE.value,
+            company_id=self.company_id,
+        )
+        new_keg.save()
+        reservation2 = Reservation(
+            customer_id="cus2",
+            address_id="add3",
+            beer_dispenser_ids=[str(disp2.id)],
+            keg_ids=[str(new_keg.id)],
+            extractor_ids=[str(self.extractor.id)],
+            pressure_gauge_ids=[str(self.pg.id)],
+            cylinder_ids=[str(self.cylinder.id)],
+            freight_value=Decimal("0"),
+            additional_value=Decimal("0"),
+            discount=Decimal("0"),
+            delivery_date=datetime.now() + timedelta(days=1),
+            pickup_date=datetime.now() + timedelta(days=2),
+            payments=[],
+            company_id=self.company_id,
+        )
+        with self.assertRaises(NotFoundError):
+            asyncio.run(self.services.create(reservation2))
 
 
 if __name__ == "__main__":

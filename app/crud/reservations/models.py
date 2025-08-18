@@ -14,11 +14,14 @@ from app.crud.payments.models import PaymentModel
 class ReservationModel(BaseDocument):
     customer_id = StringField(required=True)
     address_id = StringField(required=True)
-    beer_dispenser_id = StringField()
+    beer_dispenser_ids = ListField(StringField())
     keg_ids = ListField(StringField())
     extractor_ids = ListField(StringField())
     pressure_gauge_ids = ListField(StringField())
     cylinder_ids = ListField(StringField())
+    freight_value = DecimalField(default=0, precision=2)
+    additional_value = DecimalField(default=0, precision=2)
+    discount = DecimalField(default=0, precision=2)
     delivery_date = DateTimeField(required=True)
     pickup_date = DateTimeField(required=True)
     payments = EmbeddedDocumentListField(PaymentModel, default=list)
@@ -33,6 +36,6 @@ class ReservationModel(BaseDocument):
             "company_id",
             "delivery_date",
             "pickup_date",
-            "beer_dispenser_id",
+            "beer_dispenser_ids",
         ],
     }
