@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from mongoengine import connect, disconnect
 
 from app.api.routers.cylinders import cylinder_router
-from app.api.dependencies.company import require_company_member, require_user_company
+from app.api.dependencies.company import require_user_company
 from app.api.composers.cylinder_composite import cylinder_composer
 from app.crud.companies.repositories import CompanyRepository
 from app.crud.companies.services import CompanyServices
@@ -38,17 +38,11 @@ class TestCylinderEndpoints(unittest.TestCase):
         async def override_require_user_company():
             return self.company
 
-        async def override_require_company_member(company_id: str):
-            return self.company
-
         async def override_cylinder_composer():
             return self.services
 
         self.app.dependency_overrides[require_user_company] = (
             override_require_user_company
-        )
-        self.app.dependency_overrides[require_company_member] = (
-            override_require_company_member
         )
         self.app.dependency_overrides[cylinder_composer] = override_cylinder_composer
         self.client = TestClient(self.app)
@@ -78,9 +72,10 @@ class TestCylinderEndpoints(unittest.TestCase):
             number="CY1",
             status=CylinderStatus.AVAILABLE,
             notes="",
-            company_id=str(self.company.id),
         )
-        self.cylinder = asyncio.run(self.services.create(cylinder))
+        self.cylinder = asyncio.run(
+            self.services.create(cylinder, str(self.company.id))
+        )
 
     def tearDown(self) -> None:
         self.app.dependency_overrides = {}
@@ -92,7 +87,6 @@ class TestCylinderEndpoints(unittest.TestCase):
             "weightKg": 10.5,
             "number": "CY2",
             "status": "AVAILABLE",
-            "companyId": str(self.company.id),
         }
 
     def test_create_cylinder_endpoint(self):
@@ -102,15 +96,14 @@ class TestCylinderEndpoints(unittest.TestCase):
 
     def test_get_cylinder_by_id(self):
         resp = self.client.get(
-            f"/api/cylinders/{self.cylinder.id}",
-            params={"company_id": str(self.company.id)},
+            f"/api/cylinders/{self.cylinder.id}"
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["data"]["id"], self.cylinder.id)
 
     def test_list_cylinders(self):
         resp = self.client.get(
-            "/api/cylinders", params={"company_id": str(self.company.id)}
+            "/api/cylinders"
         )
         self.assertEqual(resp.status_code, 200)
         self.assertGreaterEqual(len(resp.json()["data"]), 1)
@@ -118,7 +111,6 @@ class TestCylinderEndpoints(unittest.TestCase):
     def test_update_cylinder_endpoint(self):
         resp = self.client.put(
             f"/api/cylinders/{self.cylinder.id}",
-            params={"company_id": str(self.company.id)},
             json={"brand": "Updated"},
         )
         self.assertEqual(resp.status_code, 200)
@@ -126,8 +118,7 @@ class TestCylinderEndpoints(unittest.TestCase):
 
     def test_delete_cylinder_endpoint(self):
         resp = self.client.delete(
-            f"/api/cylinders/{self.cylinder.id}",
-            params={"company_id": str(self.company.id)},
+            f"/api/cylinders/{self.cylinder.id}"
         )
         self.assertEqual(resp.status_code, 200)
         with self.assertRaises(NotFoundError):
@@ -136,7 +127,7 @@ class TestCylinderEndpoints(unittest.TestCase):
             )
 
     def test_create_cylinder_returns_400_when_not_created(self):
-        async def fake_create(cylinder):
+        async def fake_create(cylinder, company_id):
             return None
 
         self.services.create = fake_create
@@ -150,7 +141,6 @@ class TestCylinderEndpoints(unittest.TestCase):
         self.services.update = fake_update
         resp = self.client.put(
             f"/api/cylinders/{self.cylinder.id}",
-            params={"company_id": str(self.company.id)},
             json={"brand": "Fail"},
         )
         self.assertEqual(resp.status_code, 400)
@@ -161,8 +151,7 @@ class TestCylinderEndpoints(unittest.TestCase):
 
         self.services.delete_by_id = fake_delete
         resp = self.client.delete(
-            f"/api/cylinders/{self.cylinder.id}",
-            params={"company_id": str(self.company.id)},
+            f"/api/cylinders/{self.cylinder.id}"
         )
         self.assertEqual(resp.status_code, 400)
 

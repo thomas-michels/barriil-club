@@ -9,7 +9,7 @@ from mongoengine import connect, disconnect
 
 from app.api.routers.reservations import reservation_router
 from app.api.routers.exception_handlers import not_found_error_404
-from app.api.dependencies.company import require_company_member, require_user_company
+from app.api.dependencies.company import require_user_company
 from app.api.composers.reservation_composite import reservation_composer
 from app.crud.companies.repositories import CompanyRepository
 from app.crud.companies.services import CompanyServices
@@ -71,17 +71,11 @@ class TestReservationEndpoints(unittest.TestCase):
         async def override_require_user_company():
             return self.company
 
-        async def override_require_company_member(company_id: str):
-            return self.company
-
         async def override_reservation_composer():
             return self.reservation_services
 
         self.app.dependency_overrides[require_user_company] = (
             override_require_user_company
-        )
-        self.app.dependency_overrides[require_company_member] = (
-            override_require_company_member
         )
         self.app.dependency_overrides[reservation_composer] = (
             override_reservation_composer
@@ -202,7 +196,6 @@ class TestReservationEndpoints(unittest.TestCase):
             "deliveryDate": delivery.isoformat(),
             "pickupDate": pickup.isoformat(),
             "payments": [{"amount": 50.0, "method": "cash", "paidAt": str(date.today())}],
-            "companyId": str(self.company.id),
         }
 
     def test_create_reservation(self):
@@ -371,7 +364,6 @@ class TestReservationEndpoints(unittest.TestCase):
         res_id = resp.json()["data"]["id"]
         resp2 = self.client.put(
             f"/api/reservations/{res_id}",
-            params={"company_id": str(self.company.id)},
             json={"status": "COMPLETED"},
         )
         self.assertEqual(resp2.status_code, 200)
@@ -392,21 +384,18 @@ class TestReservationEndpoints(unittest.TestCase):
         }
         resp_add = self.client.post(
             f"/api/reservations/{res_id}/payments",
-            params={"company_id": str(self.company.id)},
             json=pay_payload,
         )
         self.assertEqual(resp_add.status_code, 200)
         self.assertEqual(len(resp_add.json()["data"]["payments"]), 2)
         resp_update = self.client.put(
             f"/api/reservations/{res_id}/payments/1",
-            params={"company_id": str(self.company.id)},
             json={"amount": 60.0, "method": "card", "paidAt": str(date.today())},
         )
         self.assertEqual(resp_update.status_code, 200)
         self.assertEqual(resp_update.json()["data"]["payments"][1]["amount"], 60.0)
         resp_delete = self.client.delete(
             f"/api/reservations/{res_id}/payments/0",
-            params={"company_id": str(self.company.id)},
         )
         self.assertEqual(resp_delete.status_code, 200)
         self.assertEqual(len(resp_delete.json()["data"]["payments"]), 1)
@@ -452,14 +441,12 @@ class TestReservationEndpoints(unittest.TestCase):
         # complete first reservation
         self.client.put(
             f"/api/reservations/{res_id1}",
-            params={"company_id": str(self.company.id)},
             json={"status": "COMPLETED"},
         )
         # filter by status
         resp = self.client.get(
             "/api/reservations",
             params={
-                "company_id": str(self.company.id),
                 "status": "COMPLETED",
             },
         )
@@ -472,7 +459,6 @@ class TestReservationEndpoints(unittest.TestCase):
         resp = self.client.get(
             "/api/reservations",
             params={
-                "company_id": str(self.company.id),
                 "start_date": start.isoformat(),
                 "end_date": end.isoformat(),
             },

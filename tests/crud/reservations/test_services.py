@@ -100,9 +100,8 @@ class TestReservationServices(unittest.TestCase):
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
-            company_id=self.company_id,
         )
-        res = asyncio.run(self.services.create(reservation))
+        res = asyncio.run(self.services.create(reservation, self.company_id))
         self.assertEqual(res.status, ReservationStatus.RESERVED)
         self.assertEqual(res.total_value, Decimal("400.00"))
         updated = asyncio.run(
@@ -135,9 +134,8 @@ class TestReservationServices(unittest.TestCase):
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
-            company_id=self.company_id,
         )
-        asyncio.run(self.services.create(reservation))
+        asyncio.run(self.services.create(reservation, self.company_id))
         new_keg = KegModel(
             number="2",
             size_l=50,
@@ -170,10 +168,9 @@ class TestReservationServices(unittest.TestCase):
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
-            company_id=self.company_id,
         )
         with self.assertRaises(NotFoundError):
-            asyncio.run(self.services.create(reservation2))
+            asyncio.run(self.services.create(reservation2, self.company_id))
 
     def test_create_reservation_cylinder_conflict(self):
         reservation = Reservation(
@@ -190,9 +187,8 @@ class TestReservationServices(unittest.TestCase):
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
-            company_id=self.company_id,
         )
-        asyncio.run(self.services.create(reservation))
+        asyncio.run(self.services.create(reservation, self.company_id))
         new_keg = KegModel(
             number="3",
             size_l=50,
@@ -224,10 +220,9 @@ class TestReservationServices(unittest.TestCase):
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
-            company_id=self.company_id,
         )
         with self.assertRaises(NotFoundError):
-            asyncio.run(self.services.create(reservation2))
+            asyncio.run(self.services.create(reservation2, self.company_id))
 
     def test_create_reservation_with_unavailable_cylinder(self):
         self.cylinder.status = CylinderStatus.TO_VERIFY.value
@@ -246,10 +241,9 @@ class TestReservationServices(unittest.TestCase):
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
-            company_id=self.company_id,
         )
         with self.assertRaises(NotFoundError):
-            asyncio.run(self.services.create(reservation))
+            asyncio.run(self.services.create(reservation, self.company_id))
 
     def test_create_reservation_with_empty_cylinder(self):
         empty_cyl = CylinderModel(
@@ -274,10 +268,9 @@ class TestReservationServices(unittest.TestCase):
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
-            company_id=self.company_id,
         )
         with self.assertRaises(NotFoundError):
-            asyncio.run(self.services.create(reservation))
+            asyncio.run(self.services.create(reservation, self.company_id))
 
     def test_create_reservation_with_unavailable_keg(self):
         reservation = Reservation(
@@ -294,9 +287,8 @@ class TestReservationServices(unittest.TestCase):
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
-            company_id=self.company_id,
         )
-        asyncio.run(self.services.create(reservation))
+        asyncio.run(self.services.create(reservation, self.company_id))
         # second reservation with same keg but no dispenser conflict
         new_dispenser = BeerDispenserModel(
             brand="Acme",
@@ -319,10 +311,9 @@ class TestReservationServices(unittest.TestCase):
             delivery_date=datetime.now() + timedelta(days=3),
             pickup_date=datetime.now() + timedelta(days=4),
             payments=[],
-            company_id=self.company_id,
         )
         with self.assertRaises(NotFoundError):
-            asyncio.run(self.services.create(reservation2))
+            asyncio.run(self.services.create(reservation2, self.company_id))
 
     def test_add_update_delete_payment(self):
         reservation = Reservation(
@@ -339,9 +330,8 @@ class TestReservationServices(unittest.TestCase):
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
-            company_id=self.company_id,
         )
-        res = asyncio.run(self.services.create(reservation))
+        res = asyncio.run(self.services.create(reservation, self.company_id))
         pay = Payment(amount=Decimal("50.00"), method="cash", paid_at=date.today())
         updated = asyncio.run(
             self.services.add_payment(res.id, self.company_id, pay)
@@ -374,9 +364,8 @@ class TestReservationServices(unittest.TestCase):
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
-            company_id=self.company_id,
         )
-        res = asyncio.run(self.services.create(reservation))
+        res = asyncio.run(self.services.create(reservation, self.company_id))
         self.assertEqual(res.total_value, Decimal("440.00"))
 
     def test_create_with_multiple_dispensers(self):
@@ -401,9 +390,8 @@ class TestReservationServices(unittest.TestCase):
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
-            company_id=self.company_id,
         )
-        res = asyncio.run(self.services.create(reservation))
+        res = asyncio.run(self.services.create(reservation, self.company_id))
         self.assertEqual(len(res.beer_dispenser_ids), 2)
         new_keg = KegModel(
             number="77",
@@ -429,10 +417,9 @@ class TestReservationServices(unittest.TestCase):
             delivery_date=datetime.now() + timedelta(days=1),
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
-            company_id=self.company_id,
         )
         with self.assertRaises(NotFoundError):
-            asyncio.run(self.services.create(reservation2))
+            asyncio.run(self.services.create(reservation2, self.company_id))
 
 
 if __name__ == "__main__":

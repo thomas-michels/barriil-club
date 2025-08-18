@@ -18,7 +18,7 @@ class ReservationRepository(Repository):
     def __init__(self) -> None:
         super().__init__()
 
-    async def create(self, reservation: Reservation) -> ReservationInDB:
+    async def create(self, reservation: Reservation, company_id: str) -> ReservationInDB:
         try:
             payments = [PaymentModel(**p.model_dump()) for p in reservation.payments]
             json = reservation.model_dump(exclude={"payments"})
@@ -31,6 +31,7 @@ class ReservationRepository(Repository):
 
             model = ReservationModel(
                 **json,
+                company_id=company_id,
                 payments=payments,
                 is_active=True,
                 created_at=UTCDateTime.now(),

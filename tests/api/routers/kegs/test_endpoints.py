@@ -136,7 +136,7 @@ class TestKegEndpoints(unittest.TestCase):
             asyncio.run(self.services.search_by_id(self.keg.id, str(self.company.id)))
 
     def test_create_keg_returns_400_when_not_created(self):
-        async def fake_create(keg):
+        async def fake_create(keg, company_id):
             return None
 
         self.services.create = fake_create

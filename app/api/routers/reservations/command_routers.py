@@ -24,12 +24,9 @@ async def create_reservation(
     company: CompanyInDB = Depends(require_user_company),
     services: ReservationServices = Depends(reservation_composer),
 ):
-    if reservation.company_id != company.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User not allowed to use this company",
-        )
-    reservation_in_db = await services.create(reservation=reservation)
+    reservation_in_db = await services.create(
+        reservation=reservation, company_id=str(company.id)
+    )
     if not reservation_in_db:
         raise HTTPException(status_code=400, detail="Reservation not created")
     return build_response(
@@ -43,13 +40,12 @@ async def create_reservation(
 )
 async def update_reservation(
     reservation_id: str,
-    company_id: str,
     reservation: UpdateReservation,
     services: ReservationServices = Depends(reservation_composer),
-    _: CompanyInDB = Depends(require_company_member),
+    company: CompanyInDB = Depends(require_user_company),
 ):
     reservation_in_db = await services.update(
-        id=reservation_id, company_id=company_id, reservation=reservation
+        id=reservation_id, company_id=str(company.id), reservation=reservation
     )
     if not reservation_in_db:
         raise HTTPException(status_code=400, detail="Reservation not updated")
@@ -64,12 +60,11 @@ async def update_reservation(
 )
 async def delete_reservation(
     reservation_id: str,
-    company_id: str,
     services: ReservationServices = Depends(reservation_composer),
-    _: CompanyInDB = Depends(require_company_member),
+    company: CompanyInDB = Depends(require_user_company),
 ):
     reservation_in_db = await services.delete_by_id(
-        id=reservation_id, company_id=company_id
+        id=reservation_id, company_id=str(company.id)
     )
     if not reservation_in_db:
         raise HTTPException(status_code=400, detail="Reservation not deleted")
@@ -84,13 +79,12 @@ async def delete_reservation(
 )
 async def add_reservation_payment(
     reservation_id: str,
-    company_id: str,
     payment: Payment,
     services: ReservationServices = Depends(reservation_composer),
-    _: CompanyInDB = Depends(require_company_member),
+    company: CompanyInDB = Depends(require_user_company),
 ):
     reservation_in_db = await services.add_payment(
-        id=reservation_id, company_id=company_id, payment=payment
+        id=reservation_id, company_id=str(company.id), payment=payment
     )
     return build_response(
         status_code=200,
@@ -106,14 +100,13 @@ async def add_reservation_payment(
 async def update_reservation_payment(
     reservation_id: str,
     payment_index: int,
-    company_id: str,
     payment: Payment,
     services: ReservationServices = Depends(reservation_composer),
-    _: CompanyInDB = Depends(require_company_member),
+    company: CompanyInDB = Depends(require_user_company),
 ):
     reservation_in_db = await services.update_payment(
         id=reservation_id,
-        company_id=company_id,
+        company_id=str(company.id),
         index=payment_index,
         payment=payment,
     )
@@ -131,12 +124,11 @@ async def update_reservation_payment(
 async def delete_reservation_payment(
     reservation_id: str,
     payment_index: int,
-    company_id: str,
     services: ReservationServices = Depends(reservation_composer),
-    _: CompanyInDB = Depends(require_company_member),
+    company: CompanyInDB = Depends(require_user_company),
 ):
     reservation_in_db = await services.delete_payment(
-        id=reservation_id, company_id=company_id, index=payment_index
+        id=reservation_id, company_id=str(company.id), index=payment_index
     )
     return build_response(
         status_code=200,
