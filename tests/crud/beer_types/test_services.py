@@ -52,7 +52,9 @@ class TestBeerTypeServices(unittest.TestCase):
         self.assertEqual(len(res), 1)
 
     def test_update_beer_type(self):
-        doc = BeerTypeModel(**self._build_beer_type().model_dump())
+        doc = BeerTypeModel(
+            **self._build_beer_type().model_dump(), company_id="com1"
+        )
         doc.save()
         updated = asyncio.run(
             self.services.update(doc.id, doc.company_id, UpdateBeerType(name="New"))
@@ -60,7 +62,9 @@ class TestBeerTypeServices(unittest.TestCase):
         self.assertEqual(updated.name, "New")
 
     def test_delete_beer_type(self):
-        doc = BeerTypeModel(**self._build_beer_type().model_dump())
+        doc = BeerTypeModel(
+            **self._build_beer_type().model_dump(), company_id="com1"
+        )
         doc.save()
         res = asyncio.run(self.services.delete_by_id(doc.id, doc.company_id))
         self.assertEqual(res.id, doc.id)

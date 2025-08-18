@@ -18,41 +18,47 @@ class TestCylinderServices(unittest.TestCase):
             host="mongodb://localhost",
             mongo_client_class=mongomock.MongoClient,
         )
+        CylinderModel.drop_collection()
         self.repository = CylinderRepository()
         self.services = CylinderServices(self.repository)
 
     def tearDown(self) -> None:
         disconnect()
 
-    def _build_cylinder(
-        self, brand: str = "Acme", company_id: str = "com1", number: str = "CY1"
-    ) -> Cylinder:
+    def _build_cylinder(self, brand: str = "Acme", number: str = "CY1") -> Cylinder:
         return Cylinder(
             brand=brand,
             weight_kg=10.5,
             number=number,
             status=CylinderStatus.AVAILABLE,
             notes="",
-            company_id=company_id,
         )
 
     def test_create_cylinder(self):
-        result = asyncio.run(self.services.create(self._build_cylinder()))
+        result = asyncio.run(
+            self.services.create(self._build_cylinder(), company_id="com1")
+        )
         self.assertEqual(result.brand, "Acme")
 
     def test_search_by_id(self):
-        doc = CylinderModel(**self._build_cylinder().model_dump())
+        doc = CylinderModel(
+            **self._build_cylinder().model_dump(), company_id="com1"
+        )
         doc.save()
         res = asyncio.run(self.services.search_by_id(doc.id, doc.company_id))
         self.assertEqual(res.id, doc.id)
 
     def test_search_all(self):
-        CylinderModel(**self._build_cylinder().model_dump()).save()
+        CylinderModel(
+            **self._build_cylinder().model_dump(), company_id="com1"
+        ).save()
         res = asyncio.run(self.services.search_all("com1"))
         self.assertEqual(len(res), 1)
 
     def test_update_cylinder(self):
-        doc = CylinderModel(**self._build_cylinder().model_dump())
+        doc = CylinderModel(
+            **self._build_cylinder().model_dump(), company_id="com1"
+        )
         doc.save()
         updated = asyncio.run(
             self.services.update(
@@ -62,7 +68,9 @@ class TestCylinderServices(unittest.TestCase):
         self.assertEqual(updated.brand, "New")
 
     def test_delete_cylinder(self):
-        doc = CylinderModel(**self._build_cylinder().model_dump())
+        doc = CylinderModel(
+            **self._build_cylinder().model_dump(), company_id="com1"
+        )
         doc.save()
         res = asyncio.run(self.services.delete_by_id(doc.id, doc.company_id))
         self.assertEqual(res.id, doc.id)

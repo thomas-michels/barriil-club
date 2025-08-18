@@ -147,8 +147,8 @@ class TestReservationEndpoints(unittest.TestCase):
                     current_volume_l=25.0,
                     status=KegStatus.AVAILABLE,
                     notes="",
-                    company_id=str(self.company.id),
-                )
+                ),
+                company_id=str(self.company.id),
             )
         )
 
@@ -176,8 +176,8 @@ class TestReservationEndpoints(unittest.TestCase):
                     weight_kg=10,
                     number="C1",
                     status=CylinderStatus.AVAILABLE,
-                    company_id=str(self.company.id),
-                )
+                ),
+                company_id=str(self.company.id),
             )
         )
 
@@ -265,8 +265,8 @@ class TestReservationEndpoints(unittest.TestCase):
                     current_volume_l=25.0,
                     status=KegStatus.AVAILABLE,
                     notes="",
-                    company_id=str(self.company.id),
-                )
+                ),
+                company_id=str(self.company.id),
             )
         )
         new_cyl = asyncio.run(
@@ -276,8 +276,8 @@ class TestReservationEndpoints(unittest.TestCase):
                     weight_kg=10,
                     number="C2",
                     status=CylinderStatus.AVAILABLE,
-                    company_id=str(self.company.id),
-                )
+                ),
+                company_id=str(self.company.id),
             )
         )
         payload = self._payload()
@@ -314,8 +314,8 @@ class TestReservationEndpoints(unittest.TestCase):
                     current_volume_l=25.0,
                     status=KegStatus.AVAILABLE,
                     notes="",
-                    company_id=str(self.company.id),
-                )
+                ),
+                company_id=str(self.company.id),
             )
         )
         new_dispenser = asyncio.run(
@@ -357,8 +357,8 @@ class TestReservationEndpoints(unittest.TestCase):
                     weight_kg=0,
                     number="C2",
                     status=CylinderStatus.AVAILABLE,
-                    company_id=str(self.company.id),
-                )
+                ),
+                company_id=str(self.company.id),
             )
         )
         payload = self._payload()
@@ -429,8 +429,8 @@ class TestReservationEndpoints(unittest.TestCase):
                     current_volume_l=25.0,
                     status=KegStatus.AVAILABLE,
                     notes="",
-                    company_id=str(self.company.id),
-                )
+                ),
+                company_id=str(self.company.id),
             )
         )
         new_cyl = asyncio.run(
@@ -440,8 +440,8 @@ class TestReservationEndpoints(unittest.TestCase):
                     weight_kg=10,
                     number="C99",
                     status=CylinderStatus.AVAILABLE,
-                    company_id=str(self.company.id),
-                )
+                ),
+                company_id=str(self.company.id),
             )
         )
         payload = self._payload(future_delivery)

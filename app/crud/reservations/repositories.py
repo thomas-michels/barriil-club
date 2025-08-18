@@ -22,6 +22,12 @@ class ReservationRepository(Repository):
         try:
             payments = [PaymentModel(**p.model_dump()) for p in reservation.payments]
             json = reservation.model_dump(exclude={"payments"})
+            json["delivery_date"] = UTCDateTime.validate_datetime(
+                json["delivery_date"]
+            )
+            json["pickup_date"] = UTCDateTime.validate_datetime(
+                json["pickup_date"]
+            )
 
             model = ReservationModel(
                 **json,

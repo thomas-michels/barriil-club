@@ -19,6 +19,7 @@ class TestAddressServices(unittest.TestCase):
             host="mongodb://localhost",
             mongo_client_class=mongomock.MongoClient,
         )
+        AddressModel.drop_collection()
         self.repository = AddressRepository()
         self.services = AddressServices(self.repository)
 

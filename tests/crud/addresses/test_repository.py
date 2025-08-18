@@ -17,6 +17,7 @@ class TestAddressRepository(unittest.TestCase):
             host="mongodb://localhost",
             mongo_client_class=mongomock.MongoClient,
         )
+        AddressModel.drop_collection()
 
     def tearDown(self) -> None:
         disconnect()
