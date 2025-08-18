@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Response
 
 from app.api.composers.pressure_gauge_composite import pressure_gauge_composer
-from app.api.dependencies import build_response, require_company_member
+from app.api.dependencies import build_response, require_user_company
 from app.api.shared_schemas.responses import MessageResponse
 from .schemas import PressureGaugeResponse, PressureGaugeListResponse
 from app.crud.pressure_gauges import PressureGaugeServices
@@ -16,11 +16,10 @@ router = APIRouter(tags=["Pressure Gauges"])
 )
 async def get_pressure_gauge_by_id(
     gauge_id: str,
-    company_id: str,
     services: PressureGaugeServices = Depends(pressure_gauge_composer),
-    _: CompanyInDB = Depends(require_company_member),
+    company: CompanyInDB = Depends(require_user_company),
 ):
-    gauge_in_db = await services.search_by_id(id=gauge_id, company_id=company_id)
+    gauge_in_db = await services.search_by_id(id=gauge_id, company_id=str(company.id))
     return build_response(
         status_code=200,
         message="Pressure gauge found with success",
@@ -33,11 +32,10 @@ async def get_pressure_gauge_by_id(
     responses={200: {"model": PressureGaugeListResponse}, 204: {"description": "No Content"}},
 )
 async def get_pressure_gauges(
-    company_id: str,
     services: PressureGaugeServices = Depends(pressure_gauge_composer),
-    _: CompanyInDB = Depends(require_company_member),
+    company: CompanyInDB = Depends(require_user_company),
 ):
-    gauges = await services.search_all(company_id=company_id)
+    gauges = await services.search_all(company_id=str(company.id))
     if gauges:
         return build_response(
             status_code=200,

@@ -25,7 +25,7 @@ class TestPressureGaugeRepository(unittest.TestCase):
     def tearDown(self) -> None:
         disconnect()
 
-    def _build_gauge(self, brand: str = "Acme", company_id: str = "com1") -> PressureGauge:
+    def _build_gauge(self, brand: str = "Acme") -> PressureGauge:
         return PressureGauge(
             brand=brand,
             type=PressureGaugeType.ANALOG,
@@ -33,18 +33,17 @@ class TestPressureGaugeRepository(unittest.TestCase):
             last_calibration_date=None,
             status=PressureGaugeStatus.ACTIVE,
             notes="",
-            company_id=company_id,
         )
 
     def test_create_gauge(self):
         repository = PressureGaugeRepository()
         gauge = self._build_gauge()
-        result = asyncio.run(repository.create(gauge))
+        result = asyncio.run(repository.create(gauge, "com1"))
         self.assertEqual(result.brand, "Acme")
         self.assertEqual(PressureGaugeModel.objects.count(), 1)
 
     def test_select_by_id_found(self):
-        doc = PressureGaugeModel(**self._build_gauge().model_dump())
+        doc = PressureGaugeModel(**self._build_gauge().model_dump(), company_id="com1")
         doc.save()
         repository = PressureGaugeRepository()
         res = asyncio.run(repository.select_by_id(doc.id, doc.company_id))
@@ -56,14 +55,14 @@ class TestPressureGaugeRepository(unittest.TestCase):
             asyncio.run(repository.select_by_id("invalid", "com1"))
 
     def test_select_all(self):
-        PressureGaugeModel(**self._build_gauge("A").model_dump()).save()
-        PressureGaugeModel(**self._build_gauge("B").model_dump()).save()
+        PressureGaugeModel(**self._build_gauge("A").model_dump(), company_id="com1").save()
+        PressureGaugeModel(**self._build_gauge("B").model_dump(), company_id="com1").save()
         repository = PressureGaugeRepository()
         res = asyncio.run(repository.select_all("com1"))
         self.assertEqual(len(res), 2)
 
     def test_update_gauge(self):
-        doc = PressureGaugeModel(**self._build_gauge().model_dump())
+        doc = PressureGaugeModel(**self._build_gauge().model_dump(), company_id="com1")
         doc.save()
         repository = PressureGaugeRepository()
         updated = asyncio.run(
@@ -72,7 +71,7 @@ class TestPressureGaugeRepository(unittest.TestCase):
         self.assertEqual(updated.brand, "New")
 
     def test_delete_gauge(self):
-        doc = PressureGaugeModel(**self._build_gauge().model_dump())
+        doc = PressureGaugeModel(**self._build_gauge().model_dump(), company_id="com1")
         doc.save()
         repository = PressureGaugeRepository()
         result = asyncio.run(repository.delete_by_id(doc.id, doc.company_id))

@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from mongoengine import connect, disconnect
 
 from app.api.routers.pressure_gauges import pressure_gauge_router
-from app.api.dependencies.company import require_company_member, require_user_company
+from app.api.dependencies.company import require_user_company
 from app.api.composers.pressure_gauge_composite import pressure_gauge_composer
 from app.crud.companies.repositories import CompanyRepository
 from app.crud.companies.services import CompanyServices
@@ -42,17 +42,12 @@ class TestPressureGaugeEndpoints(unittest.TestCase):
         async def override_require_user_company():
             return self.company
 
-        async def override_require_company_member(company_id: str):
-            return self.company
 
         async def override_gauge_composer():
             return self.services
 
         self.app.dependency_overrides[require_user_company] = (
             override_require_user_company
-        )
-        self.app.dependency_overrides[require_company_member] = (
-            override_require_company_member
         )
         self.app.dependency_overrides[pressure_gauge_composer] = override_gauge_composer
         self.client = TestClient(self.app)
@@ -83,9 +78,10 @@ class TestPressureGaugeEndpoints(unittest.TestCase):
             last_calibration_date=None,
             status=PressureGaugeStatus.ACTIVE,
             notes="",
-            company_id=str(self.company.id),
         )
-        self.gauge = asyncio.run(self.services.create(gauge))
+        self.gauge = asyncio.run(
+            self.services.create(gauge, company_id=str(self.company.id))
+        )
 
     def tearDown(self) -> None:
         self.app.dependency_overrides = {}
@@ -97,7 +93,6 @@ class TestPressureGaugeEndpoints(unittest.TestCase):
             "type": "ANALOG",
             "serialNumber": "SN2",
             "status": "ACTIVE",
-            "companyId": str(self.company.id),
         }
 
     def test_create_gauge_endpoint(self):
@@ -107,23 +102,19 @@ class TestPressureGaugeEndpoints(unittest.TestCase):
 
     def test_get_gauge_by_id(self):
         resp = self.client.get(
-            f"/api/pressure-gauges/{self.gauge.id}",
-            params={"company_id": str(self.company.id)},
+            f"/api/pressure-gauges/{self.gauge.id}"
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["data"]["id"], self.gauge.id)
 
     def test_list_gauges(self):
-        resp = self.client.get(
-            "/api/pressure-gauges", params={"company_id": str(self.company.id)}
-        )
+        resp = self.client.get("/api/pressure-gauges")
         self.assertEqual(resp.status_code, 200)
         self.assertGreaterEqual(len(resp.json()["data"]), 1)
 
     def test_update_gauge_endpoint(self):
         resp = self.client.put(
             f"/api/pressure-gauges/{self.gauge.id}",
-            params={"company_id": str(self.company.id)},
             json={"brand": "Updated"},
         )
         self.assertEqual(resp.status_code, 200)
@@ -131,15 +122,14 @@ class TestPressureGaugeEndpoints(unittest.TestCase):
 
     def test_delete_gauge_endpoint(self):
         resp = self.client.delete(
-            f"/api/pressure-gauges/{self.gauge.id}",
-            params={"company_id": str(self.company.id)},
+            f"/api/pressure-gauges/{self.gauge.id}"
         )
         self.assertEqual(resp.status_code, 200)
         with self.assertRaises(NotFoundError):
             asyncio.run(self.services.search_by_id(self.gauge.id, str(self.company.id)))
 
     def test_create_gauge_returns_400_when_not_created(self):
-        async def fake_create(gauge):
+        async def fake_create(gauge, company_id):
             return None
 
         self.services.create = fake_create
@@ -153,7 +143,6 @@ class TestPressureGaugeEndpoints(unittest.TestCase):
         self.services.update = fake_update
         resp = self.client.put(
             f"/api/pressure-gauges/{self.gauge.id}",
-            params={"company_id": str(self.company.id)},
             json={"brand": "Fail"},
         )
         self.assertEqual(resp.status_code, 400)
@@ -164,8 +153,7 @@ class TestPressureGaugeEndpoints(unittest.TestCase):
 
         self.services.delete_by_id = fake_delete
         resp = self.client.delete(
-            f"/api/pressure-gauges/{self.gauge.id}",
-            params={"company_id": str(self.company.id)},
+            f"/api/pressure-gauges/{self.gauge.id}"
         )
         self.assertEqual(resp.status_code, 400)
 

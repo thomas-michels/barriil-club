@@ -29,7 +29,7 @@ class TestBeerDispenserServices(unittest.TestCase):
     def tearDown(self) -> None:
         disconnect()
 
-    def _build_dispenser(self, brand: str = "Acme", company_id: str = "com1") -> BeerDispenser:
+    def _build_dispenser(self, brand: str = "Acme") -> BeerDispenser:
         return BeerDispenser(
             brand=brand,
             model="X1",
@@ -38,26 +38,25 @@ class TestBeerDispenserServices(unittest.TestCase):
             voltage=Voltage.V110,
             status=DispenserStatus.ACTIVE,
             notes="",
-            company_id=company_id,
         )
 
     def test_create_dispenser(self):
-        result = asyncio.run(self.services.create(self._build_dispenser()))
+        result = asyncio.run(self.services.create(self._build_dispenser(), "com1"))
         self.assertEqual(result.brand, "Acme")
 
     def test_search_by_id(self):
-        doc = BeerDispenserModel(**self._build_dispenser().model_dump())
+        doc = BeerDispenserModel(**self._build_dispenser().model_dump(), company_id="com1")
         doc.save()
         res = asyncio.run(self.services.search_by_id(doc.id, doc.company_id))
         self.assertEqual(res.id, doc.id)
 
     def test_search_all(self):
-        BeerDispenserModel(**self._build_dispenser().model_dump()).save()
+        BeerDispenserModel(**self._build_dispenser().model_dump(), company_id="com1").save()
         res = asyncio.run(self.services.search_all("com1"))
         self.assertEqual(len(res), 1)
 
     def test_update_dispenser(self):
-        doc = BeerDispenserModel(**self._build_dispenser().model_dump())
+        doc = BeerDispenserModel(**self._build_dispenser().model_dump(), company_id="com1")
         doc.save()
         updated = asyncio.run(
             self.services.update(
@@ -67,7 +66,7 @@ class TestBeerDispenserServices(unittest.TestCase):
         self.assertEqual(updated.brand, "New")
 
     def test_delete_dispenser(self):
-        doc = BeerDispenserModel(**self._build_dispenser().model_dump())
+        doc = BeerDispenserModel(**self._build_dispenser().model_dump(), company_id="com1")
         doc.save()
         res = asyncio.run(self.services.delete_by_id(doc.id, doc.company_id))
         self.assertEqual(res.id, doc.id)

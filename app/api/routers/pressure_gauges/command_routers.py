@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.composers.pressure_gauge_composite import pressure_gauge_composer
-from app.api.dependencies import build_response, require_company_member, require_user_company
+from app.api.dependencies import build_response, require_user_company
 from app.api.shared_schemas.responses import MessageResponse
 from .schemas import PressureGaugeResponse
 from app.crud.pressure_gauges import (
@@ -23,12 +23,7 @@ async def create_pressure_gauge(
     company: CompanyInDB = Depends(require_user_company),
     services: PressureGaugeServices = Depends(pressure_gauge_composer),
 ):
-    if gauge.company_id != company.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User not allowed to use this company",
-        )
-    gauge_in_db = await services.create(gauge=gauge)
+    gauge_in_db = await services.create(gauge=gauge, company_id=str(company.id))
     if not gauge_in_db:
         raise HTTPException(status_code=400, detail="Pressure gauge not created")
     return build_response(
@@ -42,13 +37,12 @@ async def create_pressure_gauge(
 )
 async def update_pressure_gauge(
     gauge_id: str,
-    company_id: str,
     gauge: UpdatePressureGauge,
     services: PressureGaugeServices = Depends(pressure_gauge_composer),
-    _: CompanyInDB = Depends(require_company_member),
+    company: CompanyInDB = Depends(require_user_company),
 ):
     gauge_in_db = await services.update(
-        id=gauge_id, company_id=company_id, gauge=gauge
+        id=gauge_id, company_id=str(company.id), gauge=gauge
     )
     if not gauge_in_db:
         raise HTTPException(status_code=400, detail="Pressure gauge not updated")
@@ -63,11 +57,10 @@ async def update_pressure_gauge(
 )
 async def delete_pressure_gauge(
     gauge_id: str,
-    company_id: str,
     services: PressureGaugeServices = Depends(pressure_gauge_composer),
-    _: CompanyInDB = Depends(require_company_member),
+    company: CompanyInDB = Depends(require_user_company),
 ):
-    gauge_in_db = await services.delete_by_id(id=gauge_id, company_id=company_id)
+    gauge_in_db = await services.delete_by_id(id=gauge_id, company_id=str(company.id))
     if not gauge_in_db:
         raise HTTPException(status_code=400, detail="Pressure gauge not deleted")
     return build_response(

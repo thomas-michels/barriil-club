@@ -18,13 +18,14 @@ class ExtractorRepository(Repository):
     def __init__(self) -> None:
         super().__init__()
 
-    async def create(self, extractor: Extractor) -> ExtractorInDB:
+    async def create(self, extractor: Extractor, company_id: str) -> ExtractorInDB:
         try:
             json = jsonable_encoder(extractor.model_dump())
             extractor_model = ExtractorModel(
                 is_active=True,
                 created_at=UTCDateTime.now(),
                 updated_at=UTCDateTime.now(),
+                company_id=company_id,
                 **json,
             )
             extractor_model.save()

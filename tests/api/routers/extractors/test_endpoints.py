@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from mongoengine import connect, disconnect
 
 from app.api.routers.extractors import extractor_router
-from app.api.dependencies.company import require_company_member, require_user_company
+from app.api.dependencies.company import require_user_company
 from app.api.composers.extractor_composite import extractor_composer
 from app.crud.companies.repositories import CompanyRepository
 from app.crud.companies.services import CompanyServices
@@ -51,8 +51,10 @@ class TestExtractorEndpoints(unittest.TestCase):
             email="info@acme.com",
         )
         self.company = asyncio.run(self.company_services.create(company))
-        extractor = Extractor(brand="Old", company_id=str(self.company.id))
-        self.extractor = asyncio.run(self.extractor_services.create(extractor))
+        extractor = Extractor(brand="Old")
+        self.extractor = asyncio.run(
+            self.extractor_services.create(extractor, company_id=str(self.company.id))
+        )
 
         self.app = FastAPI()
         self.app.include_router(extractor_router, prefix="/api")
@@ -60,14 +62,11 @@ class TestExtractorEndpoints(unittest.TestCase):
         async def override_require_user_company():
             return self.company
 
-        async def override_require_company_member(company_id: str):
-            return self.company
 
         async def override_extractor_composer():
             return self.extractor_services
 
         self.app.dependency_overrides[require_user_company] = override_require_user_company
-        self.app.dependency_overrides[require_company_member] = override_require_company_member
         self.app.dependency_overrides[extractor_composer] = override_extractor_composer
 
         self.client = TestClient(self.app)
@@ -77,30 +76,26 @@ class TestExtractorEndpoints(unittest.TestCase):
         disconnect()
 
     def test_create_extractor_endpoint(self):
-        payload = {"brand": "New", "company_id": str(self.company.id)}
+        payload = {"brand": "New"}
         resp = self.client.post("/api/extractors", json=payload)
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(resp.json()["data"]["brand"], "New")
 
     def test_get_extractor_by_id(self):
         resp = self.client.get(
-            f"/api/extractors/{self.extractor.id}",
-            params={"company_id": str(self.company.id)},
+            f"/api/extractors/{self.extractor.id}"
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["data"]["id"], str(self.extractor.id))
 
     def test_list_extractors(self):
-        resp = self.client.get(
-            "/api/extractors", params={"company_id": str(self.company.id)}
-        )
+        resp = self.client.get("/api/extractors")
         self.assertEqual(resp.status_code, 200)
         self.assertGreaterEqual(len(resp.json()["data"]), 1)
 
     def test_update_extractor_endpoint(self):
         resp = self.client.put(
             f"/api/extractors/{self.extractor.id}",
-            params={"company_id": str(self.company.id)},
             json={"brand": "Updated"},
         )
         self.assertEqual(resp.status_code, 200)
@@ -108,8 +103,7 @@ class TestExtractorEndpoints(unittest.TestCase):
 
     def test_delete_extractor_endpoint(self):
         resp = self.client.delete(
-            f"/api/extractors/{self.extractor.id}",
-            params={"company_id": str(self.company.id)},
+            f"/api/extractors/{self.extractor.id}"
         )
         self.assertEqual(resp.status_code, 200)
         with self.assertRaises(NotFoundError):

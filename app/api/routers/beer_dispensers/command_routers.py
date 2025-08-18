@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.composers.beer_dispenser_composite import beer_dispenser_composer
-from app.api.dependencies import build_response, require_company_member, require_user_company
+from app.api.dependencies import build_response, require_user_company
 from app.api.shared_schemas.responses import MessageResponse
 from .schemas import BeerDispenserResponse
 from app.crud.beer_dispensers import (
@@ -23,12 +23,9 @@ async def create_beer_dispenser(
     company: CompanyInDB = Depends(require_user_company),
     services: BeerDispenserServices = Depends(beer_dispenser_composer),
 ):
-    if dispenser.company_id != company.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User not allowed to use this company",
-        )
-    dispenser_in_db = await services.create(dispenser=dispenser)
+    dispenser_in_db = await services.create(
+        dispenser=dispenser, company_id=str(company.id)
+    )
     if not dispenser_in_db:
         raise HTTPException(status_code=400, detail="Beer dispenser not created")
     return build_response(
@@ -42,13 +39,12 @@ async def create_beer_dispenser(
 )
 async def update_beer_dispenser(
     dispenser_id: str,
-    company_id: str,
     dispenser: UpdateBeerDispenser,
     services: BeerDispenserServices = Depends(beer_dispenser_composer),
-    _: CompanyInDB = Depends(require_company_member),
+    company: CompanyInDB = Depends(require_user_company),
 ):
     dispenser_in_db = await services.update(
-        id=dispenser_id, company_id=company_id, dispenser=dispenser
+        id=dispenser_id, company_id=str(company.id), dispenser=dispenser
     )
     if not dispenser_in_db:
         raise HTTPException(status_code=400, detail="Beer dispenser not updated")
@@ -63,12 +59,11 @@ async def update_beer_dispenser(
 )
 async def delete_beer_dispenser(
     dispenser_id: str,
-    company_id: str,
     services: BeerDispenserServices = Depends(beer_dispenser_composer),
-    _: CompanyInDB = Depends(require_company_member),
+    company: CompanyInDB = Depends(require_user_company),
 ):
     dispenser_in_db = await services.delete_by_id(
-        id=dispenser_id, company_id=company_id
+        id=dispenser_id, company_id=str(company.id)
     )
     if not dispenser_in_db:
         raise HTTPException(status_code=400, detail="Beer dispenser not deleted")

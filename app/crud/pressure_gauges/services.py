@@ -8,8 +8,8 @@ class PressureGaugeServices:
     def __init__(self, repository: PressureGaugeRepository) -> None:
         self.__repository = repository
 
-    async def create(self, gauge: PressureGauge) -> PressureGaugeInDB:
-        return await self.__repository.create(gauge=gauge)
+    async def create(self, gauge: PressureGauge, company_id: str) -> PressureGaugeInDB:
+        return await self.__repository.create(gauge=gauge, company_id=company_id)
 
     async def update(
         self, id: str, company_id: str, gauge: UpdatePressureGauge
