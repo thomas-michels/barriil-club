@@ -4,4 +4,5 @@ from .company import (
     ensure_user_without_company,
     require_user_company,
     require_company_member,
+    require_company_owner,
 )

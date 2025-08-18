@@ -141,6 +141,23 @@ class TestCompanyServices(unittest.TestCase):
         with self.assertRaises(UnprocessableEntity):
             asyncio.run(self.services.add_member(c2.id, member))
 
+    def test_remove_member(self):
+        doc = CompanyModel(**self._build_company().model_dump())
+        doc.save()
+        owner = CompanyMember(user_id="usr1", role="owner")
+        member = CompanyMember(user_id="usr2", role="member")
+        asyncio.run(self.services.add_member(doc.id, owner))
+        asyncio.run(self.services.add_member(doc.id, member))
+        updated = asyncio.run(self.services.remove_member(doc.id, "usr2"))
+        self.assertEqual(len(updated.members), 1)
+        self.assertEqual(updated.members[0].user_id, "usr1")
+
+    def test_remove_member_not_found(self):
+        doc = CompanyModel(**self._build_company().model_dump())
+        doc.save()
+        with self.assertRaises(NotFoundError):
+            asyncio.run(self.services.remove_member(doc.id, "usr1"))
+
     def test_search_by_user(self):
         doc = CompanyModel(**self._build_company().model_dump())
         doc.members.append(CompanyMemberModel(user_id="usr1", role="owner"))
