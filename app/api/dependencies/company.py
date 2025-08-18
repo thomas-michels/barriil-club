@@ -55,3 +55,26 @@ async def require_company_member(
         status_code=status.HTTP_403_FORBIDDEN,
         detail="User is not member of this company",
     )
+
+
+async def require_company_owner(
+    company_id: str,
+    current_user: UserInDB = Depends(decode_jwt),
+    company_services: CompanyServices = Depends(company_composer),
+) -> CompanyInDB:
+    """Ensure the current user is an owner of the given company."""
+    try:
+        company = await company_services.search_by_id(id=company_id)
+    except NotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found")
+
+    for member in company.members:
+        if member.user_id == current_user.user_id:
+            if member.role == "owner":
+                return company
+            break
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="User is not owner of this company",
+    )

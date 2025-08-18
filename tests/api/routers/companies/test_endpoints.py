@@ -12,11 +12,13 @@ from app.api.dependencies.company import (
     ensure_user_without_company,
     require_company_member,
     require_user_company,
+    require_company_owner,
 )
+from app.api.dependencies import decode_jwt
 from app.api.composers.company_composite import company_composer
 from app.crud.companies.repositories import CompanyRepository
 from app.crud.companies.services import CompanyServices
-from app.crud.companies.schemas import Company
+from app.crud.companies.schemas import Company, CompanyMember
 from app.crud.addresses.repositories import AddressRepository
 from app.crud.addresses.services import AddressServices
 from app.crud.addresses.schemas import Address
@@ -91,11 +93,15 @@ class TestCompanyEndpoints(unittest.TestCase):
         async def override_company_composer():
             return self.services
 
+        async def override_require_company_owner(company_id: str):
+            return self.company
+
         self.app.dependency_overrides[ensure_user_without_company] = (
             override_ensure_user_without_company
         )
         self.app.dependency_overrides[require_user_company] = override_require_user_company
         self.app.dependency_overrides[require_company_member] = override_require_company_member
+        self.app.dependency_overrides[require_company_owner] = override_require_company_owner
         self.app.dependency_overrides[company_composer] = override_company_composer
 
         self.client = TestClient(self.app)
@@ -167,6 +173,94 @@ class TestCompanyEndpoints(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.json()["data"]["members"]), 1)
         self.assertEqual(resp.json()["data"]["members"][0]["userId"], "usr2")
+
+    def test_add_member_forbidden(self):
+        self.app.dependency_overrides.pop(require_company_owner, None)
+        self.app.dependency_overrides.pop(require_company_member, None)
+
+        async def override_decode_jwt():
+            return self.user
+
+        self.app.dependency_overrides[decode_jwt] = override_decode_jwt
+        asyncio.run(
+            self.services.add_member(
+                self.company.id, CompanyMember(user_id=self.user.user_id, role="member")
+            )
+        )
+        payload = {"user_id": "usr2", "role": "member"}
+        resp = self.client.post(
+            f"/api/companies/{self.company.id}/members", json=payload
+        )
+        self.assertEqual(resp.status_code, 403)
+
+    def test_remove_member_endpoint(self):
+        payload = {"user_id": "usr2", "role": "member"}
+        asyncio.run(self.services.add_member(self.company.id, CompanyMember(**payload)))
+        resp = self.client.delete(
+            f"/api/companies/{self.company.id}/members/usr2"
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.json()["data"]["members"]), 0)
+
+    def test_remove_member_forbidden(self):
+        self.app.dependency_overrides.pop(require_company_owner, None)
+
+        async def override_decode_jwt():
+            return self.user
+
+        self.app.dependency_overrides[decode_jwt] = override_decode_jwt
+        asyncio.run(
+            self.services.add_member(
+                self.company.id, CompanyMember(user_id=self.user.user_id, role="member")
+            )
+        )
+        asyncio.run(
+            self.services.add_member(
+                self.company.id, CompanyMember(user_id="usr2", role="member")
+            )
+        )
+        resp = self.client.delete(
+            f"/api/companies/{self.company.id}/members/usr2"
+        )
+        self.assertEqual(resp.status_code, 403)
+
+    def test_leave_company_endpoint(self):
+        asyncio.run(
+            self.services.add_member(
+                self.company.id, CompanyMember(user_id="owner", role="owner")
+            )
+        )
+        asyncio.run(
+            self.services.add_member(
+                self.company.id, CompanyMember(user_id=self.user.user_id, role="member")
+            )
+        )
+        self.company = asyncio.run(self.services.search_by_id(self.company.id))
+        async def override_decode_jwt():
+            return self.user
+        self.app.dependency_overrides[decode_jwt] = override_decode_jwt
+        resp = self.client.delete(
+            f"/api/companies/{self.company.id}/members/me"
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.json()["data"]["members"]), 1)
+        self.assertEqual(resp.json()["data"]["members"][0]["userId"], "owner")
+
+    def test_leave_company_owner_forbidden(self):
+        asyncio.run(
+            self.services.add_member(
+                self.company.id,
+                CompanyMember(user_id=self.user.user_id, role="owner"),
+            )
+        )
+        self.company = asyncio.run(self.services.search_by_id(self.company.id))
+        async def override_decode_jwt():
+            return self.user
+        self.app.dependency_overrides[decode_jwt] = override_decode_jwt
+        resp = self.client.delete(
+            f"/api/companies/{self.company.id}/members/me"
+        )
+        self.assertEqual(resp.status_code, 403)
 
     def test_get_subscription_endpoint(self):
         resp = self.client.get(f"/api/companies/{self.company.id}/subscription")

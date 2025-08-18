@@ -126,6 +126,28 @@ class CompanyRepository(Repository):
             _logger.error(f"Error on add_member: {str(error)}")
             raise NotFoundError(message=f"Company {company_id} not found")
 
+    async def remove_member(self, company_id: str, user_id: str) -> CompanyInDB:
+        try:
+            company = CompanyModel.objects(id=company_id, is_active=True).first()
+            if not company:
+                raise NotFoundError(message=f"Company {company_id} not found")
+
+            for member in list(company.members):
+                if member.user_id == user_id:
+                    company.members.remove(member)
+                    company.base_update()
+                    company.save()
+                    return CompanyInDB.model_validate(company)
+
+            raise NotFoundError(
+                message=f"User {user_id} is not a member of company {company_id}"
+            )
+        except NotFoundError:
+            raise
+        except Exception as error:
+            _logger.error(f"Error on remove_member: {str(error)}")
+            raise NotFoundError(message=f"Company {company_id} not found")
+
     async def update_subscription(
         self, company_id: str, subscription: UpdateCompanySubscription
     ) -> CompanyInDB:
