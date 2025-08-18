@@ -20,6 +20,16 @@ class CylinderRepository(Repository):
 
     async def create(self, cylinder: Cylinder) -> CylinderInDB:
         try:
+            exists = CylinderModel.objects(
+                number=cylinder.number,
+                company_id=cylinder.company_id,
+                is_active=True,
+            ).first()
+            if exists:
+                raise NotFoundError(
+                    message=f"Cylinder #{cylinder.number} already exists"
+                )
+
             json = jsonable_encoder(cylinder.model_dump())
             model = CylinderModel(
                 is_active=True,
