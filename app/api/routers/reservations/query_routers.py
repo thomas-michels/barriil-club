@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Response
 
 from app.api.composers.reservation_composite import reservation_composer
-from app.api.dependencies import build_response, require_company_member
+from app.api.dependencies import build_response, require_user_company
 from app.api.shared_schemas.responses import MessageResponse
 from app.core.utils.utc_datetime import UTCDateTimeType
 from .schemas import ReservationResponse, ReservationListResponse
@@ -17,11 +17,12 @@ router = APIRouter(tags=["Reservations"])
 )
 async def get_reservation_by_id(
     reservation_id: str,
-    company_id: str,
     services: ReservationServices = Depends(reservation_composer),
-    _: CompanyInDB = Depends(require_company_member),
+    company: CompanyInDB = Depends(require_user_company),
 ):
-    reservation_in_db = await services.search_by_id(id=reservation_id, company_id=company_id)
+    reservation_in_db = await services.search_by_id(
+        id=reservation_id, company_id=str(company.id)
+    )
     return build_response(
         status_code=200, message="Reservation found with success", data=reservation_in_db
     )
@@ -32,15 +33,14 @@ async def get_reservation_by_id(
     responses={200: {"model": ReservationListResponse}, 204: {"description": "No Content"}},
 )
 async def get_reservations(
-    company_id: str,
     start_date: UTCDateTimeType | None = None,
     end_date: UTCDateTimeType | None = None,
     status: ReservationStatus | None = None,
     services: ReservationServices = Depends(reservation_composer),
-    _: CompanyInDB = Depends(require_company_member),
+    company: CompanyInDB = Depends(require_user_company),
 ):
     reservations = await services.search_all(
-        company_id=company_id,
+        company_id=str(company.id),
         start_date=start_date,
         end_date=end_date,
         status=status,

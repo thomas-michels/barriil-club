@@ -34,7 +34,6 @@ class Reservation(GenericModel):
     payments: List[Payment] = Field(default_factory=list)
     total_value: Decimal | None = Field(default=None, example=200.0)
     status: ReservationStatus | None = Field(default=None, example=ReservationStatus.RESERVED)
-    company_id: str = Field(example="com_123")
 
 
 class ReservationInDB(DatabaseModel):

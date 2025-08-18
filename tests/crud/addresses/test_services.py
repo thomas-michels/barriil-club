@@ -19,15 +19,14 @@ class TestAddressServices(unittest.TestCase):
             host="mongodb://localhost",
             mongo_client_class=mongomock.MongoClient,
         )
+        AddressModel.drop_collection()
         self.repository = AddressRepository()
         self.services = AddressServices(self.repository)
 
     def tearDown(self) -> None:
         disconnect()
 
-    def _build_address(
-        self, postal_code: str = "12345", company_id: str = "com1"
-    ) -> Address:
+    def _build_address(self, postal_code: str = "12345") -> Address:
         return Address(
             postal_code=postal_code,
             street="Main",
@@ -37,27 +36,26 @@ class TestAddressServices(unittest.TestCase):
             city="City",
             state="ST",
             reference="Near",
-            company_id=company_id,
         )
 
     def test_create_address(self):
         address = self._build_address()
-        result = asyncio.run(self.services.create(address))
+        result = asyncio.run(self.services.create(address, company_id="com1"))
         self.assertEqual(result.postal_code, "12345")
 
     def test_search_by_id(self):
-        doc = AddressModel(**self._build_address().model_dump())
+        doc = AddressModel(**self._build_address().model_dump(), company_id="com1")
         doc.save()
         res = asyncio.run(self.services.search_by_id(doc.id, doc.company_id))
         self.assertEqual(res.id, doc.id)
 
     def test_search_all(self):
-        AddressModel(**self._build_address("1").model_dump()).save()
+        AddressModel(**self._build_address("1").model_dump(), company_id="com1").save()
         res = asyncio.run(self.services.search_all("com1"))
         self.assertEqual(len(res), 1)
 
     def test_update_address(self):
-        doc = AddressModel(**self._build_address().model_dump())
+        doc = AddressModel(**self._build_address().model_dump(), company_id="com1")
         doc.save()
         updated = asyncio.run(
             self.services.update(
@@ -67,7 +65,7 @@ class TestAddressServices(unittest.TestCase):
         self.assertEqual(updated.city, "New City")
 
     def test_delete_address(self):
-        doc = AddressModel(**self._build_address().model_dump())
+        doc = AddressModel(**self._build_address().model_dump(), company_id="com1")
         doc.save()
         res = asyncio.run(self.services.delete_by_id(doc.id, doc.company_id))
         self.assertEqual(res.id, doc.id)
@@ -81,7 +79,7 @@ class TestAddressServices(unittest.TestCase):
             asyncio.run(self.services.delete_by_id("invalid", "com1"))
 
     def test_search_by_zip_code_existing(self):
-        doc = AddressModel(**self._build_address("12345").model_dump())
+        doc = AddressModel(**self._build_address("12345").model_dump(), company_id="com1")
         doc.save()
         res = asyncio.run(self.services.search_by_zip_code("12345", "com1"))
         self.assertEqual(res.id, doc.id)

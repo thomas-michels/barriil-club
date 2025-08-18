@@ -17,7 +17,6 @@ class Cylinder(GenericModel):
     number: str = Field(example="CY123")
     status: CylinderStatus = Field(example=CylinderStatus.AVAILABLE)
     notes: str | None = Field(default=None, example="notes")
-    company_id: str = Field(example="com_123")
 
 
 class CylinderInDB(DatabaseModel):

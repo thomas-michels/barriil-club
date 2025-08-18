@@ -18,11 +18,11 @@ class CylinderRepository(Repository):
     def __init__(self) -> None:
         super().__init__()
 
-    async def create(self, cylinder: Cylinder) -> CylinderInDB:
+    async def create(self, cylinder: Cylinder, company_id: str) -> CylinderInDB:
         try:
             exists = CylinderModel.objects(
                 number=cylinder.number,
-                company_id=cylinder.company_id,
+                company_id=company_id,
                 is_active=True,
             ).first()
             if exists:
@@ -35,6 +35,7 @@ class CylinderRepository(Repository):
                 is_active=True,
                 created_at=UTCDateTime.now(),
                 updated_at=UTCDateTime.now(),
+                company_id=company_id,
                 **json,
             )
             model.save()

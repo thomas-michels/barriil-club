@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from mongoengine import connect, disconnect
 
 from app.api.routers.addresses import address_router
-from app.api.dependencies.company import require_company_member, require_user_company
+from app.api.dependencies.company import require_user_company
 from app.api.composers.address_composite import address_composer
 from app.crud.companies.repositories import CompanyRepository
 from app.crud.companies.services import CompanyServices
@@ -38,17 +38,11 @@ class TestAddressEndpoints(unittest.TestCase):
         async def override_require_user_company():
             return self.company
 
-        async def override_require_company_member(company_id: str):
-            return self.company
-
         async def override_address_composer():
             return self.services
 
         self.app.dependency_overrides[require_user_company] = (
             override_require_user_company
-        )
-        self.app.dependency_overrides[require_company_member] = (
-            override_require_company_member
         )
         self.app.dependency_overrides[address_composer] = override_address_composer
         self.client = TestClient(self.app)
@@ -81,9 +75,10 @@ class TestAddressEndpoints(unittest.TestCase):
             city="City",
             state="ST",
             reference="Near",
-            company_id=str(self.company.id),
         )
-        self.address = asyncio.run(self.services.create(address))
+        self.address = asyncio.run(
+            self.services.create(address, company_id=str(self.company.id))
+        )
 
     def tearDown(self) -> None:
         self.app.dependency_overrides = {}
@@ -99,7 +94,6 @@ class TestAddressEndpoints(unittest.TestCase):
             "city": "Metropolis",
             "state": "ST",
             "reference": "Ref",
-            "companyId": str(self.company.id),
         }
 
     def test_create_address_endpoint(self):
@@ -108,34 +102,25 @@ class TestAddressEndpoints(unittest.TestCase):
         self.assertEqual(resp.json()["data"]["postal_code"], "11111")
 
     def test_get_address_by_id(self):
-        resp = self.client.get(
-            f"/api/addresses/{self.address.id}",
-            params={"company_id": str(self.company.id)},
-        )
+        resp = self.client.get(f"/api/addresses/{self.address.id}")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["data"]["id"], self.address.id)
 
     def test_list_addresses(self):
-        resp = self.client.get(
-            "/api/addresses", params={"company_id": str(self.company.id)}
-        )
+        resp = self.client.get("/api/addresses")
         self.assertEqual(resp.status_code, 200)
         self.assertGreaterEqual(len(resp.json()["data"]), 1)
 
     def test_update_address_endpoint(self):
         resp = self.client.put(
             f"/api/addresses/{self.address.id}",
-            params={"company_id": str(self.company.id)},
             json={"city": "New"},
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["data"]["city"], "New")
 
     def test_delete_address_endpoint(self):
-        resp = self.client.delete(
-            f"/api/addresses/{self.address.id}",
-            params={"company_id": str(self.company.id)},
-        )
+        resp = self.client.delete(f"/api/addresses/{self.address.id}")
         self.assertEqual(resp.status_code, 200)
         with self.assertRaises(NotFoundError):
             asyncio.run(
@@ -144,8 +129,7 @@ class TestAddressEndpoints(unittest.TestCase):
 
     def test_get_address_by_zip_existing(self):
         resp = self.client.get(
-            f"/api/addresses/zip/{self.address.postal_code}",
-            params={"company_id": str(self.company.id)},
+            f"/api/addresses/zip/{self.address.postal_code}"
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["data"]["id"], self.address.id)
@@ -160,15 +144,12 @@ class TestAddressEndpoints(unittest.TestCase):
             "localidade": "City",
             "uf": "ST",
         }
-        resp = self.client.get(
-            "/api/addresses/zip/99999000",
-            params={"company_id": str(self.company.id)},
-        )
+        resp = self.client.get("/api/addresses/zip/99999000")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["data"]["postal_code"], "99999-000")
 
     def test_create_address_returns_400_when_not_created(self):
-        async def fake_create(address):
+        async def fake_create(address, company_id):
             return None
 
         self.services.create = fake_create
@@ -182,7 +163,6 @@ class TestAddressEndpoints(unittest.TestCase):
         self.services.update = fake_update
         resp = self.client.put(
             f"/api/addresses/{self.address.id}",
-            params={"company_id": str(self.company.id)},
             json={"city": "Fail"},
         )
         self.assertEqual(resp.status_code, 400)
@@ -192,10 +172,7 @@ class TestAddressEndpoints(unittest.TestCase):
             return None
 
         self.services.delete_by_id = fake_delete
-        resp = self.client.delete(
-            f"/api/addresses/{self.address.id}",
-            params={"company_id": str(self.company.id)},
-        )
+        resp = self.client.delete(f"/api/addresses/{self.address.id}")
         self.assertEqual(resp.status_code, 400)
 
 

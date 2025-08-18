@@ -33,7 +33,7 @@ class ReservationServices:
         self.__pg_repository = pressure_gauge_repository
         self.__cylinder_repository = cylinder_repository
 
-    async def create(self, reservation: Reservation) -> ReservationInDB:
+    async def create(self, reservation: Reservation, company_id: str) -> ReservationInDB:
         if not reservation.beer_dispenser_ids:
             raise NotFoundError(message="At least one beer dispenser is required")
         if not reservation.keg_ids:
@@ -48,7 +48,7 @@ class ReservationServices:
         total = Decimal("0")
         for keg_id in reservation.keg_ids:
             keg = await self.__keg_repository.select_by_id(
-                keg_id, reservation.company_id
+                keg_id, company_id
             )
             if keg.status in [KegStatus.EMPTY, KegStatus.IN_USE]:
                 raise NotFoundError(message=f"Keg #{keg_id} not available")
@@ -57,7 +57,7 @@ class ReservationServices:
 
         for cylinder_id in reservation.cylinder_ids:
             cylinder = await self.__cylinder_repository.select_by_id(
-                cylinder_id, reservation.company_id
+                cylinder_id, company_id
             )
             if cylinder.status != CylinderStatus.AVAILABLE:
                 raise NotFoundError(
@@ -69,7 +69,7 @@ class ReservationServices:
                 )
 
         conflict = await self.__repository.find_beer_dispenser_conflict(
-            company_id=reservation.company_id,
+            company_id=company_id,
             beer_dispenser_ids=reservation.beer_dispenser_ids,
             delivery_date=reservation.delivery_date,
             pickup_date=reservation.pickup_date,
@@ -80,7 +80,7 @@ class ReservationServices:
             )
 
         conflict = await self.__repository.find_cylinder_conflict(
-            company_id=reservation.company_id,
+            company_id=company_id,
             cylinder_ids=reservation.cylinder_ids,
             delivery_date=reservation.delivery_date,
             pickup_date=reservation.pickup_date,
@@ -98,10 +98,13 @@ class ReservationServices:
         data = reservation.model_dump()
         data["total_value"] = round(total, 2)
         data["status"] = status
-        res = await self.__repository.create(reservation=Reservation(**data))
+        data["company_id"] = company_id
+        res = await self.__repository.create(
+            reservation=Reservation(**data), company_id=company_id
+        )
         for keg_id in reservation.keg_ids:
             await self.__keg_repository.update(
-                keg_id, reservation.company_id, {"status": KegStatus.IN_USE.value}
+                keg_id, company_id, {"status": KegStatus.IN_USE.value}
             )
         return res
 

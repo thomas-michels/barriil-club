@@ -17,31 +17,31 @@ class TestCylinderRepository(unittest.TestCase):
             host="mongodb://localhost",
             mongo_client_class=mongomock.MongoClient,
         )
+        CylinderModel.drop_collection()
 
     def tearDown(self) -> None:
         disconnect()
 
-    def _build_cylinder(
-        self, brand: str = "Acme", company_id: str = "com1", number: str = "CY1"
-    ) -> Cylinder:
+    def _build_cylinder(self, brand: str = "Acme", number: str = "CY1") -> Cylinder:
         return Cylinder(
             brand=brand,
             weight_kg=10.5,
             number=number,
             status=CylinderStatus.AVAILABLE,
             notes="",
-            company_id=company_id,
         )
 
     def test_create_cylinder(self):
         repository = CylinderRepository()
         cylinder = self._build_cylinder()
-        result = asyncio.run(repository.create(cylinder))
+        result = asyncio.run(repository.create(cylinder, company_id="com1"))
         self.assertEqual(result.brand, "Acme")
         self.assertEqual(CylinderModel.objects.count(), 1)
 
     def test_select_by_id_found(self):
-        doc = CylinderModel(**self._build_cylinder().model_dump())
+        doc = CylinderModel(
+            **self._build_cylinder().model_dump(), company_id="com1"
+        )
         doc.save()
         repository = CylinderRepository()
         res = asyncio.run(repository.select_by_id(doc.id, doc.company_id))
@@ -53,14 +53,20 @@ class TestCylinderRepository(unittest.TestCase):
             asyncio.run(repository.select_by_id("invalid", "com1"))
 
     def test_select_all(self):
-        CylinderModel(**self._build_cylinder("A", number="CY1").model_dump()).save()
-        CylinderModel(**self._build_cylinder("B", number="CY2").model_dump()).save()
+        CylinderModel(
+            **self._build_cylinder("A", number="CY1").model_dump(), company_id="com1"
+        ).save()
+        CylinderModel(
+            **self._build_cylinder("B", number="CY2").model_dump(), company_id="com1"
+        ).save()
         repository = CylinderRepository()
         res = asyncio.run(repository.select_all("com1"))
         self.assertEqual(len(res), 2)
 
     def test_update_cylinder(self):
-        doc = CylinderModel(**self._build_cylinder().model_dump())
+        doc = CylinderModel(
+            **self._build_cylinder().model_dump(), company_id="com1"
+        )
         doc.save()
         repository = CylinderRepository()
         updated = asyncio.run(
@@ -69,7 +75,9 @@ class TestCylinderRepository(unittest.TestCase):
         self.assertEqual(updated.brand, "New")
 
     def test_delete_cylinder(self):
-        doc = CylinderModel(**self._build_cylinder().model_dump())
+        doc = CylinderModel(
+            **self._build_cylinder().model_dump(), company_id="com1"
+        )
         doc.save()
         repository = CylinderRepository()
         result = asyncio.run(repository.delete_by_id(doc.id, doc.company_id))
@@ -84,16 +92,16 @@ class TestCylinderRepository(unittest.TestCase):
     def test_create_cylinder_duplicate_number_active(self):
         repository = CylinderRepository()
         cylinder = self._build_cylinder()
-        asyncio.run(repository.create(cylinder))
+        asyncio.run(repository.create(cylinder, company_id="com1"))
         with self.assertRaises(NotFoundError):
-            asyncio.run(repository.create(cylinder))
+            asyncio.run(repository.create(cylinder, company_id="com1"))
 
     def test_create_cylinder_after_soft_delete(self):
         repository = CylinderRepository()
         cylinder = self._build_cylinder()
-        first = asyncio.run(repository.create(cylinder))
+        first = asyncio.run(repository.create(cylinder, company_id="com1"))
         asyncio.run(repository.delete_by_id(first.id, first.company_id))
-        second = asyncio.run(repository.create(cylinder))
+        second = asyncio.run(repository.create(cylinder, company_id="com1"))
         self.assertEqual(second.number, cylinder.number)
         self.assertNotEqual(first.id, second.id)
         self.assertEqual(

@@ -10,7 +10,7 @@ from mongoengine import connect, disconnect
 
 from app.api.routers.dashboard import dashboard_router
 from app.api.routers.exception_handlers import not_found_error_404
-from app.api.dependencies.company import require_company_member
+from app.api.dependencies.company import require_user_company
 from app.api.composers.dashboard_composite import dashboard_composer
 from app.crud.reservations.repositories import ReservationRepository
 from app.crud.reservations.services import ReservationServices
@@ -72,14 +72,14 @@ class TestDashboardEndpoints(unittest.TestCase):
             updated_at=self.fixed_now,
         )
 
-        async def override_require_company_member(company_id: str):
+        async def override_require_user_company():
             return self.company
 
         async def override_dashboard_composer():
             return self.dashboard_services
 
-        self.app.dependency_overrides[require_company_member] = (
-            override_require_company_member
+        self.app.dependency_overrides[require_user_company] = (
+            override_require_user_company
         )
         self.app.dependency_overrides[dashboard_composer] = override_dashboard_composer
 
@@ -91,7 +91,6 @@ class TestDashboardEndpoints(unittest.TestCase):
             beer_type_id="bty1",
             cost_price_per_l=Decimal("1"),
             sale_price_per_l=Decimal("2"),
-            company_id=self.company.id,
             status=KegStatus.AVAILABLE,
         )
         keg2 = Keg(
@@ -100,11 +99,10 @@ class TestDashboardEndpoints(unittest.TestCase):
             beer_type_id="bty1",
             cost_price_per_l=Decimal("3"),
             sale_price_per_l=Decimal("5"),
-            company_id=self.company.id,
             status=KegStatus.AVAILABLE,
         )
-        self.keg1 = asyncio.run(self.keg_repo.create(keg1))
-        self.keg2 = asyncio.run(self.keg_repo.create(keg2))
+        self.keg1 = asyncio.run(self.keg_repo.create(keg1, self.company.id))
+        self.keg2 = asyncio.run(self.keg_repo.create(keg2, self.company.id))
         self.disp1 = BeerDispenserModel(
             brand="Acme",
             status=DispenserStatus.ACTIVE.value,
@@ -150,7 +148,6 @@ class TestDashboardEndpoints(unittest.TestCase):
             payments=[],
             total_value=Decimal("100.0"),
             status=ReservationStatus.RESERVED,
-            company_id=self.company.id,
         )
         res2 = Reservation(
             customer_id="cus2",
@@ -165,10 +162,9 @@ class TestDashboardEndpoints(unittest.TestCase):
             payments=[],
             total_value=Decimal("200.0"),
             status=ReservationStatus.RESERVED,
-            company_id=self.company.id,
         )
-        self.res1 = asyncio.run(self.reservation_repo.create(res1))
-        self.res2 = asyncio.run(self.reservation_repo.create(res2))
+        self.res1 = asyncio.run(self.reservation_repo.create(res1, self.company.id))
+        self.res2 = asyncio.run(self.reservation_repo.create(res2, self.company.id))
 
     def tearDown(self) -> None:
         self.app.dependency_overrides = {}
@@ -177,7 +173,7 @@ class TestDashboardEndpoints(unittest.TestCase):
 
     def test_monthly_revenue(self):
         resp = self.client.get(
-            f"/api/dashboard/revenue?company_id={self.company.id}&year=2024"
+            "/api/dashboard/revenue?year=2024"
         )
         self.assertEqual(resp.status_code, 200)
         data = resp.json()["data"]
@@ -196,7 +192,7 @@ class TestDashboardEndpoints(unittest.TestCase):
 
     def test_upcoming_reservations(self):
         resp = self.client.get(
-            f"/api/dashboard/upcoming-reservations?company_id={self.company.id}"
+            "/api/dashboard/upcoming-reservations"
         )
         self.assertEqual(resp.status_code, 200)
         data = resp.json()["data"]
@@ -205,7 +201,7 @@ class TestDashboardEndpoints(unittest.TestCase):
 
     def test_reservation_calendar(self):
         resp = self.client.get(
-            f"/api/dashboard/calendar?company_id={self.company.id}&year=2024&month=1"
+            "/api/dashboard/calendar?year=2024&month=1"
         )
         self.assertEqual(resp.status_code, 200)
         data = resp.json()["data"]

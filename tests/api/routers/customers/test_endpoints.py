@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from mongoengine import connect, disconnect
 
 from app.api.routers.customers import customer_router
-from app.api.dependencies.company import require_company_member, require_user_company
+from app.api.dependencies.company import require_user_company
 from app.api.composers.customer_composite import customer_composer
 from app.crud.companies.repositories import CompanyRepository
 from app.crud.companies.services import CompanyServices
@@ -38,17 +38,11 @@ class TestCustomerEndpoints(unittest.TestCase):
         async def override_require_user_company():
             return self.company
 
-        async def override_require_company_member(company_id: str):
-            return self.company
-
         async def override_customer_composer():
             return self.services
 
         self.app.dependency_overrides[require_user_company] = (
             override_require_user_company
-        )
-        self.app.dependency_overrides[require_company_member] = (
-            override_require_company_member
         )
         self.app.dependency_overrides[customer_composer] = override_customer_composer
         self.client = TestClient(self.app)
@@ -81,9 +75,10 @@ class TestCustomerEndpoints(unittest.TestCase):
             birth_date="1990-01-01",
             address_ids=[self.address_id],
             notes="VIP",
-            company_id=str(self.company.id),
         )
-        self.customer = asyncio.run(self.services.create(customer))
+        self.customer = asyncio.run(
+            self.services.create(customer, company_id=str(self.company.id))
+        )
 
     def tearDown(self) -> None:
         self.app.dependency_overrides = {}
@@ -98,7 +93,6 @@ class TestCustomerEndpoints(unittest.TestCase):
             "birthDate": "1995-01-01",
             "addressIds": [self.address_id],
             "notes": "Note",
-            "companyId": str(self.company.id),
         }
 
     def test_create_customer_endpoint(self):
@@ -107,34 +101,25 @@ class TestCustomerEndpoints(unittest.TestCase):
         self.assertEqual(resp.json()["data"]["document"], "10000000280")
 
     def test_get_customer_by_id(self):
-        resp = self.client.get(
-            f"/api/customers/{self.customer.id}",
-            params={"company_id": str(self.company.id)},
-        )
+        resp = self.client.get(f"/api/customers/{self.customer.id}")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["data"]["id"], self.customer.id)
 
     def test_list_customers(self):
-        resp = self.client.get(
-            "/api/customers", params={"company_id": str(self.company.id)}
-        )
+        resp = self.client.get("/api/customers")
         self.assertEqual(resp.status_code, 200)
         self.assertGreaterEqual(len(resp.json()["data"]), 1)
 
     def test_update_customer_endpoint(self):
         resp = self.client.put(
             f"/api/customers/{self.customer.id}",
-            params={"company_id": str(self.company.id)},
             json={"name": "Updated"},
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["data"]["name"], "Updated")
 
     def test_delete_customer_endpoint(self):
-        resp = self.client.delete(
-            f"/api/customers/{self.customer.id}",
-            params={"company_id": str(self.company.id)},
-        )
+        resp = self.client.delete(f"/api/customers/{self.customer.id}")
         self.assertEqual(resp.status_code, 200)
         with self.assertRaises(NotFoundError):
             asyncio.run(
@@ -142,7 +127,7 @@ class TestCustomerEndpoints(unittest.TestCase):
             )
 
     def test_create_customer_returns_400_when_not_created(self):
-        async def fake_create(customer):
+        async def fake_create(customer, company_id):
             return None
 
         self.services.create = fake_create
@@ -156,7 +141,6 @@ class TestCustomerEndpoints(unittest.TestCase):
         self.services.update = fake_update
         resp = self.client.put(
             f"/api/customers/{self.customer.id}",
-            params={"company_id": str(self.company.id)},
             json={"name": "Fail"},
         )
         self.assertEqual(resp.status_code, 400)
@@ -166,10 +150,7 @@ class TestCustomerEndpoints(unittest.TestCase):
             return None
 
         self.services.delete_by_id = fake_delete
-        resp = self.client.delete(
-            f"/api/customers/{self.customer.id}",
-            params={"company_id": str(self.company.id)},
-        )
+        resp = self.client.delete(f"/api/customers/{self.customer.id}")
         self.assertEqual(resp.status_code, 400)
 
 

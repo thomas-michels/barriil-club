@@ -12,8 +12,8 @@ class AddressServices:
     def __init__(self, address_repository: AddressRepository) -> None:
         self.__repository = address_repository
 
-    async def create(self, address: Address) -> AddressInDB:
-        return await self.__repository.create(address=address)
+    async def create(self, address: Address, company_id: str) -> AddressInDB:
+        return await self.__repository.create(address=address, company_id=company_id)
 
     async def update(
         self, id: str, company_id: str, address: UpdateAddress
@@ -53,11 +53,11 @@ class AddressServices:
             complement=data.get("complemento"),
             number="",
             state=data["uf"],
-            company_id=company_id,
+            reference=None,
         )
 
         try:
-            return await self.__repository.create(address=address_data)
+            return await self.__repository.create(address=address_data, company_id=company_id)
         except Exception as error:
             raise UnprocessableEntity(
                 message=f"Failed to create address: {str(error)}"

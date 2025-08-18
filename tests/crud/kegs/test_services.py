@@ -31,7 +31,7 @@ class TestKegServices(unittest.TestCase):
     def tearDown(self) -> None:
         disconnect()
 
-    def _build_keg(self, number: str = "1", company_id: str = "com1") -> Keg:
+    def _build_keg(self, number: str = "1") -> Keg:
         return Keg(
             number=number,
             size_l=50,
@@ -43,26 +43,25 @@ class TestKegServices(unittest.TestCase):
             current_volume_l=25.0,
             status=KegStatus.AVAILABLE,
             notes="",
-            company_id=company_id,
         )
 
     def test_create_keg(self):
-        result = asyncio.run(self.services.create(self._build_keg()))
+        result = asyncio.run(self.services.create(self._build_keg(), "com1"))
         self.assertEqual(result.number, "1")
 
     def test_search_by_id(self):
-        doc = KegModel(**self._build_keg().model_dump())
+        doc = KegModel(**self._build_keg().model_dump(), company_id="com1")
         doc.save()
         res = asyncio.run(self.services.search_by_id(doc.id, doc.company_id))
         self.assertEqual(res.id, doc.id)
 
     def test_search_all(self):
-        KegModel(**self._build_keg().model_dump()).save()
+        KegModel(**self._build_keg().model_dump(), company_id="com1").save()
         res = asyncio.run(self.services.search_all("com1"))
         self.assertEqual(len(res), 1)
 
     def test_update_keg(self):
-        doc = KegModel(**self._build_keg().model_dump())
+        doc = KegModel(**self._build_keg().model_dump(), company_id="com1")
         doc.save()
         updated = asyncio.run(
             self.services.update(doc.id, doc.company_id, UpdateKeg(number="2"))
@@ -70,7 +69,7 @@ class TestKegServices(unittest.TestCase):
         self.assertEqual(updated.number, "2")
 
     def test_delete_keg(self):
-        doc = KegModel(**self._build_keg().model_dump())
+        doc = KegModel(**self._build_keg().model_dump(), company_id="com1")
         doc.save()
         res = asyncio.run(self.services.delete_by_id(doc.id, doc.company_id))
         self.assertEqual(res.id, doc.id)

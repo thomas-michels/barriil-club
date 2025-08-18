@@ -24,7 +24,6 @@ class Keg(GenericModel):
     current_volume_l: Decimal | None = Field(default=None, example=25)
     status: KegStatus = Field(example=KegStatus.AVAILABLE)
     notes: str | None = Field(default=None, example="notes")
-    company_id: str = Field(example="com_123")
 
 
 class KegInDB(DatabaseModel):

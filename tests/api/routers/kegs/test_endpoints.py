@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from mongoengine import connect, disconnect
 
 from app.api.routers.kegs import keg_router
-from app.api.dependencies.company import require_company_member, require_user_company
+from app.api.dependencies.company import require_user_company
 from app.api.composers.keg_composite import keg_composer
 from app.crud.companies.repositories import CompanyRepository
 from app.crud.companies.services import CompanyServices
@@ -39,17 +39,11 @@ class TestKegEndpoints(unittest.TestCase):
         async def override_require_user_company():
             return self.company
 
-        async def override_require_company_member(company_id: str):
-            return self.company
-
         async def override_keg_composer():
             return self.services
 
         self.app.dependency_overrides[require_user_company] = (
             override_require_user_company
-        )
-        self.app.dependency_overrides[require_company_member] = (
-            override_require_company_member
         )
         self.app.dependency_overrides[keg_composer] = override_keg_composer
         self.client = TestClient(self.app)
@@ -91,9 +85,10 @@ class TestKegEndpoints(unittest.TestCase):
             current_volume_l=25.0,
             status=KegStatus.AVAILABLE,
             notes="",
-            company_id=str(self.company.id),
         )
-        self.keg = asyncio.run(self.services.create(keg))
+        self.keg = asyncio.run(
+            self.services.create(keg, str(self.company.id))
+        )
 
     def tearDown(self) -> None:
         self.app.dependency_overrides = {}
@@ -109,7 +104,6 @@ class TestKegEndpoints(unittest.TestCase):
             "lot": "L2",
             "currentVolumeL": 25.0,
             "status": "AVAILABLE",
-            "companyId": str(self.company.id),
         }
 
     def test_create_keg_endpoint(self):
@@ -118,40 +112,31 @@ class TestKegEndpoints(unittest.TestCase):
         self.assertEqual(resp.json()["data"]["number"], "3")
 
     def test_get_keg_by_id(self):
-        resp = self.client.get(
-            f"/api/kegs/{self.keg.id}",
-            params={"company_id": str(self.company.id)},
-        )
+        resp = self.client.get(f"/api/kegs/{self.keg.id}")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["data"]["id"], self.keg.id)
 
     def test_list_kegs(self):
-        resp = self.client.get(
-            "/api/kegs", params={"company_id": str(self.company.id)}
-        )
+        resp = self.client.get("/api/kegs")
         self.assertEqual(resp.status_code, 200)
         self.assertGreaterEqual(len(resp.json()["data"]), 1)
 
     def test_update_keg_endpoint(self):
         resp = self.client.put(
             f"/api/kegs/{self.keg.id}",
-            params={"company_id": str(self.company.id)},
             json={"number": "10"},
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["data"]["number"], "10")
 
     def test_delete_keg_endpoint(self):
-        resp = self.client.delete(
-            f"/api/kegs/{self.keg.id}",
-            params={"company_id": str(self.company.id)},
-        )
+        resp = self.client.delete(f"/api/kegs/{self.keg.id}")
         self.assertEqual(resp.status_code, 200)
         with self.assertRaises(NotFoundError):
             asyncio.run(self.services.search_by_id(self.keg.id, str(self.company.id)))
 
     def test_create_keg_returns_400_when_not_created(self):
-        async def fake_create(keg):
+        async def fake_create(keg, company_id):
             return None
 
         self.services.create = fake_create
@@ -165,7 +150,6 @@ class TestKegEndpoints(unittest.TestCase):
         self.services.update = fake_update
         resp = self.client.put(
             f"/api/kegs/{self.keg.id}",
-            params={"company_id": str(self.company.id)},
             json={"number": "11"},
         )
         self.assertEqual(resp.status_code, 400)
@@ -175,10 +159,7 @@ class TestKegEndpoints(unittest.TestCase):
             return None
 
         self.services.delete_by_id = fake_delete
-        resp = self.client.delete(
-            f"/api/kegs/{self.keg.id}",
-            params={"company_id": str(self.company.id)},
-        )
+        resp = self.client.delete(f"/api/kegs/{self.keg.id}")
         self.assertEqual(resp.status_code, 400)
 
 

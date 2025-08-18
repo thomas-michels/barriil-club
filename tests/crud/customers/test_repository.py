@@ -21,9 +21,7 @@ class TestCustomerRepository(unittest.TestCase):
     def tearDown(self) -> None:
         disconnect()
 
-    def _build_customer(
-        self, document: str = "10000000019", company_id: str = "com1"
-    ) -> Customer:
+    def _build_customer(self, document: str = "10000000019") -> Customer:
         return Customer(
             name="John Doe",
             document=document,
@@ -32,31 +30,34 @@ class TestCustomerRepository(unittest.TestCase):
             birth_date="1990-01-01",
             address_ids=["add1"],
             notes="VIP",
-            company_id=company_id,
         )
 
     def test_create_customer(self):
         repository = CustomerRepository()
         customer = self._build_customer()
-        result = asyncio.run(repository.create(customer))
+        result = asyncio.run(repository.create(customer, company_id="com1"))
         self.assertEqual(result.document, "10000000019")
         self.assertEqual(CustomerModel.objects.count(), 1)
 
     def test_create_customer_unique_document(self):
         repository = CustomerRepository()
-        asyncio.run(repository.create(self._build_customer("10000000019")))
+        asyncio.run(
+            repository.create(self._build_customer("10000000019"), company_id="com1")
+        )
         with self.assertRaises(UnprocessableEntity):
-            asyncio.run(repository.create(self._build_customer("10000000019")))
+            asyncio.run(
+                repository.create(self._build_customer("10000000019"), company_id="com1")
+            )
 
     def test_create_customer_more_than_five_addresses(self):
         repository = CustomerRepository()
         customer = self._build_customer()
         customer.address_ids = [f"add{i}" for i in range(6)]
         with self.assertRaises(UnprocessableEntity):
-            asyncio.run(repository.create(customer))
+            asyncio.run(repository.create(customer, company_id="com1"))
 
     def test_select_by_id_found(self):
-        doc = CustomerModel(**self._build_customer().model_dump())
+        doc = CustomerModel(**self._build_customer().model_dump(), company_id="com1")
         doc.save()
         repository = CustomerRepository()
         res = asyncio.run(repository.select_by_id(doc.id, doc.company_id))
@@ -68,14 +69,14 @@ class TestCustomerRepository(unittest.TestCase):
             asyncio.run(repository.select_by_id("invalid", "com1"))
 
     def test_select_all(self):
-        CustomerModel(**self._build_customer("10000000108").model_dump()).save()
-        CustomerModel(**self._build_customer("10000000280").model_dump()).save()
+        CustomerModel(**self._build_customer("10000000108").model_dump(), company_id="com1").save()
+        CustomerModel(**self._build_customer("10000000280").model_dump(), company_id="com1").save()
         repository = CustomerRepository()
         res = asyncio.run(repository.select_all("com1"))
         self.assertEqual(len(res), 2)
 
     def test_update_customer(self):
-        doc = CustomerModel(**self._build_customer().model_dump())
+        doc = CustomerModel(**self._build_customer().model_dump(), company_id="com1")
         doc.save()
         repository = CustomerRepository()
         updated = asyncio.run(
@@ -84,7 +85,7 @@ class TestCustomerRepository(unittest.TestCase):
         self.assertEqual(updated.name, "New")
 
     def test_delete_customer(self):
-        doc = CustomerModel(**self._build_customer().model_dump())
+        doc = CustomerModel(**self._build_customer().model_dump(), company_id="com1")
         doc.save()
         repository = CustomerRepository()
         result = asyncio.run(repository.delete_by_id(doc.id, doc.company_id))

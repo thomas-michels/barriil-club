@@ -29,7 +29,7 @@ class TestKegRepository(unittest.TestCase):
     def tearDown(self) -> None:
         disconnect()
 
-    def _build_keg(self, number: str = "1", company_id: str = "com1") -> Keg:
+    def _build_keg(self, number: str = "1") -> Keg:
         return Keg(
             number=number,
             size_l=50,
@@ -41,18 +41,17 @@ class TestKegRepository(unittest.TestCase):
             current_volume_l=25.0,
             status=KegStatus.AVAILABLE,
             notes="",
-            company_id=company_id,
         )
 
     def test_create_keg(self):
         repository = KegRepository()
         keg = self._build_keg()
-        result = asyncio.run(repository.create(keg))
+        result = asyncio.run(repository.create(keg, "com1"))
         self.assertEqual(result.number, "1")
         self.assertEqual(KegModel.objects.count(), 1)
 
     def test_select_by_id_found(self):
-        doc = KegModel(**self._build_keg().model_dump())
+        doc = KegModel(**self._build_keg().model_dump(), company_id="com1")
         doc.save()
         repository = KegRepository()
         res = asyncio.run(repository.select_by_id(doc.id, doc.company_id))
@@ -64,14 +63,14 @@ class TestKegRepository(unittest.TestCase):
             asyncio.run(repository.select_by_id("invalid", "com1"))
 
     def test_select_all(self):
-        KegModel(**self._build_keg("1").model_dump()).save()
-        KegModel(**self._build_keg("2").model_dump()).save()
+        KegModel(**self._build_keg("1").model_dump(), company_id="com1").save()
+        KegModel(**self._build_keg("2").model_dump(), company_id="com1").save()
         repository = KegRepository()
         res = asyncio.run(repository.select_all("com1"))
         self.assertEqual(len(res), 2)
 
     def test_update_keg(self):
-        doc = KegModel(**self._build_keg().model_dump())
+        doc = KegModel(**self._build_keg().model_dump(), company_id="com1")
         doc.save()
         repository = KegRepository()
         updated = asyncio.run(
@@ -80,7 +79,7 @@ class TestKegRepository(unittest.TestCase):
         self.assertEqual(updated.number, "3")
 
     def test_delete_keg(self):
-        doc = KegModel(**self._build_keg().model_dump())
+        doc = KegModel(**self._build_keg().model_dump(), company_id="com1")
         doc.save()
         repository = KegRepository()
         result = asyncio.run(repository.delete_by_id(doc.id, doc.company_id))

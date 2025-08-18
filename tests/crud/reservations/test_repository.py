@@ -87,9 +87,8 @@ class TestReservationRepository(unittest.TestCase):
             payments=[],
             total_value=Decimal("400.00"),
             status=ReservationStatus.RESERVED,
-            company_id=self.company_id,
         )
-        res = asyncio.run(self.repository.create(reservation))
+        res = asyncio.run(self.repository.create(reservation, self.company_id))
         self.assertIsNotNone(res.id)
 
     def test_add_update_delete_payment(self):
@@ -109,9 +108,8 @@ class TestReservationRepository(unittest.TestCase):
             payments=[],
             total_value=Decimal("400.00"),
             status=ReservationStatus.RESERVED,
-            company_id=self.company_id,
         )
-        res = asyncio.run(self.repository.create(reservation))
+        res = asyncio.run(self.repository.create(reservation, self.company_id))
         pay = Payment(amount=Decimal("50.00"), method="cash", paid_at=date.today())
         updated = asyncio.run(
             self.repository.add_payment(res.id, self.company_id, pay)

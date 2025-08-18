@@ -68,9 +68,10 @@ class TestCompanyEndpoints(unittest.TestCase):
             district="Center",
             city="City",
             state="ST",
-            company_id=str(self.company.id),
         )
-        self.address = asyncio.run(self.address_services.create(address))
+        self.address = asyncio.run(
+            self.address_services.create(address, str(self.company.id))
+        )
         self.user = UserInDB(
             user_id="usr1",
             email="u@t.com",
