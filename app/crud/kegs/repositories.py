@@ -18,13 +18,14 @@ class KegRepository(Repository):
     def __init__(self) -> None:
         super().__init__()
 
-    async def create(self, keg: Keg) -> KegInDB:
+    async def create(self, keg: Keg, company_id: str) -> KegInDB:
         try:
             json = jsonable_encoder(keg.model_dump())
             model = KegModel(
                 is_active=True,
                 created_at=UTCDateTime.now(),
                 updated_at=UTCDateTime.now(),
+                company_id=company_id,
                 **json,
             )
             model.save()

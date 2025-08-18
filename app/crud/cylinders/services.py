@@ -8,8 +8,8 @@ class CylinderServices:
     def __init__(self, repository: CylinderRepository) -> None:
         self.__repository = repository
 
-    async def create(self, cylinder: Cylinder) -> CylinderInDB:
-        return await self.__repository.create(cylinder=cylinder)
+    async def create(self, cylinder: Cylinder, company_id: str) -> CylinderInDB:
+        return await self.__repository.create(cylinder=cylinder, company_id=company_id)
 
     async def update(
         self, id: str, company_id: str, cylinder: UpdateCylinder

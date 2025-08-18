@@ -8,8 +8,8 @@ class KegServices:
     def __init__(self, keg_repository: KegRepository) -> None:
         self.__repository = keg_repository
 
-    async def create(self, keg: Keg) -> KegInDB:
-        return await self.__repository.create(keg=keg)
+    async def create(self, keg: Keg, company_id: str) -> KegInDB:
+        return await self.__repository.create(keg=keg, company_id=company_id)
 
     async def update(self, id: str, company_id: str, keg: UpdateKeg) -> KegInDB:
         data = keg.model_dump(exclude_unset=True, exclude_none=True)

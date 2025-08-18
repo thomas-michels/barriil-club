@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from mongoengine import connect, disconnect
 
 from app.api.routers.beer_types import beer_type_router
-from app.api.dependencies.company import require_company_member, require_user_company
+from app.api.dependencies.company import require_user_company
 from app.api.composers.beer_type_composite import beer_type_composer
 from app.crud.companies.repositories import CompanyRepository
 from app.crud.companies.services import CompanyServices
@@ -38,17 +38,11 @@ class TestBeerTypeEndpoints(unittest.TestCase):
         async def override_require_user_company():
             return self.company
 
-        async def override_require_company_member(company_id: str):
-            return self.company
-
         async def override_beer_type_composer():
             return self.services
 
         self.app.dependency_overrides[require_user_company] = (
             override_require_user_company
-        )
-        self.app.dependency_overrides[require_company_member] = (
-            override_require_company_member
         )
         self.app.dependency_overrides[beer_type_composer] = override_beer_type_composer
         self.client = TestClient(self.app)
@@ -79,9 +73,10 @@ class TestBeerTypeEndpoints(unittest.TestCase):
             ibu=40.0,
             description="Tasty",
             default_sale_price_per_l=10.0,
-            company_id=str(self.company.id),
         )
-        self.beer_type = asyncio.run(self.services.create(beer_type))
+        self.beer_type = asyncio.run(
+            self.services.create(beer_type, company_id=str(self.company.id))
+        )
 
     def tearDown(self) -> None:
         self.app.dependency_overrides = {}
@@ -95,7 +90,6 @@ class TestBeerTypeEndpoints(unittest.TestCase):
             "ibu": 20.0,
             "description": "Desc",
             "defaultSalePricePerL": 9.0,
-            "companyId": str(self.company.id),
         }
 
     def test_create_beer_type_endpoint(self):
@@ -104,34 +98,25 @@ class TestBeerTypeEndpoints(unittest.TestCase):
         self.assertEqual(resp.json()["data"]["name"], "IPA")
 
     def test_get_beer_type_by_id(self):
-        resp = self.client.get(
-            f"/api/beer-types/{self.beer_type.id}",
-            params={"company_id": str(self.company.id)},
-        )
+        resp = self.client.get(f"/api/beer-types/{self.beer_type.id}")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["data"]["id"], self.beer_type.id)
 
     def test_list_beer_types(self):
-        resp = self.client.get(
-            "/api/beer-types", params={"company_id": str(self.company.id)}
-        )
+        resp = self.client.get("/api/beer-types")
         self.assertEqual(resp.status_code, 200)
         self.assertGreaterEqual(len(resp.json()["data"]), 1)
 
     def test_update_beer_type_endpoint(self):
         resp = self.client.put(
             f"/api/beer-types/{self.beer_type.id}",
-            params={"company_id": str(self.company.id)},
             json={"name": "New"},
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["data"]["name"], "New")
 
     def test_delete_beer_type_endpoint(self):
-        resp = self.client.delete(
-            f"/api/beer-types/{self.beer_type.id}",
-            params={"company_id": str(self.company.id)},
-        )
+        resp = self.client.delete(f"/api/beer-types/{self.beer_type.id}")
         self.assertEqual(resp.status_code, 200)
         with self.assertRaises(NotFoundError):
             asyncio.run(
@@ -139,7 +124,7 @@ class TestBeerTypeEndpoints(unittest.TestCase):
             )
 
     def test_create_beer_type_returns_400_when_not_created(self):
-        async def fake_create(beer_type):
+        async def fake_create(beer_type, company_id):
             return None
 
         self.services.create = fake_create
@@ -153,7 +138,6 @@ class TestBeerTypeEndpoints(unittest.TestCase):
         self.services.update = fake_update
         resp = self.client.put(
             f"/api/beer-types/{self.beer_type.id}",
-            params={"company_id": str(self.company.id)},
             json={"name": "Fail"},
         )
         self.assertEqual(resp.status_code, 400)
@@ -163,10 +147,7 @@ class TestBeerTypeEndpoints(unittest.TestCase):
             return None
 
         self.services.delete_by_id = fake_delete
-        resp = self.client.delete(
-            f"/api/beer-types/{self.beer_type.id}",
-            params={"company_id": str(self.company.id)},
-        )
+        resp = self.client.delete(f"/api/beer-types/{self.beer_type.id}")
         self.assertEqual(resp.status_code, 400)
 
 

@@ -8,8 +8,8 @@ class CustomerServices:
     def __init__(self, customer_repository: CustomerRepository) -> None:
         self.__repository = customer_repository
 
-    async def create(self, customer: Customer) -> CustomerInDB:
-        return await self.__repository.create(customer=customer)
+    async def create(self, customer: Customer, company_id: str) -> CustomerInDB:
+        return await self.__repository.create(customer=customer, company_id=company_id)
 
     async def update(
         self, id: str, company_id: str, customer: UpdateCustomer

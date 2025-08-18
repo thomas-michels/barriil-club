@@ -12,7 +12,6 @@ class BeerType(GenericModel):
     ibu: Decimal | None = Field(default=None, example=40.0)
     description: str | None = Field(default=None, example="Tasty beer")
     default_sale_price_per_l: Decimal = Field(example=10.5)
-    company_id: str = Field(example="com_123")
 
 
 class BeerTypeInDB(DatabaseModel):

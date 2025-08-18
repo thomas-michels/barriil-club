@@ -18,13 +18,14 @@ class AddressRepository(Repository):
     def __init__(self) -> None:
         super().__init__()
 
-    async def create(self, address: Address) -> AddressInDB:
+    async def create(self, address: Address, company_id: str) -> AddressInDB:
         try:
             json = jsonable_encoder(address.model_dump())
             address_model = AddressModel(
                 is_active=True,
                 created_at=UTCDateTime.now(),
                 updated_at=UTCDateTime.now(),
+                company_id=company_id,
                 **json,
             )
             address_model.save()

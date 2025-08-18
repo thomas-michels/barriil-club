@@ -16,7 +16,6 @@ class Customer(GenericModel):
         default=None, example=["add_12345678", "add_87654321"]
     )
     notes: str | None = Field(default=None, example="VIP")
-    company_id: str = Field(example="com_123")
 
     @field_validator("document")
     @classmethod

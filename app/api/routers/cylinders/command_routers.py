@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.composers.cylinder_composite import cylinder_composer
-from app.api.dependencies import build_response, require_company_member, require_user_company
+from app.api.dependencies import build_response, require_user_company
 from app.api.shared_schemas.responses import MessageResponse
 from .schemas import CylinderResponse
 from app.crud.cylinders import Cylinder, UpdateCylinder, CylinderServices
@@ -19,12 +19,9 @@ async def create_cylinder(
     company: CompanyInDB = Depends(require_user_company),
     services: CylinderServices = Depends(cylinder_composer),
 ):
-    if cylinder.company_id != company.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User not allowed to use this company",
-        )
-    cylinder_in_db = await services.create(cylinder=cylinder)
+    cylinder_in_db = await services.create(
+        cylinder=cylinder, company_id=str(company.id)
+    )
     if not cylinder_in_db:
         raise HTTPException(status_code=400, detail="Cylinder not created")
     return build_response(
@@ -38,13 +35,12 @@ async def create_cylinder(
 )
 async def update_cylinder(
     cylinder_id: str,
-    company_id: str,
     cylinder: UpdateCylinder,
     services: CylinderServices = Depends(cylinder_composer),
-    _: CompanyInDB = Depends(require_company_member),
+    company: CompanyInDB = Depends(require_user_company),
 ):
     cylinder_in_db = await services.update(
-        id=cylinder_id, company_id=company_id, cylinder=cylinder
+        id=cylinder_id, company_id=str(company.id), cylinder=cylinder
     )
     if not cylinder_in_db:
         raise HTTPException(status_code=400, detail="Cylinder not updated")
@@ -59,11 +55,12 @@ async def update_cylinder(
 )
 async def delete_cylinder(
     cylinder_id: str,
-    company_id: str,
     services: CylinderServices = Depends(cylinder_composer),
-    _: CompanyInDB = Depends(require_company_member),
+    company: CompanyInDB = Depends(require_user_company),
 ):
-    cylinder_in_db = await services.delete_by_id(id=cylinder_id, company_id=company_id)
+    cylinder_in_db = await services.delete_by_id(
+        id=cylinder_id, company_id=str(company.id)
+    )
     if not cylinder_in_db:
         raise HTTPException(status_code=400, detail="Cylinder not deleted")
     return build_response(

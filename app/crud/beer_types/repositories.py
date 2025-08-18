@@ -18,13 +18,14 @@ class BeerTypeRepository(Repository):
     def __init__(self) -> None:
         super().__init__()
 
-    async def create(self, beer_type: BeerType) -> BeerTypeInDB:
+    async def create(self, beer_type: BeerType, company_id: str) -> BeerTypeInDB:
         try:
             json = jsonable_encoder(beer_type.model_dump())
             model = BeerTypeModel(
                 is_active=True,
                 created_at=UTCDateTime.now(),
                 updated_at=UTCDateTime.now(),
+                company_id=company_id,
                 **json,
             )
             model.save()

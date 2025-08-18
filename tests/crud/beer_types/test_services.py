@@ -24,7 +24,7 @@ class TestBeerTypeServices(unittest.TestCase):
     def tearDown(self) -> None:
         disconnect()
 
-    def _build_beer_type(self, name: str = "Pale Ale", company_id: str = "com1") -> BeerType:
+    def _build_beer_type(self, name: str = "Pale Ale") -> BeerType:
         return BeerType(
             name=name,
             producer="Brew Co",
@@ -32,21 +32,22 @@ class TestBeerTypeServices(unittest.TestCase):
             ibu=40.0,
             description="Tasty",
             default_sale_price_per_l=10.0,
-            company_id=company_id,
         )
 
     def test_create_beer_type(self):
-        result = asyncio.run(self.services.create(self._build_beer_type()))
+        result = asyncio.run(
+            self.services.create(self._build_beer_type(), company_id="com1")
+        )
         self.assertEqual(result.name, "Pale Ale")
 
     def test_search_by_id(self):
-        doc = BeerTypeModel(**self._build_beer_type().model_dump())
+        doc = BeerTypeModel(**self._build_beer_type().model_dump(), company_id="com1")
         doc.save()
         res = asyncio.run(self.services.search_by_id(doc.id, doc.company_id))
         self.assertEqual(res.id, doc.id)
 
     def test_search_all(self):
-        BeerTypeModel(**self._build_beer_type().model_dump()).save()
+        BeerTypeModel(**self._build_beer_type().model_dump(), company_id="com1").save()
         res = asyncio.run(self.services.search_all("com1"))
         self.assertEqual(len(res), 1)
 

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.composers.keg_composite import keg_composer
-from app.api.dependencies import build_response, require_company_member, require_user_company
+from app.api.dependencies import build_response, require_user_company
 from app.api.shared_schemas.responses import MessageResponse
 from .schemas import KegResponse
 from app.crud.kegs import Keg, UpdateKeg, KegServices
@@ -19,12 +19,7 @@ async def create_keg(
     company: CompanyInDB = Depends(require_user_company),
     services: KegServices = Depends(keg_composer),
 ):
-    if keg.company_id != company.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User not allowed to use this company",
-        )
-    keg_in_db = await services.create(keg=keg)
+    keg_in_db = await services.create(keg=keg, company_id=str(company.id))
     if not keg_in_db:
         raise HTTPException(status_code=400, detail="Keg not created")
     return build_response(
@@ -38,12 +33,13 @@ async def create_keg(
 )
 async def update_keg(
     keg_id: str,
-    company_id: str,
     keg: UpdateKeg,
+    company: CompanyInDB = Depends(require_user_company),
     services: KegServices = Depends(keg_composer),
-    _: CompanyInDB = Depends(require_company_member),
 ):
-    keg_in_db = await services.update(id=keg_id, company_id=company_id, keg=keg)
+    keg_in_db = await services.update(
+        id=keg_id, company_id=str(company.id), keg=keg
+    )
     if not keg_in_db:
         raise HTTPException(status_code=400, detail="Keg not updated")
     return build_response(
@@ -57,11 +53,12 @@ async def update_keg(
 )
 async def delete_keg(
     keg_id: str,
-    company_id: str,
+    company: CompanyInDB = Depends(require_user_company),
     services: KegServices = Depends(keg_composer),
-    _: CompanyInDB = Depends(require_company_member),
 ):
-    keg_in_db = await services.delete_by_id(id=keg_id, company_id=company_id)
+    keg_in_db = await services.delete_by_id(
+        id=keg_id, company_id=str(company.id)
+    )
     if not keg_in_db:
         raise HTTPException(status_code=400, detail="Keg not deleted")
     return build_response(
