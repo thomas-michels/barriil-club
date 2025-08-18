@@ -123,8 +123,8 @@ class TestReservationEndpoints(unittest.TestCase):
                     voltage=Voltage.V110,
                     status=DispenserStatus.ACTIVE,
                     notes="",
-                    company_id=str(self.company.id),
-                )
+                ),
+                company_id=str(self.company.id),
             )
         )
 
@@ -148,7 +148,8 @@ class TestReservationEndpoints(unittest.TestCase):
 
         self.extractor = asyncio.run(
             self.extractor_services.create(
-                Extractor(brand="Acme", company_id=str(self.company.id))
+                Extractor(brand="Acme"),
+                company_id=str(self.company.id),
             )
         )
 
@@ -158,8 +159,8 @@ class TestReservationEndpoints(unittest.TestCase):
                     brand="Acme",
                     type=PressureGaugeType.ANALOG,
                     status=PressureGaugeStatus.ACTIVE,
-                    company_id=str(self.company.id),
-                )
+                ),
+                company_id=str(self.company.id),
             )
         )
 
@@ -216,8 +217,8 @@ class TestReservationEndpoints(unittest.TestCase):
                     voltage=Voltage.V110,
                     status=DispenserStatus.ACTIVE,
                     notes="",
-                    company_id=str(self.company.id),
-                )
+                ),
+                company_id=str(self.company.id),
             )
         )
         payload = self._payload()
@@ -321,8 +322,8 @@ class TestReservationEndpoints(unittest.TestCase):
                     voltage=Voltage.V110,
                     status=DispenserStatus.ACTIVE,
                     notes="",
-                    company_id=str(self.company.id),
-                )
+                ),
+                company_id=str(self.company.id),
             )
         )
         payload = self._payload()

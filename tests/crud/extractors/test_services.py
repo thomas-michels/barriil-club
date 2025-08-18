@@ -24,17 +24,17 @@ class TestExtractorServices(unittest.TestCase):
     def tearDown(self) -> None:
         disconnect()
 
-    def _build_extractor(self, brand: str = "BrandX", company_id: str = "com1") -> Extractor:
-        return Extractor(brand=brand, company_id=company_id)
+    def _build_extractor(self, brand: str = "BrandX") -> Extractor:
+        return Extractor(brand=brand)
 
     def test_create_extractor(self):
         extractor = self._build_extractor()
-        result = asyncio.run(self.services.create(extractor))
+        result = asyncio.run(self.services.create(extractor, "com1"))
         self.assertEqual(result.brand, "BrandX")
         self.assertEqual(ExtractorModel.objects.count(), 1)
 
     def test_search_by_id(self):
-        doc = ExtractorModel(**self._build_extractor().model_dump())
+        doc = ExtractorModel(**self._build_extractor().model_dump(), company_id="com1")
         doc.save()
         res = asyncio.run(self.services.search_by_id(doc.id, "com1"))
         self.assertEqual(res.id, doc.id)
@@ -44,14 +44,14 @@ class TestExtractorServices(unittest.TestCase):
             asyncio.run(self.services.search_by_id("invalid", "com1"))
 
     def test_search_all(self):
-        ExtractorModel(**self._build_extractor("A", "com1").model_dump()).save()
-        ExtractorModel(**self._build_extractor("B", "com1").model_dump()).save()
-        ExtractorModel(**self._build_extractor("C", "com2").model_dump()).save()
+        ExtractorModel(**self._build_extractor("A").model_dump(), company_id="com1").save()
+        ExtractorModel(**self._build_extractor("B").model_dump(), company_id="com1").save()
+        ExtractorModel(**self._build_extractor("C").model_dump(), company_id="com2").save()
         res = asyncio.run(self.services.search_all("com1"))
         self.assertEqual(len(res), 2)
 
     def test_update_extractor(self):
-        doc = ExtractorModel(**self._build_extractor("Old", "com1").model_dump())
+        doc = ExtractorModel(**self._build_extractor("Old").model_dump(), company_id="com1")
         doc.save()
         updated = asyncio.run(
             self.services.update(doc.id, "com1", UpdateExtractor(brand="New"))
@@ -65,7 +65,7 @@ class TestExtractorServices(unittest.TestCase):
             )
 
     def test_delete_extractor(self):
-        doc = ExtractorModel(**self._build_extractor("Del", "com1").model_dump())
+        doc = ExtractorModel(**self._build_extractor("Del").model_dump(), company_id="com1")
         doc.save()
         result = asyncio.run(self.services.delete_by_id(doc.id, "com1"))
         self.assertEqual(result.id, doc.id)

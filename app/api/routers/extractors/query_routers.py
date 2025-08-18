@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Response
 
 from app.api.composers.extractor_composite import extractor_composer
-from app.api.dependencies import build_response, require_company_member
+from app.api.dependencies import build_response, require_user_company
 from app.api.shared_schemas.responses import MessageResponse
 from .schemas import ExtractorResponse, ExtractorListResponse
 from app.crud.extractors import ExtractorServices
@@ -16,12 +16,11 @@ router = APIRouter(tags=["Extractors"])
 )
 async def get_extractor_by_id(
     extractor_id: str,
-    company_id: str,
     extractor_services: ExtractorServices = Depends(extractor_composer),
-    _: CompanyInDB = Depends(require_company_member),
+    company: CompanyInDB = Depends(require_user_company),
 ):
     extractor_in_db = await extractor_services.search_by_id(
-        id=extractor_id, company_id=company_id
+        id=extractor_id, company_id=str(company.id)
     )
     return build_response(
         status_code=200, message="Extractor found with success", data=extractor_in_db
@@ -33,11 +32,10 @@ async def get_extractor_by_id(
     responses={200: {"model": ExtractorListResponse}, 204: {"description": "No Content"}},
 )
 async def get_extractors(
-    company_id: str,
     extractor_services: ExtractorServices = Depends(extractor_composer),
-    _: CompanyInDB = Depends(require_company_member),
+    company: CompanyInDB = Depends(require_user_company),
 ):
-    extractors = await extractor_services.search_all(company_id=company_id)
+    extractors = await extractor_services.search_all(company_id=str(company.id))
     if extractors:
         return build_response(
             status_code=200, message="Extractors found with success", data=extractors

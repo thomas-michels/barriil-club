@@ -18,13 +18,14 @@ class PressureGaugeRepository(Repository):
     def __init__(self) -> None:
         super().__init__()
 
-    async def create(self, gauge: PressureGauge) -> PressureGaugeInDB:
+    async def create(self, gauge: PressureGauge, company_id: str) -> PressureGaugeInDB:
         try:
             json = jsonable_encoder(gauge.model_dump())
             model = PressureGaugeModel(
                 is_active=True,
                 created_at=UTCDateTime.now(),
                 updated_at=UTCDateTime.now(),
+                company_id=company_id,
                 **json,
             )
             model.save()

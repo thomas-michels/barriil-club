@@ -25,7 +25,6 @@ class PressureGauge(GenericModel):
     last_calibration_date: date | None = Field(default=None, example="2024-01-01")
     status: PressureGaugeStatus = Field(example=PressureGaugeStatus.ACTIVE)
     notes: str | None = Field(default=None, example="notes")
-    company_id: str = Field(example="com_123")
 
 
 class PressureGaugeInDB(DatabaseModel):

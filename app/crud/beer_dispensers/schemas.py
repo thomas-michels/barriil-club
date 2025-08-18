@@ -24,7 +24,6 @@ class BeerDispenser(GenericModel):
     voltage: Voltage | None = Field(default=None, example=Voltage.V110)
     status: DispenserStatus = Field(example=DispenserStatus.ACTIVE)
     notes: str | None = Field(default=None, example="notes")
-    company_id: str = Field(example="com_123")
 
 
 class BeerDispenserInDB(DatabaseModel):

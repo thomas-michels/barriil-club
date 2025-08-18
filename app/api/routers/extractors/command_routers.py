@@ -1,11 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.composers.extractor_composite import extractor_composer
-from app.api.dependencies import (
-    build_response,
-    require_company_member,
-    require_user_company,
-)
+from app.api.dependencies import build_response, require_user_company
 from app.api.shared_schemas.responses import MessageResponse
 from .schemas import ExtractorResponse
 from app.crud.extractors import Extractor, UpdateExtractor, ExtractorServices
@@ -23,12 +19,9 @@ async def create_extractor(
     company: CompanyInDB = Depends(require_user_company),
     extractor_services: ExtractorServices = Depends(extractor_composer),
 ):
-    if extractor.company_id != company.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User not allowed to use this company",
-        )
-    extractor_in_db = await extractor_services.create(extractor=extractor)
+    extractor_in_db = await extractor_services.create(
+        extractor=extractor, company_id=str(company.id)
+    )
     return build_response(
         status_code=201, message="Extractor created with success", data=extractor_in_db
     )
@@ -40,13 +33,12 @@ async def create_extractor(
 )
 async def update_extractor(
     extractor_id: str,
-    company_id: str,
     extractor: UpdateExtractor,
     extractor_services: ExtractorServices = Depends(extractor_composer),
-    _: CompanyInDB = Depends(require_company_member),
+    company: CompanyInDB = Depends(require_user_company),
 ):
     extractor_in_db = await extractor_services.update(
-        id=extractor_id, company_id=company_id, extractor=extractor
+        id=extractor_id, company_id=str(company.id), extractor=extractor
     )
     return build_response(
         status_code=200, message="Extractor updated with success", data=extractor_in_db
@@ -59,12 +51,11 @@ async def update_extractor(
 )
 async def delete_extractor(
     extractor_id: str,
-    company_id: str,
     extractor_services: ExtractorServices = Depends(extractor_composer),
-    _: CompanyInDB = Depends(require_company_member),
+    company: CompanyInDB = Depends(require_user_company),
 ):
     extractor_in_db = await extractor_services.delete_by_id(
-        id=extractor_id, company_id=company_id
+        id=extractor_id, company_id=str(company.id)
     )
     return build_response(
         status_code=200, message="Extractor deleted with success", data=extractor_in_db

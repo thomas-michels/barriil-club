@@ -21,7 +21,7 @@ class TestBeerDispenserRepository(unittest.TestCase):
     def tearDown(self) -> None:
         disconnect()
 
-    def _build_dispenser(self, brand: str = "Acme", company_id: str = "com1") -> BeerDispenser:
+    def _build_dispenser(self, brand: str = "Acme") -> BeerDispenser:
         return BeerDispenser(
             brand=brand,
             model="X1",
@@ -30,18 +30,17 @@ class TestBeerDispenserRepository(unittest.TestCase):
             voltage=Voltage.V110,
             status=DispenserStatus.ACTIVE,
             notes="",
-            company_id=company_id,
         )
 
     def test_create_dispenser(self):
         repository = BeerDispenserRepository()
         dispenser = self._build_dispenser()
-        result = asyncio.run(repository.create(dispenser))
+        result = asyncio.run(repository.create(dispenser, "com1"))
         self.assertEqual(result.brand, "Acme")
         self.assertEqual(BeerDispenserModel.objects.count(), 1)
 
     def test_select_by_id_found(self):
-        doc = BeerDispenserModel(**self._build_dispenser().model_dump())
+        doc = BeerDispenserModel(**self._build_dispenser().model_dump(), company_id="com1")
         doc.save()
         repository = BeerDispenserRepository()
         res = asyncio.run(repository.select_by_id(doc.id, doc.company_id))
@@ -53,14 +52,14 @@ class TestBeerDispenserRepository(unittest.TestCase):
             asyncio.run(repository.select_by_id("invalid", "com1"))
 
     def test_select_all(self):
-        BeerDispenserModel(**self._build_dispenser("A").model_dump()).save()
-        BeerDispenserModel(**self._build_dispenser("B").model_dump()).save()
+        BeerDispenserModel(**self._build_dispenser("A").model_dump(), company_id="com1").save()
+        BeerDispenserModel(**self._build_dispenser("B").model_dump(), company_id="com1").save()
         repository = BeerDispenserRepository()
         res = asyncio.run(repository.select_all("com1"))
         self.assertEqual(len(res), 2)
 
     def test_update_dispenser(self):
-        doc = BeerDispenserModel(**self._build_dispenser().model_dump())
+        doc = BeerDispenserModel(**self._build_dispenser().model_dump(), company_id="com1")
         doc.save()
         repository = BeerDispenserRepository()
         updated = asyncio.run(
@@ -69,7 +68,7 @@ class TestBeerDispenserRepository(unittest.TestCase):
         self.assertEqual(updated.brand, "New")
 
     def test_delete_dispenser(self):
-        doc = BeerDispenserModel(**self._build_dispenser().model_dump())
+        doc = BeerDispenserModel(**self._build_dispenser().model_dump(), company_id="com1")
         doc.save()
         repository = BeerDispenserRepository()
         result = asyncio.run(repository.delete_by_id(doc.id, doc.company_id))

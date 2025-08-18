@@ -8,8 +8,8 @@ class BeerDispenserServices:
     def __init__(self, repository: BeerDispenserRepository) -> None:
         self.__repository = repository
 
-    async def create(self, dispenser: BeerDispenser) -> BeerDispenserInDB:
-        return await self.__repository.create(dispenser=dispenser)
+    async def create(self, dispenser: BeerDispenser, company_id: str) -> BeerDispenserInDB:
+        return await self.__repository.create(dispenser=dispenser, company_id=company_id)
 
     async def update(
         self, id: str, company_id: str, dispenser: UpdateBeerDispenser

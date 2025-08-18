@@ -8,8 +8,8 @@ class ExtractorServices:
     def __init__(self, extractor_repository: ExtractorRepository) -> None:
         self.__repository = extractor_repository
 
-    async def create(self, extractor: Extractor) -> ExtractorInDB:
-        return await self.__repository.create(extractor=extractor)
+    async def create(self, extractor: Extractor, company_id: str) -> ExtractorInDB:
+        return await self.__repository.create(extractor=extractor, company_id=company_id)
 
     async def update(
         self, id: str, company_id: str, extractor: UpdateExtractor
