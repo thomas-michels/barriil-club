@@ -8,7 +8,7 @@ from .schemas import CylinderStatus
 class CylinderModel(BaseDocument):
     brand = StringField(required=True)
     weight_kg = DecimalField(required=True, precision=2)
-    number = StringField(required=True, unique=True)
+    number = StringField(required=True)
     status = StringField(required=True, choices=[s.value for s in CylinderStatus])
     notes = StringField()
     company_id = StringField(required=True)

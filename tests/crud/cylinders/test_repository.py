@@ -81,6 +81,25 @@ class TestCylinderRepository(unittest.TestCase):
         with self.assertRaises(NotFoundError):
             asyncio.run(repository.delete_by_id("invalid", "com1"))
 
+    def test_create_cylinder_duplicate_number_active(self):
+        repository = CylinderRepository()
+        cylinder = self._build_cylinder()
+        asyncio.run(repository.create(cylinder))
+        with self.assertRaises(NotFoundError):
+            asyncio.run(repository.create(cylinder))
+
+    def test_create_cylinder_after_soft_delete(self):
+        repository = CylinderRepository()
+        cylinder = self._build_cylinder()
+        first = asyncio.run(repository.create(cylinder))
+        asyncio.run(repository.delete_by_id(first.id, first.company_id))
+        second = asyncio.run(repository.create(cylinder))
+        self.assertEqual(second.number, cylinder.number)
+        self.assertNotEqual(first.id, second.id)
+        self.assertEqual(
+            CylinderModel.objects(number=cylinder.number, is_active=True).count(), 1
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
