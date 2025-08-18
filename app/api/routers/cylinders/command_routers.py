@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from app.core.exceptions import NotFoundError
 
 from app.api.composers.cylinder_composite import cylinder_composer
 from app.api.dependencies import build_response, require_user_company
@@ -12,16 +13,22 @@ router = APIRouter(tags=["Cylinders"])
 
 @router.post(
     "/cylinders",
-    responses={201: {"model": CylinderResponse}, 400: {"model": MessageResponse}},
+    responses={
+        201: {"model": CylinderResponse},
+        400: {"model": MessageResponse},
+    },
 )
 async def create_cylinder(
     cylinder: Cylinder,
     company: CompanyInDB = Depends(require_user_company),
     services: CylinderServices = Depends(cylinder_composer),
 ):
-    cylinder_in_db = await services.create(
-        cylinder=cylinder, company_id=str(company.id)
-    )
+    try:
+        cylinder_in_db = await services.create(
+            cylinder=cylinder, company_id=str(company.id)
+        )
+    except NotFoundError as error:
+        raise HTTPException(status_code=400, detail=error.message)
     if not cylinder_in_db:
         raise HTTPException(status_code=400, detail="Cylinder not created")
     return build_response(

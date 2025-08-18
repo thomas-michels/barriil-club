@@ -40,6 +40,8 @@ class CylinderRepository(Repository):
             )
             model.save()
             return CylinderInDB.model_validate(model)
+        except NotFoundError:
+            raise
         except Exception as error:
             _logger.error(f"Error on create_cylinder: {str(error)}")
             raise NotFoundError(message="Error on create new cylinder")
