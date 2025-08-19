@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from app.api.routers.users import user_router
 from app.api.dependencies.auth import decode_jwt
 from app.api.composers.company_composite import company_composer
+from app.api.composers.user_composite import user_composer
 from app.crud.users.schemas import UserInDB
 from app.crud.companies.schemas import CompanyInDB
 
@@ -49,8 +50,21 @@ class TestUserEndpoints(unittest.TestCase):
         async def override_company_composer():
             return CompanyServiceStub(self.company)
 
+        class UserServiceStub:
+            def __init__(self, user):
+                self.user = user
+
+            async def search_by_email(self, email: str):
+                if self.user.email == email:
+                    return self.user
+                return None
+
+        async def override_user_composer():
+            return UserServiceStub(self.user)
+
         self.app.dependency_overrides[decode_jwt] = override_decode_jwt
         self.app.dependency_overrides[company_composer] = override_company_composer
+        self.app.dependency_overrides[user_composer] = override_user_composer
 
         self.client = TestClient(self.app)
 
@@ -63,6 +77,16 @@ class TestUserEndpoints(unittest.TestCase):
         data = resp.json()["data"]
         self.assertEqual(data["userId"], self.user.user_id)
         self.assertEqual(data["company"]["id"], self.company.id)
+
+    def test_get_user_by_email(self):
+        resp = self.client.get(f"/api/users/email/{self.user.email}")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()["data"]
+        self.assertEqual(data["userId"], self.user.user_id)
+
+    def test_get_user_by_email_not_found(self):
+        resp = self.client.get("/api/users/email/unknown@test.com")
+        self.assertEqual(resp.status_code, 404)
 
 
 if __name__ == "__main__":

@@ -32,6 +32,12 @@ class UserServices:
         user_in_db = await self.__repository.select_by_id(id=id)
         return user_in_db
 
+    async def search_by_email(self, email: str) -> UserInDB:
+        user_in_db = await self.__repository.select_by_email(
+            email=email, raise_404=False
+        )
+        return user_in_db
+
     async def search_all(self) -> List[UserInDB]:
         users = await self.__repository.select_all()
         return users
