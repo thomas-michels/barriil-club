@@ -2,7 +2,7 @@ from typing import List
 
 import app.api.dependencies.get_address_by_zip_code as get_address_by_zip_code
 
-from app.core.exceptions import NotFoundError, UnprocessableEntity
+from app.core.exceptions import NotFoundError
 
 from .repositories import AddressRepository
 from .schemas import Address, AddressInDB, UpdateAddress
@@ -32,20 +32,19 @@ class AddressServices:
     async def delete_by_id(self, id: str, company_id: str) -> AddressInDB:
         return await self.__repository.delete_by_id(id=id, company_id=company_id)
 
-    async def search_by_zip_code(self, zip_code: str, company_id: str) -> AddressInDB:
-        address_in_db = await self.__repository.select_by_zip_code(
-            zip_code=zip_code, company_id=company_id, raise_404=False
-        )
-        if address_in_db:
-            return address_in_db
+    async def search_by_zip_code(self, zip_code: str, company_id: str) -> Address:
+        """Fetch address information directly from ViaCEP service.
+
+        This method ignores any address stored in the local database and
+        always retrieves fresh data from ViaCEP.
+        """
 
         data = get_address_by_zip_code.get_address_by_zip_code(zip_code=zip_code)
-        if "erro" in data:
-            raise NotFoundError(
-                message=f"CEP {zip_code} not found in ViaCEP"
-            )
 
-        address_data = Address(
+        if "erro" in data:
+            raise NotFoundError(message=f"CEP {zip_code} not found in ViaCEP")
+
+        return Address(
             postal_code=data["cep"],
             city=data["localidade"],
             district=data["bairro"],
@@ -55,10 +54,3 @@ class AddressServices:
             state=data["uf"],
             reference=None,
         )
-
-        try:
-            return await self.__repository.create(address=address_data, company_id=company_id)
-        except Exception as error:
-            raise UnprocessableEntity(
-                message=f"Failed to create address: {str(error)}"
-            )

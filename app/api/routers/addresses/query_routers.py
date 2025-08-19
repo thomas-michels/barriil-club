@@ -52,9 +52,9 @@ async def get_address_by_zip_code(
     company: CompanyInDB = Depends(require_user_company),
     address_services: AddressServices = Depends(address_composer),
 ):
-    address_in_db = await address_services.search_by_zip_code(
+    address = await address_services.search_by_zip_code(
         zip_code=zip_code, company_id=str(company.id)
     )
     return build_response(
-        status_code=200, message="Address found with success", data=address_in_db
+        status_code=200, message="Address found with success", data=address
     )

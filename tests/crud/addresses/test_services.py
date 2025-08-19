@@ -78,14 +78,9 @@ class TestAddressServices(unittest.TestCase):
         with self.assertRaises(NotFoundError):
             asyncio.run(self.services.delete_by_id("invalid", "com1"))
 
-    def test_search_by_zip_code_existing(self):
-        doc = AddressModel(**self._build_address("12345").model_dump(), company_id="com1")
-        doc.save()
-        res = asyncio.run(self.services.search_by_zip_code("12345", "com1"))
-        self.assertEqual(res.id, doc.id)
-
     @patch("app.api.dependencies.get_address_by_zip_code.get_address_by_zip_code")
-    def test_search_by_zip_code_via_cep(self, mock_get):
+    def test_search_by_zip_code_always_via_cep(self, mock_get):
+        AddressModel(**self._build_address("12345").model_dump(), company_id="com1").save()
         mock_get.return_value = {
             "cep": "99999-000",
             "logradouro": "Street",
@@ -94,8 +89,9 @@ class TestAddressServices(unittest.TestCase):
             "localidade": "City",
             "uf": "ST",
         }
-        res = asyncio.run(self.services.search_by_zip_code("99999000", "com1"))
+        res = asyncio.run(self.services.search_by_zip_code("12345", "com1"))
         self.assertEqual(res.postal_code, "99999-000")
+        mock_get.assert_called_once()
 
 
 if __name__ == "__main__":
