@@ -8,6 +8,7 @@ from app.core.exceptions import NotFoundError
 from .schemas import (
     GetCurrentUserResponse,
     GetUserByIdResponse,
+    GetUserByEmailResponse,
     GetUsersResponse,
     CurrentUser,
 )
@@ -59,6 +60,33 @@ async def get_user_by_id(
     else:
         return build_response(
             status_code=404, message=f"User {user_id} not found", data=None
+        )
+
+
+@router.get(
+    "/users/email/{email}",
+    responses={
+        200: {"model": GetUserByEmailResponse},
+        404: {"model": MessageResponse},
+    },
+)
+async def get_user_by_email(
+    email: str,
+    current_user: UserInDB = Security(decode_jwt, scopes=["user:get"]),
+    user_services: UserServices = Depends(user_composer),
+):
+    user_in_db = await user_services.search_by_email(email=email)
+
+    if user_in_db:
+        return build_response(
+            status_code=200, message="User found with success", data=user_in_db
+        )
+
+    else:
+        return build_response(
+            status_code=404,
+            message=f"User with email {email} not found",
+            data=None,
         )
 
 
