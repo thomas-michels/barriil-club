@@ -7,8 +7,8 @@ from app.core.models.base_model import DatabaseModel
 
 
 class PressureGaugeType(str, Enum):
-    ANALOG = "ANALOG"
-    DIGITAL = "DIGITAL"
+    SIMPLE = "SIMPLE"
+    DOUBLE = "DOUBLE"
 
 
 class PressureGaugeStatus(str, Enum):
@@ -20,7 +20,7 @@ class PressureGaugeStatus(str, Enum):
 
 class PressureGauge(GenericModel):
     brand: str = Field(example="Acme")
-    type: PressureGaugeType = Field(example=PressureGaugeType.ANALOG)
+    type: PressureGaugeType = Field(example=PressureGaugeType.SIMPLE)
     serial_number: str | None = Field(default=None, example="SN123")
     last_calibration_date: date | None = Field(default=None, example="2024-01-01")
     status: PressureGaugeStatus = Field(example=PressureGaugeStatus.ACTIVE)
@@ -29,7 +29,7 @@ class PressureGauge(GenericModel):
 
 class PressureGaugeInDB(DatabaseModel):
     brand: str = Field(example="Acme")
-    type: PressureGaugeType = Field(example=PressureGaugeType.ANALOG)
+    type: PressureGaugeType = Field(example=PressureGaugeType.SIMPLE)
     serial_number: str | None = Field(default=None, example="SN123")
     last_calibration_date: date | None = Field(default=None, example="2024-01-01")
     status: PressureGaugeStatus = Field(example=PressureGaugeStatus.ACTIVE)

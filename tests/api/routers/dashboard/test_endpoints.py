@@ -8,29 +8,29 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from mongoengine import connect, disconnect
 
+from app.api.composers.dashboard_composite import dashboard_composer
+from app.api.dependencies.company import require_user_company
 from app.api.routers.dashboard import dashboard_router
 from app.api.routers.exception_handlers import not_found_error_404
-from app.api.dependencies.company import require_user_company
-from app.api.composers.dashboard_composite import dashboard_composer
-from app.crud.reservations.repositories import ReservationRepository
-from app.crud.reservations.services import ReservationServices
-from app.crud.reservations.schemas import Reservation, ReservationStatus
-from app.crud.dashboard.services import DashboardServices
-from app.crud.companies.schemas import CompanyInDB
-from app.crud.kegs.repositories import KegRepository
-from app.crud.kegs.services import KegServices
-from app.crud.kegs.schemas import Keg, KegStatus
-from app.crud.pressure_gauges.repositories import PressureGaugeRepository
-from app.crud.cylinders.repositories import CylinderRepository
-from app.crud.extractors.models import ExtractorModel
-from app.crud.beer_dispensers.models import BeerDispenserModel
-from app.crud.pressure_gauges.models import PressureGaugeModel
-from app.crud.cylinders.models import CylinderModel
-from app.crud.beer_dispensers.schemas import DispenserStatus, Voltage
-from app.crud.pressure_gauges.schemas import PressureGaugeStatus, PressureGaugeType
-from app.crud.cylinders.schemas import CylinderStatus
-from app.core.utils.utc_datetime import UTCDateTime
 from app.core.exceptions import NotFoundError
+from app.core.utils.utc_datetime import UTCDateTime
+from app.crud.beer_dispensers.models import BeerDispenserModel
+from app.crud.beer_dispensers.schemas import DispenserStatus, Voltage
+from app.crud.companies.schemas import CompanyInDB
+from app.crud.cylinders.models import CylinderModel
+from app.crud.cylinders.repositories import CylinderRepository
+from app.crud.cylinders.schemas import CylinderStatus
+from app.crud.dashboard.services import DashboardServices
+from app.crud.extractors.models import ExtractorModel
+from app.crud.kegs.repositories import KegRepository
+from app.crud.kegs.schemas import Keg, KegStatus
+from app.crud.kegs.services import KegServices
+from app.crud.pressure_gauges.models import PressureGaugeModel
+from app.crud.pressure_gauges.repositories import PressureGaugeRepository
+from app.crud.pressure_gauges.schemas import PressureGaugeStatus, PressureGaugeType
+from app.crud.reservations.repositories import ReservationRepository
+from app.crud.reservations.schemas import Reservation, ReservationStatus
+from app.crud.reservations.services import ReservationServices
 
 
 class TestDashboardEndpoints(unittest.TestCase):
@@ -119,7 +119,7 @@ class TestDashboardEndpoints(unittest.TestCase):
         self.disp2.save()
         self.pg_model = PressureGaugeModel(
             brand="Acme",
-            type=PressureGaugeType.ANALOG.value,
+            type=PressureGaugeType.SIMPLE.value,
             status=PressureGaugeStatus.ACTIVE.value,
             company_id=self.company.id,
         )
@@ -172,9 +172,7 @@ class TestDashboardEndpoints(unittest.TestCase):
         disconnect()
 
     def test_monthly_revenue(self):
-        resp = self.client.get(
-            "/api/dashboard/revenue?year=2024"
-        )
+        resp = self.client.get("/api/dashboard/revenue?year=2024")
         self.assertEqual(resp.status_code, 200)
         data = resp.json()["data"]
         jan = next(item for item in data if item["month"] == 1)
@@ -191,18 +189,14 @@ class TestDashboardEndpoints(unittest.TestCase):
         self.assertEqual(float(feb["profit"]), 80.0)
 
     def test_upcoming_reservations(self):
-        resp = self.client.get(
-            "/api/dashboard/upcoming-reservations"
-        )
+        resp = self.client.get("/api/dashboard/upcoming-reservations")
         self.assertEqual(resp.status_code, 200)
         data = resp.json()["data"]
         self.assertEqual(len(data), 1)
         self.assertEqual(data[0]["id"], str(self.res1.id))
 
     def test_reservation_calendar(self):
-        resp = self.client.get(
-            "/api/dashboard/calendar?year=2024&month=1"
-        )
+        resp = self.client.get("/api/dashboard/calendar?year=2024&month=1")
         self.assertEqual(resp.status_code, 200)
         data = resp.json()["data"]
         day = next(item for item in data if item["day"] == 2)

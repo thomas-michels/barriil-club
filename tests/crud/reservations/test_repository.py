@@ -1,26 +1,23 @@
 import asyncio
 import unittest
-from datetime import datetime, timedelta, date
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 import mongomock
 from mongoengine import connect, disconnect
 
-from app.crud.reservations.repositories import ReservationRepository
-from app.crud.reservations.schemas import Reservation, ReservationStatus
-from app.crud.kegs.models import KegModel
-from app.crud.kegs.schemas import KegStatus
 from app.crud.beer_dispensers.models import BeerDispenserModel
 from app.crud.beer_dispensers.schemas import DispenserStatus, Voltage
-from app.crud.pressure_gauges.models import PressureGaugeModel
-from app.crud.pressure_gauges.schemas import (
-    PressureGaugeStatus,
-    PressureGaugeType,
-)
 from app.crud.cylinders.models import CylinderModel
 from app.crud.cylinders.schemas import CylinderStatus
 from app.crud.extractors.models import ExtractorModel
+from app.crud.kegs.models import KegModel
+from app.crud.kegs.schemas import KegStatus
 from app.crud.payments.schemas import Payment
+from app.crud.pressure_gauges.models import PressureGaugeModel
+from app.crud.pressure_gauges.schemas import PressureGaugeStatus, PressureGaugeType
+from app.crud.reservations.repositories import ReservationRepository
+from app.crud.reservations.schemas import Reservation, ReservationStatus
 
 
 class TestReservationRepository(unittest.TestCase):
@@ -51,7 +48,7 @@ class TestReservationRepository(unittest.TestCase):
         self.keg.save()
         self.pg = PressureGaugeModel(
             brand="Acme",
-            type=PressureGaugeType.ANALOG.value,
+            type=PressureGaugeType.SIMPLE.value,
             status=PressureGaugeStatus.ACTIVE.value,
             company_id=self.company_id,
         )
@@ -111,13 +108,9 @@ class TestReservationRepository(unittest.TestCase):
         )
         res = asyncio.run(self.repository.create(reservation, self.company_id))
         pay = Payment(amount=Decimal("50.00"), method="cash", paid_at=date.today())
-        updated = asyncio.run(
-            self.repository.add_payment(res.id, self.company_id, pay)
-        )
+        updated = asyncio.run(self.repository.add_payment(res.id, self.company_id, pay))
         self.assertEqual(len(updated.payments), 1)
-        new_pay = Payment(
-            amount=Decimal("60.00"), method="card", paid_at=date.today()
-        )
+        new_pay = Payment(amount=Decimal("60.00"), method="card", paid_at=date.today())
         updated = asyncio.run(
             self.repository.update_payment(res.id, self.company_id, 0, new_pay)
         )

@@ -11,7 +11,7 @@ from app.crud.pressure_gauges.schemas import (
 EXAMPLE_GAUGE = {
     "id": "pga_12345678",
     "brand": "Acme",
-    "type": PressureGaugeType.ANALOG,
+    "type": PressureGaugeType.SIMPLE,
     "serial_number": "SN123",
     "last_calibration_date": "2024-01-01",
     "status": PressureGaugeStatus.ACTIVE,

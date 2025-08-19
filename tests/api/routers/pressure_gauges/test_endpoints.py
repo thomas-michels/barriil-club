@@ -6,22 +6,22 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from mongoengine import connect, disconnect
 
-from app.api.routers.pressure_gauges import pressure_gauge_router
-from app.api.dependencies.company import require_user_company
 from app.api.composers.pressure_gauge_composite import pressure_gauge_composer
-from app.crud.companies.repositories import CompanyRepository
-from app.crud.companies.services import CompanyServices
-from app.crud.companies.schemas import Company
-from app.crud.addresses.repositories import AddressRepository
+from app.api.dependencies.company import require_user_company
+from app.api.routers.pressure_gauges import pressure_gauge_router
+from app.core.exceptions import NotFoundError
 from app.crud.addresses.models import AddressModel
+from app.crud.addresses.repositories import AddressRepository
+from app.crud.companies.repositories import CompanyRepository
+from app.crud.companies.schemas import Company
+from app.crud.companies.services import CompanyServices
 from app.crud.pressure_gauges.repositories import PressureGaugeRepository
-from app.crud.pressure_gauges.services import PressureGaugeServices
 from app.crud.pressure_gauges.schemas import (
     PressureGauge,
     PressureGaugeStatus,
     PressureGaugeType,
 )
-from app.core.exceptions import NotFoundError
+from app.crud.pressure_gauges.services import PressureGaugeServices
 
 
 class TestPressureGaugeEndpoints(unittest.TestCase):
@@ -41,7 +41,6 @@ class TestPressureGaugeEndpoints(unittest.TestCase):
 
         async def override_require_user_company():
             return self.company
-
 
         async def override_gauge_composer():
             return self.services
@@ -73,7 +72,7 @@ class TestPressureGaugeEndpoints(unittest.TestCase):
 
         gauge = PressureGauge(
             brand="Acme",
-            type=PressureGaugeType.ANALOG,
+            type=PressureGaugeType.SIMPLE,
             serial_number="SN1",
             last_calibration_date=None,
             status=PressureGaugeStatus.ACTIVE,
@@ -90,7 +89,7 @@ class TestPressureGaugeEndpoints(unittest.TestCase):
     def _payload(self, brand: str = "NewBrand") -> dict:
         return {
             "brand": brand,
-            "type": "ANALOG",
+            "type": "SIMPLE",
             "serialNumber": "SN2",
             "status": "ACTIVE",
         }
@@ -101,9 +100,7 @@ class TestPressureGaugeEndpoints(unittest.TestCase):
         self.assertEqual(resp.json()["data"]["brand"], "BrandX")
 
     def test_get_gauge_by_id(self):
-        resp = self.client.get(
-            f"/api/pressure-gauges/{self.gauge.id}"
-        )
+        resp = self.client.get(f"/api/pressure-gauges/{self.gauge.id}")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["data"]["id"], self.gauge.id)
 
@@ -121,9 +118,7 @@ class TestPressureGaugeEndpoints(unittest.TestCase):
         self.assertEqual(resp.json()["data"]["brand"], "Updated")
 
     def test_delete_gauge_endpoint(self):
-        resp = self.client.delete(
-            f"/api/pressure-gauges/{self.gauge.id}"
-        )
+        resp = self.client.delete(f"/api/pressure-gauges/{self.gauge.id}")
         self.assertEqual(resp.status_code, 200)
         with self.assertRaises(NotFoundError):
             asyncio.run(self.services.search_by_id(self.gauge.id, str(self.company.id)))
@@ -152,9 +147,7 @@ class TestPressureGaugeEndpoints(unittest.TestCase):
             return None
 
         self.services.delete_by_id = fake_delete
-        resp = self.client.delete(
-            f"/api/pressure-gauges/{self.gauge.id}"
-        )
+        resp = self.client.delete(f"/api/pressure-gauges/{self.gauge.id}")
         self.assertEqual(resp.status_code, 400)
 
 

@@ -1,43 +1,43 @@
 import asyncio
 import unittest
-from datetime import datetime, timedelta, date
+from datetime import date, datetime, timedelta
 
 import mongomock
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from mongoengine import connect, disconnect
 
-from app.api.routers.reservations import reservation_router
-from app.api.routers.exception_handlers import not_found_error_404
-from app.api.dependencies.company import require_user_company
 from app.api.composers.reservation_composite import reservation_composer
-from app.crud.companies.repositories import CompanyRepository
-from app.crud.companies.services import CompanyServices
-from app.crud.companies.schemas import Company
-from app.crud.addresses.repositories import AddressRepository
+from app.api.dependencies.company import require_user_company
+from app.api.routers.exception_handlers import not_found_error_404
+from app.api.routers.reservations import reservation_router
+from app.core.exceptions import NotFoundError
 from app.crud.addresses.models import AddressModel
+from app.crud.addresses.repositories import AddressRepository
 from app.crud.beer_dispensers.repositories import BeerDispenserRepository
-from app.crud.beer_dispensers.services import BeerDispenserServices
 from app.crud.beer_dispensers.schemas import BeerDispenser, DispenserStatus, Voltage
-from app.crud.kegs.repositories import KegRepository
-from app.crud.kegs.services import KegServices
-from app.crud.kegs.schemas import Keg, KegStatus, UpdateKeg
+from app.crud.beer_dispensers.services import BeerDispenserServices
+from app.crud.companies.repositories import CompanyRepository
+from app.crud.companies.schemas import Company
+from app.crud.companies.services import CompanyServices
+from app.crud.cylinders.repositories import CylinderRepository
+from app.crud.cylinders.schemas import Cylinder, CylinderStatus, UpdateCylinder
+from app.crud.cylinders.services import CylinderServices
 from app.crud.extractors.repositories import ExtractorRepository
-from app.crud.extractors.services import ExtractorServices
 from app.crud.extractors.schemas import Extractor
+from app.crud.extractors.services import ExtractorServices
+from app.crud.kegs.repositories import KegRepository
+from app.crud.kegs.schemas import Keg, KegStatus, UpdateKeg
+from app.crud.kegs.services import KegServices
 from app.crud.pressure_gauges.repositories import PressureGaugeRepository
-from app.crud.pressure_gauges.services import PressureGaugeServices
 from app.crud.pressure_gauges.schemas import (
     PressureGauge,
     PressureGaugeStatus,
     PressureGaugeType,
 )
+from app.crud.pressure_gauges.services import PressureGaugeServices
 from app.crud.reservations.repositories import ReservationRepository
 from app.crud.reservations.services import ReservationServices
-from app.crud.cylinders.repositories import CylinderRepository
-from app.crud.cylinders.services import CylinderServices
-from app.crud.cylinders.schemas import Cylinder, CylinderStatus, UpdateCylinder
-from app.core.exceptions import NotFoundError
 
 
 class TestReservationEndpoints(unittest.TestCase):
@@ -157,7 +157,7 @@ class TestReservationEndpoints(unittest.TestCase):
             self.pressure_gauge_services.create(
                 PressureGauge(
                     brand="Acme",
-                    type=PressureGaugeType.ANALOG,
+                    type=PressureGaugeType.SIMPLE,
                     status=PressureGaugeStatus.ACTIVE,
                 ),
                 company_id=str(self.company.id),
@@ -196,14 +196,18 @@ class TestReservationEndpoints(unittest.TestCase):
             "discount": 0.0,
             "deliveryDate": delivery.isoformat(),
             "pickupDate": pickup.isoformat(),
-            "payments": [{"amount": 50.0, "method": "cash", "paidAt": str(date.today())}],
+            "payments": [
+                {"amount": 50.0, "method": "cash", "paidAt": str(date.today())}
+            ],
         }
 
     def test_create_reservation(self):
         resp = self.client.post("/api/reservations", json=self._payload())
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(resp.json()["data"]["status"], "RESERVED")
-        keg = asyncio.run(self.keg_services.search_by_id(self.keg.id, str(self.company.id)))
+        keg = asyncio.run(
+            self.keg_services.search_by_id(self.keg.id, str(self.company.id))
+        )
         self.assertEqual(keg.status, KegStatus.IN_USE)
 
     def test_create_reservation_multiple_dispensers(self):
@@ -368,11 +372,19 @@ class TestReservationEndpoints(unittest.TestCase):
             json={"status": "COMPLETED"},
         )
         self.assertEqual(resp2.status_code, 200)
-        keg = asyncio.run(self.keg_services.search_by_id(self.keg.id, str(self.company.id)))
+        keg = asyncio.run(
+            self.keg_services.search_by_id(self.keg.id, str(self.company.id))
+        )
         self.assertEqual(keg.status, KegStatus.EMPTY)
-        pg = asyncio.run(self.pressure_gauge_services.search_by_id(self.pressure_gauge.id, str(self.company.id)))
+        pg = asyncio.run(
+            self.pressure_gauge_services.search_by_id(
+                self.pressure_gauge.id, str(self.company.id)
+            )
+        )
         self.assertEqual(pg.status, PressureGaugeStatus.TO_VERIFY)
-        cyl = asyncio.run(self.cylinder_services.search_by_id(self.cylinder.id, str(self.company.id)))
+        cyl = asyncio.run(
+            self.cylinder_services.search_by_id(self.cylinder.id, str(self.company.id))
+        )
         self.assertEqual(cyl.status, CylinderStatus.TO_VERIFY)
 
     def test_payment_endpoints(self):

@@ -4,16 +4,16 @@ import unittest
 import mongomock
 from mongoengine import connect, disconnect
 
+from app.core.exceptions import NotFoundError
+from app.crud.pressure_gauges.models import PressureGaugeModel
 from app.crud.pressure_gauges.repositories import PressureGaugeRepository
-from app.crud.pressure_gauges.services import PressureGaugeServices
 from app.crud.pressure_gauges.schemas import (
     PressureGauge,
-    UpdatePressureGauge,
     PressureGaugeStatus,
     PressureGaugeType,
+    UpdatePressureGauge,
 )
-from app.crud.pressure_gauges.models import PressureGaugeModel
-from app.core.exceptions import NotFoundError
+from app.crud.pressure_gauges.services import PressureGaugeServices
 
 
 class TestPressureGaugeServices(unittest.TestCase):
@@ -32,7 +32,7 @@ class TestPressureGaugeServices(unittest.TestCase):
     def _build_gauge(self, brand: str = "Acme") -> PressureGauge:
         return PressureGauge(
             brand=brand,
-            type=PressureGaugeType.ANALOG,
+            type=PressureGaugeType.SIMPLE,
             serial_number="SN1",
             last_calibration_date=None,
             status=PressureGaugeStatus.ACTIVE,

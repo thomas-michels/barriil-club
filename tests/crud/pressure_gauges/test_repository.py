@@ -4,14 +4,14 @@ import unittest
 import mongomock
 from mongoengine import connect, disconnect
 
-from app.crud.pressure_gauges.repositories import PressureGaugeRepository
+from app.core.exceptions import NotFoundError
 from app.crud.pressure_gauges.models import PressureGaugeModel
+from app.crud.pressure_gauges.repositories import PressureGaugeRepository
 from app.crud.pressure_gauges.schemas import (
     PressureGauge,
     PressureGaugeStatus,
     PressureGaugeType,
 )
-from app.core.exceptions import NotFoundError
 
 
 class TestPressureGaugeRepository(unittest.TestCase):
@@ -28,7 +28,7 @@ class TestPressureGaugeRepository(unittest.TestCase):
     def _build_gauge(self, brand: str = "Acme") -> PressureGauge:
         return PressureGauge(
             brand=brand,
-            type=PressureGaugeType.ANALOG,
+            type=PressureGaugeType.SIMPLE,
             serial_number="SN1",
             last_calibration_date=None,
             status=PressureGaugeStatus.ACTIVE,
@@ -55,8 +55,12 @@ class TestPressureGaugeRepository(unittest.TestCase):
             asyncio.run(repository.select_by_id("invalid", "com1"))
 
     def test_select_all(self):
-        PressureGaugeModel(**self._build_gauge("A").model_dump(), company_id="com1").save()
-        PressureGaugeModel(**self._build_gauge("B").model_dump(), company_id="com1").save()
+        PressureGaugeModel(
+            **self._build_gauge("A").model_dump(), company_id="com1"
+        ).save()
+        PressureGaugeModel(
+            **self._build_gauge("B").model_dump(), company_id="com1"
+        ).save()
         repository = PressureGaugeRepository()
         res = asyncio.run(repository.select_all("com1"))
         self.assertEqual(len(res), 2)
