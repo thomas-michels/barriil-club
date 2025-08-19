@@ -3,7 +3,7 @@ from typing import List
 from pydantic import Field, ConfigDict
 
 from app.api.shared_schemas.responses import Response
-from app.crud.addresses.schemas import AddressInDB
+from app.crud.addresses.schemas import Address, AddressInDB
 
 EXAMPLE_ADDRESS = {
     "id": "add_12345678",
@@ -22,7 +22,7 @@ EXAMPLE_ADDRESS = {
 
 
 class AddressResponse(Response):
-    data: AddressInDB | None = Field()
+    data: Address | AddressInDB | None = Field()
 
     model_config = ConfigDict(
         json_schema_extra={

@@ -127,15 +127,8 @@ class TestAddressEndpoints(unittest.TestCase):
                 self.services.search_by_id(self.address.id, str(self.company.id))
             )
 
-    def test_get_address_by_zip_existing(self):
-        resp = self.client.get(
-            f"/api/addresses/zip/{self.address.postal_code}"
-        )
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.json()["data"]["id"], self.address.id)
-
     @patch("app.api.dependencies.get_address_by_zip_code.get_address_by_zip_code")
-    def test_get_address_by_zip_via_cep(self, mock_get):
+    def test_get_address_by_zip_always_via_cep(self, mock_get):
         mock_get.return_value = {
             "cep": "99999-000",
             "logradouro": "Street",
@@ -144,9 +137,12 @@ class TestAddressEndpoints(unittest.TestCase):
             "localidade": "City",
             "uf": "ST",
         }
-        resp = self.client.get("/api/addresses/zip/99999000")
+        resp = self.client.get(
+            f"/api/addresses/zip/{self.address.postal_code}"
+        )
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.json()["data"]["postal_code"], "99999-000")
+        self.assertEqual(resp.json()["data"]["postalCode"], "99999-000")
+        mock_get.assert_called_once()
 
     def test_create_address_returns_400_when_not_created(self):
         async def fake_create(address, company_id):
