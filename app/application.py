@@ -18,6 +18,7 @@ from app.api.routers import (
     cylinder_router,
     reservation_router,
     dashboard_router,
+    payment_router,
 )
 from app.api.routers.exception_handlers import (
     unprocessable_entity_error_422,
@@ -74,6 +75,7 @@ app.include_router(pressure_gauge_router, prefix="/api")
 app.include_router(cylinder_router, prefix="/api")
 app.include_router(reservation_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api")
+app.include_router(payment_router, prefix="/api")
 
 app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)
