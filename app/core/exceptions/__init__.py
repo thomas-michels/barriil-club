@@ -1,1 +1,6 @@
-from .users import InvalidPassword, UnprocessableEntity, NotFoundError
+from .users import (
+    InvalidPassword,
+    UnprocessableEntity,
+    NotFoundError,
+    BadRequestError,
+)

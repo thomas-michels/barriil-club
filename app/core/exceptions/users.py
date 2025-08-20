@@ -24,3 +24,10 @@ class NotFoundError(Exception):
 
     def __init__(self, message="Not found") -> None:
         self.message = message
+
+
+class BadRequestError(Exception):
+    """Raised when a request cannot be processed"""
+
+    def __init__(self, message="Bad request") -> None:
+        self.message = message

@@ -7,6 +7,7 @@ from app.core.exceptions import (
     InvalidPassword,
     NotFoundError,
     UnprocessableEntity,
+    BadRequestError,
 )
 from app.core.configs import get_logger
 
@@ -40,7 +41,7 @@ def not_found_error_404(request: Request, exc: NotFoundError):
     )
 
 
-def generic_error_400(request: Request, exc: InvalidPassword):
+def generic_error_400(request: Request, exc: InvalidPassword | BadRequestError):
     error = MessageResponse(message=exc.message)
 
     return JSONResponse(
