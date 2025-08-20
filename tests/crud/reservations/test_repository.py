@@ -120,6 +120,84 @@ class TestReservationRepository(unittest.TestCase):
         )
         self.assertEqual(len(updated.payments), 0)
 
+    def test_find_active_by_beer_dispenser_id_within_period(self):
+        reservation = Reservation(
+            customer_id="cus1",
+            address_id="add2",
+            beer_dispenser_ids=[str(self.dispenser.id)],
+            keg_ids=[str(self.keg.id)],
+            extractor_ids=[str(self.extractor.id)],
+            pressure_gauge_ids=[str(self.pg.id)],
+            cylinder_ids=[str(self.cylinder.id)],
+            freight_value=Decimal("0"),
+            additional_value=Decimal("0"),
+            discount=Decimal("0"),
+            delivery_date=datetime.now() - timedelta(hours=1),
+            pickup_date=datetime.now() + timedelta(hours=1),
+            payments=[],
+            total_value=Decimal("400.00"),
+            status=ReservationStatus.RESERVED,
+        )
+        res = asyncio.run(self.repository.create(reservation, self.company_id))
+        found = asyncio.run(
+            self.repository.find_active_by_beer_dispenser_id(
+                self.company_id, str(self.dispenser.id)
+            )
+        )
+        self.assertEqual(found.id, res.id)
+
+    def test_find_active_by_beer_dispenser_id_outside_period(self):
+        reservation = Reservation(
+            customer_id="cus1",
+            address_id="add2",
+            beer_dispenser_ids=[str(self.dispenser.id)],
+            keg_ids=[str(self.keg.id)],
+            extractor_ids=[str(self.extractor.id)],
+            pressure_gauge_ids=[str(self.pg.id)],
+            cylinder_ids=[str(self.cylinder.id)],
+            freight_value=Decimal("0"),
+            additional_value=Decimal("0"),
+            discount=Decimal("0"),
+            delivery_date=datetime.now() + timedelta(days=1),
+            pickup_date=datetime.now() + timedelta(days=2),
+            payments=[],
+            total_value=Decimal("400.00"),
+            status=ReservationStatus.RESERVED,
+        )
+        asyncio.run(self.repository.create(reservation, self.company_id))
+        found = asyncio.run(
+            self.repository.find_active_by_beer_dispenser_id(
+                self.company_id, str(self.dispenser.id)
+            )
+        )
+        self.assertIsNone(found)
+
+    def test_find_active_by_beer_dispenser_id_completed(self):
+        reservation = Reservation(
+            customer_id="cus1",
+            address_id="add2",
+            beer_dispenser_ids=[str(self.dispenser.id)],
+            keg_ids=[str(self.keg.id)],
+            extractor_ids=[str(self.extractor.id)],
+            pressure_gauge_ids=[str(self.pg.id)],
+            cylinder_ids=[str(self.cylinder.id)],
+            freight_value=Decimal("0"),
+            additional_value=Decimal("0"),
+            discount=Decimal("0"),
+            delivery_date=datetime.now() - timedelta(hours=1),
+            pickup_date=datetime.now() + timedelta(hours=1),
+            payments=[],
+            total_value=Decimal("400.00"),
+            status=ReservationStatus.COMPLETED,
+        )
+        asyncio.run(self.repository.create(reservation, self.company_id))
+        found = asyncio.run(
+            self.repository.find_active_by_beer_dispenser_id(
+                self.company_id, str(self.dispenser.id)
+            )
+        )
+        self.assertIsNone(found)
+
 
 if __name__ == "__main__":
     unittest.main()
