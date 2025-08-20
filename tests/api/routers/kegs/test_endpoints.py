@@ -121,6 +121,27 @@ class TestKegEndpoints(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertGreaterEqual(len(resp.json()["data"]), 1)
 
+    def test_list_kegs_filtered_by_status(self):
+        other_keg = Keg(
+            number="2",
+            size_l=50,
+            beer_type_id=str(self.beer_type.id),
+            cost_price_per_l=5.0,
+            sale_price_per_l=8.0,
+            lot="L2",
+            expiration_date=None,
+            current_volume_l=25.0,
+            status=KegStatus.IN_USE,
+            notes="",
+        )
+        asyncio.run(self.services.create(other_keg, str(self.company.id)))
+        resp = self.client.get(
+            "/api/kegs", params={"status": KegStatus.AVAILABLE.value}
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.json()["data"]), 1)
+        self.assertEqual(resp.json()["data"][0]["id"], self.keg.id)
+
     def test_update_keg_endpoint(self):
         resp = self.client.put(
             f"/api/kegs/{self.keg.id}",

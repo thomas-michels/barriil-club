@@ -1,7 +1,7 @@
 from typing import List
 
 from .repositories import KegRepository
-from .schemas import Keg, KegInDB, UpdateKeg
+from .schemas import Keg, KegInDB, UpdateKeg, KegStatus
 
 
 class KegServices:
@@ -18,8 +18,13 @@ class KegServices:
     async def search_by_id(self, id: str, company_id: str) -> KegInDB:
         return await self.__repository.select_by_id(id=id, company_id=company_id)
 
-    async def search_all(self, company_id: str) -> List[KegInDB]:
-        return await self.__repository.select_all(company_id=company_id)
+    async def search_all(
+        self, company_id: str, status: KegStatus | None = None
+    ) -> List[KegInDB]:
+        status_value = status.value if status else None
+        return await self.__repository.select_all(
+            company_id=company_id, status=status_value
+        )
 
     async def delete_by_id(self, id: str, company_id: str) -> KegInDB:
         return await self.__repository.delete_by_id(id=id, company_id=company_id)
