@@ -69,6 +69,19 @@ class TestKegRepository(unittest.TestCase):
         res = asyncio.run(repository.select_all("com1"))
         self.assertEqual(len(res), 2)
 
+    def test_select_all_filtered_by_status(self):
+        keg1 = self._build_keg("1")
+        KegModel(**keg1.model_dump(), company_id="com1").save()
+        keg2 = self._build_keg("2")
+        keg2.status = KegStatus.IN_USE
+        KegModel(**keg2.model_dump(), company_id="com1").save()
+        repository = KegRepository()
+        res = asyncio.run(
+            repository.select_all("com1", status=KegStatus.AVAILABLE.value)
+        )
+        self.assertEqual(len(res), 1)
+        self.assertEqual(res[0].status, KegStatus.AVAILABLE)
+
     def test_update_keg(self):
         doc = KegModel(**self._build_keg().model_dump(), company_id="com1")
         doc.save()

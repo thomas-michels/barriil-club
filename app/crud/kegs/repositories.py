@@ -64,12 +64,15 @@ class KegRepository(Repository):
             _logger.error(f"Error on select_by_id: {str(error)}")
             raise NotFoundError(message=f"Keg #{id} not found")
 
-    async def select_all(self, company_id: str) -> List[KegInDB]:
+    async def select_all(
+        self, company_id: str, status: str | None = None
+    ) -> List[KegInDB]:
         try:
+            query = KegModel.objects(company_id=company_id, is_active=True)
+            if status:
+                query = query.filter(status=status)
             kegs: List[KegInDB] = []
-            for model in KegModel.objects(company_id=company_id, is_active=True).order_by(
-                "number"
-            ):
+            for model in query.order_by("number"):
                 kegs.append(KegInDB.model_validate(model))
             return kegs
         except Exception as error:
