@@ -28,7 +28,12 @@ from app.api.routers.exception_handlers import (
 )
 from app.api.routers.exception_handlers.generic_errors import http_exception_handler
 from app.core.db.connection import lifespan
-from app.core.exceptions import UnprocessableEntity, NotFoundError, InvalidPassword
+from app.core.exceptions import (
+    UnprocessableEntity,
+    NotFoundError,
+    InvalidPassword,
+    BadRequestError,
+)
 from app.core.configs import get_environment
 
 _env = get_environment()
@@ -82,6 +87,7 @@ app.add_exception_handler(StarletteHTTPException, http_exception_handler)
 app.add_exception_handler(UnprocessableEntity, unprocessable_entity_error_422)
 app.add_exception_handler(NotFoundError, not_found_error_404)
 app.add_exception_handler(InvalidPassword, generic_error_400)
+app.add_exception_handler(BadRequestError, generic_error_400)
 app.add_exception_handler(Exception, generic_error_500)
 
 

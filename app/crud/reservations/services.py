@@ -1,7 +1,7 @@
 from typing import List
 from decimal import Decimal
 
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import BadRequestError
 from app.core.utils.utc_datetime import UTCDateTime
 from app.crud.kegs.repositories import KegRepository
 from app.crud.kegs.schemas import KegStatus
@@ -35,15 +35,15 @@ class ReservationServices:
 
     async def create(self, reservation: Reservation, company_id: str) -> ReservationInDB:
         if not reservation.beer_dispenser_ids:
-            raise NotFoundError(message="At least one beer dispenser is required")
+            raise BadRequestError(message="At least one beer dispenser is required")
         if not reservation.keg_ids:
-            raise NotFoundError(message="At least one keg is required")
+            raise BadRequestError(message="At least one keg is required")
         if not reservation.extractor_ids:
-            raise NotFoundError(message="At least one extractor is required")
+            raise BadRequestError(message="At least one extractor is required")
         if not reservation.pressure_gauge_ids:
-            raise NotFoundError(message="At least one pressure gauge is required")
+            raise BadRequestError(message="At least one pressure gauge is required")
         if not reservation.cylinder_ids:
-            raise NotFoundError(message="At least one cylinder is required")
+            raise BadRequestError(message="At least one cylinder is required")
 
         total = Decimal("0")
         for keg_id in reservation.keg_ids:
@@ -51,7 +51,7 @@ class ReservationServices:
                 keg_id, company_id
             )
             if keg.status in [KegStatus.EMPTY, KegStatus.IN_USE]:
-                raise NotFoundError(message=f"Keg #{keg_id} not available")
+                raise BadRequestError(message=f"Keg #{keg_id} not available")
             price = keg.sale_price_per_l or Decimal("0")
             total += price * Decimal(keg.size_l)
 
@@ -60,11 +60,11 @@ class ReservationServices:
                 cylinder_id, company_id
             )
             if cylinder.status != CylinderStatus.AVAILABLE:
-                raise NotFoundError(
+                raise BadRequestError(
                     message=f"Cylinder #{cylinder_id} not available"
                 )
             if cylinder.weight_kg <= Decimal("0"):
-                raise NotFoundError(
+                raise BadRequestError(
                     message=f"Cylinder #{cylinder_id} empty"
                 )
 
@@ -75,7 +75,7 @@ class ReservationServices:
             pickup_date=reservation.pickup_date,
         )
         if conflict:
-            raise NotFoundError(
+            raise BadRequestError(
                 message="Beer dispenser already reserved for this period"
             )
 
@@ -86,7 +86,7 @@ class ReservationServices:
             pickup_date=reservation.pickup_date,
         )
         if conflict:
-            raise NotFoundError(
+            raise BadRequestError(
                 message="Cylinder already reserved for this period"
             )
 

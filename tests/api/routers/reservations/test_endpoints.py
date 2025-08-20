@@ -9,9 +9,9 @@ from mongoengine import connect, disconnect
 
 from app.api.composers.reservation_composite import reservation_composer
 from app.api.dependencies.company import require_user_company
-from app.api.routers.exception_handlers import not_found_error_404
+from app.api.routers.exception_handlers import not_found_error_404, generic_error_400
 from app.api.routers.reservations import reservation_router
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import NotFoundError, BadRequestError
 from app.crud.addresses.models import AddressModel
 from app.crud.addresses.repositories import AddressRepository
 from app.crud.beer_dispensers.repositories import BeerDispenserRepository
@@ -67,6 +67,7 @@ class TestReservationEndpoints(unittest.TestCase):
         self.app = FastAPI()
         self.app.include_router(reservation_router, prefix="/api")
         self.app.add_exception_handler(NotFoundError, not_found_error_404)
+        self.app.add_exception_handler(BadRequestError, generic_error_400)
 
         async def override_require_user_company():
             return self.company
@@ -282,7 +283,7 @@ class TestReservationEndpoints(unittest.TestCase):
         payload["kegIds"] = [new_keg.id]
         payload["cylinderIds"] = [new_cyl.id]
         resp2 = self.client.post("/api/reservations", json=payload)
-        self.assertEqual(resp2.status_code, 404)
+        self.assertEqual(resp2.status_code, 400)
 
     def test_create_reservation_with_empty_keg(self):
         # mark keg as empty
@@ -294,7 +295,7 @@ class TestReservationEndpoints(unittest.TestCase):
             )
         )
         resp = self.client.post("/api/reservations", json=self._payload())
-        self.assertEqual(resp.status_code, 404)
+        self.assertEqual(resp.status_code, 400)
 
     def test_create_reservation_cylinder_conflict(self):
         resp1 = self.client.post("/api/reservations", json=self._payload())
@@ -334,7 +335,7 @@ class TestReservationEndpoints(unittest.TestCase):
         payload["kegIds"] = [new_keg.id]
         payload["beerDispenserIds"] = [new_dispenser.id]
         resp2 = self.client.post("/api/reservations", json=payload)
-        self.assertEqual(resp2.status_code, 404)
+        self.assertEqual(resp2.status_code, 400)
 
     def test_create_reservation_with_unavailable_cylinder(self):
         asyncio.run(
@@ -345,7 +346,7 @@ class TestReservationEndpoints(unittest.TestCase):
             )
         )
         resp = self.client.post("/api/reservations", json=self._payload())
-        self.assertEqual(resp.status_code, 404)
+        self.assertEqual(resp.status_code, 400)
 
     def test_create_reservation_with_empty_cylinder(self):
         empty_cyl = asyncio.run(
@@ -362,7 +363,7 @@ class TestReservationEndpoints(unittest.TestCase):
         payload = self._payload()
         payload["cylinderIds"] = [empty_cyl.id]
         resp = self.client.post("/api/reservations", json=payload)
-        self.assertEqual(resp.status_code, 404)
+        self.assertEqual(resp.status_code, 400)
 
     def test_complete_reservation_updates_items(self):
         resp = self.client.post("/api/reservations", json=self._payload())

@@ -6,7 +6,7 @@ from decimal import Decimal
 import mongomock
 from mongoengine import connect, disconnect
 
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import BadRequestError
 from app.crud.beer_dispensers.models import BeerDispenserModel
 from app.crud.beer_dispensers.schemas import DispenserStatus, Voltage
 from app.crud.cylinders.models import CylinderModel
@@ -166,7 +166,7 @@ class TestReservationServices(unittest.TestCase):
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
         )
-        with self.assertRaises(NotFoundError):
+        with self.assertRaises(BadRequestError):
             asyncio.run(self.services.create(reservation2, self.company_id))
 
     def test_create_reservation_cylinder_conflict(self):
@@ -218,7 +218,7 @@ class TestReservationServices(unittest.TestCase):
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
         )
-        with self.assertRaises(NotFoundError):
+        with self.assertRaises(BadRequestError):
             asyncio.run(self.services.create(reservation2, self.company_id))
 
     def test_create_reservation_with_unavailable_cylinder(self):
@@ -239,7 +239,7 @@ class TestReservationServices(unittest.TestCase):
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
         )
-        with self.assertRaises(NotFoundError):
+        with self.assertRaises(BadRequestError):
             asyncio.run(self.services.create(reservation, self.company_id))
 
     def test_create_reservation_with_empty_cylinder(self):
@@ -266,7 +266,7 @@ class TestReservationServices(unittest.TestCase):
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
         )
-        with self.assertRaises(NotFoundError):
+        with self.assertRaises(BadRequestError):
             asyncio.run(self.services.create(reservation, self.company_id))
 
     def test_create_reservation_with_unavailable_keg(self):
@@ -309,7 +309,7 @@ class TestReservationServices(unittest.TestCase):
             pickup_date=datetime.now() + timedelta(days=4),
             payments=[],
         )
-        with self.assertRaises(NotFoundError):
+        with self.assertRaises(BadRequestError):
             asyncio.run(self.services.create(reservation2, self.company_id))
 
     def test_add_update_delete_payment(self):
@@ -409,7 +409,7 @@ class TestReservationServices(unittest.TestCase):
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
         )
-        with self.assertRaises(NotFoundError):
+        with self.assertRaises(BadRequestError):
             asyncio.run(self.services.create(reservation2, self.company_id))
 
 
