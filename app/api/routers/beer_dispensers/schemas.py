@@ -14,6 +14,7 @@ EXAMPLE_DISPENSER = {
     "status": DispenserStatus.ACTIVE,
     "notes": "notes",
     "company_id": "com_123",
+    "reservation_id": "res_123",
     "created_at": "2024-01-01T00:00:00Z",
     "updated_at": "2024-01-01T00:00:00Z",
 }

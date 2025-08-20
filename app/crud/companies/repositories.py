@@ -159,6 +159,8 @@ class CompanyRepository(Repository):
                 raise NotFoundError(message=f"Company #{company_id} not found")
 
             data = subscription.model_dump(exclude_unset=True, exclude_none=True)
+            if "expires_at" in data:
+                data["expires_at"] = UTCDateTime.validate_datetime(data["expires_at"])
             for key, value in data.items():
                 setattr(company_model.subscription, key, value)
 

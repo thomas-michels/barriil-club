@@ -1,5 +1,6 @@
 import asyncio
 import unittest
+from datetime import timedelta
 
 import mongomock
 from fastapi import FastAPI
@@ -17,6 +18,10 @@ from app.crud.addresses.models import AddressModel
 from app.crud.beer_dispensers.repositories import BeerDispenserRepository
 from app.crud.beer_dispensers.services import BeerDispenserServices
 from app.crud.beer_dispensers.schemas import BeerDispenser, DispenserStatus, Voltage
+from app.crud.reservations.repositories import ReservationRepository
+from app.crud.reservations.models import ReservationModel
+from app.crud.reservations.schemas import ReservationStatus
+from app.core.utils.utc_datetime import UTCDateTime
 from app.core.exceptions import NotFoundError
 
 
@@ -31,7 +36,10 @@ class TestBeerDispenserEndpoints(unittest.TestCase):
         self.address_repo = AddressRepository()
         self.company_services = CompanyServices(self.company_repo, self.address_repo)
         self.repository = BeerDispenserRepository()
-        self.services = BeerDispenserServices(self.repository)
+        self.reservation_repository = ReservationRepository()
+        self.services = BeerDispenserServices(
+            self.repository, self.reservation_repository
+        )
         self.app = FastAPI()
         self.app.include_router(beer_dispenser_router, prefix="/api")
 
@@ -60,6 +68,7 @@ class TestBeerDispenserEndpoints(unittest.TestCase):
             company_id="seed",
         )
         seed_address.save()
+        self.address_id = str(seed_address.id)
         company = Company(
             name="ACME",
             address_id=str(seed_address.id),
@@ -112,6 +121,84 @@ class TestBeerDispenserEndpoints(unittest.TestCase):
         resp = self.client.get("/api/beer-dispensers")
         self.assertEqual(resp.status_code, 200)
         self.assertGreaterEqual(len(resp.json()["data"]), 1)
+        self.assertNotIn("reservation_id", resp.json()["data"][0])
+
+    def test_list_dispensers_shows_reservation_id_when_ongoing(self):
+        now = UTCDateTime.now()
+        reservation = ReservationModel(
+            customer_id="cust_1",
+            address_id=self.address_id,
+            beer_dispenser_ids=[self.dispenser.id],
+            keg_ids=["keg_1"],
+            extractor_ids=["ext_1"],
+            pressure_gauge_ids=["prg_1"],
+            cylinder_ids=["cyl_1"],
+            freight_value=0,
+            additional_value=0,
+            discount=0,
+            delivery_date=now - timedelta(hours=1),
+            pickup_date=now + timedelta(hours=1),
+            total_value=100,
+            status=ReservationStatus.RESERVED.value,
+            company_id=str(self.company.id),
+        )
+        reservation.save()
+
+        resp = self.client.get("/api/beer-dispensers")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(
+            resp.json()["data"][0]["reservation_id"], reservation.id
+        )
+
+    def test_list_dispensers_hides_reservation_id_outside_period(self):
+        now = UTCDateTime.now()
+        reservation = ReservationModel(
+            customer_id="cust_1",
+            address_id=self.address_id,
+            beer_dispenser_ids=[self.dispenser.id],
+            keg_ids=["keg_1"],
+            extractor_ids=["ext_1"],
+            pressure_gauge_ids=["prg_1"],
+            cylinder_ids=["cyl_1"],
+            freight_value=0,
+            additional_value=0,
+            discount=0,
+            delivery_date=now - timedelta(days=2),
+            pickup_date=now - timedelta(days=1),
+            total_value=100,
+            status=ReservationStatus.DELIVERED.value,
+            company_id=str(self.company.id),
+        )
+        reservation.save()
+
+        resp = self.client.get("/api/beer-dispensers")
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotIn("reservation_id", resp.json()["data"][0])
+
+    def test_list_dispensers_hides_reservation_id_when_completed(self):
+        now = UTCDateTime.now()
+        reservation = ReservationModel(
+            customer_id="cust_1",
+            address_id=self.address_id,
+            beer_dispenser_ids=[self.dispenser.id],
+            keg_ids=["keg_1"],
+            extractor_ids=["ext_1"],
+            pressure_gauge_ids=["prg_1"],
+            cylinder_ids=["cyl_1"],
+            freight_value=0,
+            additional_value=0,
+            discount=0,
+            delivery_date=now - timedelta(hours=1),
+            pickup_date=now + timedelta(hours=1),
+            total_value=100,
+            status=ReservationStatus.COMPLETED.value,
+            company_id=str(self.company.id),
+        )
+        reservation.save()
+
+        resp = self.client.get("/api/beer-dispensers")
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotIn("reservation_id", resp.json()["data"][0])
 
     def test_update_dispenser_endpoint(self):
         resp = self.client.put(
