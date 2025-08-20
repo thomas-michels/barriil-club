@@ -35,6 +35,7 @@ class BeerDispenserInDB(DatabaseModel):
     status: DispenserStatus = Field(example=DispenserStatus.ACTIVE)
     notes: str | None = Field(default=None, example="notes")
     company_id: str = Field(example="com_123")
+    reservation_id: str | None = Field(default=None, example="res_123")
 
 
 class UpdateBeerDispenser(GenericModel):
