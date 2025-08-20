@@ -17,6 +17,7 @@ from app.crud.addresses.models import AddressModel
 from app.crud.beer_dispensers.repositories import BeerDispenserRepository
 from app.crud.beer_dispensers.services import BeerDispenserServices
 from app.crud.beer_dispensers.schemas import BeerDispenser, DispenserStatus, Voltage
+from app.crud.reservations.repositories import ReservationRepository
 from app.core.exceptions import NotFoundError
 
 
@@ -31,7 +32,10 @@ class TestBeerDispenserEndpoints(unittest.TestCase):
         self.address_repo = AddressRepository()
         self.company_services = CompanyServices(self.company_repo, self.address_repo)
         self.repository = BeerDispenserRepository()
-        self.services = BeerDispenserServices(self.repository)
+        self.reservation_repository = ReservationRepository()
+        self.services = BeerDispenserServices(
+            self.repository, self.reservation_repository
+        )
         self.app = FastAPI()
         self.app.include_router(beer_dispenser_router, prefix="/api")
 
@@ -112,6 +116,23 @@ class TestBeerDispenserEndpoints(unittest.TestCase):
         resp = self.client.get("/api/beer-dispensers")
         self.assertEqual(resp.status_code, 200)
         self.assertGreaterEqual(len(resp.json()["data"]), 1)
+        self.assertNotIn("reservation_id", resp.json()["data"][0])
+
+    def test_list_dispensers_shows_reservation_id_when_reserved(self):
+        class FakeReservationRepo:
+            async def find_active_by_beer_dispenser_id(self, company_id, dispenser_id):
+                class Res:
+                    id = "res_123"
+
+                return Res()
+
+        self.services._BeerDispenserServices__reservation_repository = (
+            FakeReservationRepo()
+        )
+
+        resp = self.client.get("/api/beer-dispensers")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["data"][0]["reservation_id"], "res_123")
 
     def test_update_dispenser_endpoint(self):
         resp = self.client.put(

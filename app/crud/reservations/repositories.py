@@ -198,6 +198,27 @@ class ReservationRepository(Repository):
             _logger.error(f"Error on find_cylinder_conflict: {str(error)}")
             raise NotFoundError(message="Error on find cylinder conflict")
 
+    async def find_active_by_beer_dispenser_id(
+        self, company_id: str, dispenser_id: str
+    ) -> ReservationInDB | None:
+        try:
+            model = ReservationModel.objects(
+                beer_dispenser_ids=dispenser_id,
+                company_id=company_id,
+                is_active=True,
+                status__ne=ReservationStatus.COMPLETED.value,
+            ).first()
+
+            return ReservationInDB.model_validate(model) if model else None
+
+        except Exception as error:
+            _logger.error(
+                f"Error on find_active_by_beer_dispenser_id: {str(error)}"
+            )
+            raise NotFoundError(
+                message="Error on find reservation by beer dispenser"
+            )
+
     def _auto_update_status(self, model: ReservationModel) -> None:
         # ``ReservationModel`` stores datetimes without timezone information,
         # while :class:`UTCDateTime.now` returns timezone-aware values.  Direct
