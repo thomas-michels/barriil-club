@@ -2,6 +2,7 @@ from typing import List
 
 from .repositories import CylinderRepository
 from .schemas import Cylinder, CylinderInDB, UpdateCylinder
+from .models import CylinderModel
 
 
 class CylinderServices:
@@ -9,6 +10,11 @@ class CylinderServices:
         self.__repository = repository
 
     async def create(self, cylinder: Cylinder, company_id: str) -> CylinderInDB:
+        existing = CylinderModel.objects(
+            number__startswith=cylinder.number, company_id=company_id
+        ).count()
+        if existing > 0:
+            cylinder.number = f"{cylinder.number}{existing}"
         return await self.__repository.create(cylinder=cylinder, company_id=company_id)
 
     async def update(
