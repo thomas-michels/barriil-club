@@ -163,13 +163,15 @@ class TestCylinderEndpoints(unittest.TestCase):
         resp = self.client.get("/api/cylinders")
         self.assertEqual(resp.status_code, 204)
 
-    def test_create_cylinder_returns_400_when_duplicate(self):
+    def test_create_cylinder_appends_suffix_when_duplicate(self):
         resp = self.client.post(
             "/api/cylinders",
             json=self._payload(number=self.cylinder.number),
         )
-        self.assertEqual(resp.status_code, 400)
-        self.assertIn("already exists", resp.json()["detail"])
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(
+            resp.json()["data"]["number"], f"{self.cylinder.number}1"
+        )
 
 
 if __name__ == "__main__":
