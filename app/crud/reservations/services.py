@@ -9,11 +9,14 @@ from app.crud.pressure_gauges.repositories import PressureGaugeRepository
 from app.crud.pressure_gauges.schemas import PressureGaugeStatus
 from app.crud.cylinders.repositories import CylinderRepository
 from app.crud.cylinders.schemas import CylinderStatus
+from app.crud.beer_dispensers.repositories import BeerDispenserRepository
+from app.crud.beer_dispensers.schemas import DispenserStatus
 from app.crud.payments.schemas import Payment
 
 from .repositories import ReservationRepository
 from .schemas import (
     Reservation,
+    ReservationCreate,
     ReservationInDB,
     UpdateReservation,
     ReservationStatus,
@@ -27,11 +30,15 @@ class ReservationServices:
         keg_repository: KegRepository,
         pressure_gauge_repository: PressureGaugeRepository,
         cylinder_repository: CylinderRepository,
+        beer_dispenser_repository: BeerDispenserRepository | None = None,
     ) -> None:
         self.__repository = reservation_repository
         self.__keg_repository = keg_repository
         self.__pg_repository = pressure_gauge_repository
         self.__cylinder_repository = cylinder_repository
+        self.__dispenser_repository = (
+            beer_dispenser_repository or BeerDispenserRepository()
+        )
 
     async def create(self, reservation: Reservation, company_id: str) -> ReservationInDB:
         if not reservation.beer_dispenser_ids:
@@ -46,6 +53,7 @@ class ReservationServices:
             raise BadRequestError(message="At least one cylinder is required")
 
         total = Decimal("0")
+        cost_total = Decimal("0")
         for keg_id in reservation.keg_ids:
             keg = await self.__keg_repository.select_by_id(
                 keg_id, company_id
@@ -53,7 +61,9 @@ class ReservationServices:
             if keg.status in [KegStatus.EMPTY, KegStatus.IN_USE]:
                 raise BadRequestError(message=f"Keg #{keg_id} not available")
             price = keg.sale_price_per_l or Decimal("0")
+            cost = keg.cost_price_per_l or Decimal("0")
             total += price * Decimal(keg.size_l)
+            cost_total += cost * Decimal(keg.size_l)
 
         for cylinder_id in reservation.cylinder_ids:
             cylinder = await self.__cylinder_repository.select_by_id(
@@ -116,13 +126,16 @@ class ReservationServices:
         total += reservation.additional_value
         total -= reservation.discount
 
-        status = reservation.status or self._compute_status(reservation.delivery_date)
+        status = self._compute_status(reservation.delivery_date)
         data = reservation.model_dump()
-        data["total_value"] = round(total, 2)
-        data["status"] = status
-        data["company_id"] = company_id
+        res_data = ReservationCreate(
+            **data,
+            total_value=round(total, 2),
+            total_cost=round(cost_total, 2),
+            status=status,
+        )
         res = await self.__repository.create(
-            reservation=Reservation(**data), company_id=company_id
+            reservation=res_data, company_id=company_id
         )
         for keg_id in reservation.keg_ids:
             await self.__keg_repository.update(
@@ -138,6 +151,10 @@ class ReservationServices:
             id=id, company_id=company_id, reservation=data
         )
         if updated.status == ReservationStatus.COMPLETED:
+            for dispenser_id in updated.beer_dispenser_ids:
+                await self.__dispenser_repository.update(
+                    dispenser_id, company_id, {"status": DispenserStatus.ACTIVE.value}
+                )
             for keg_id in updated.keg_ids:
                 await self.__keg_repository.update(
                     keg_id, company_id, {"status": KegStatus.EMPTY.value}

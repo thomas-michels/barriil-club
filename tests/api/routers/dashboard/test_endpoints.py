@@ -29,7 +29,7 @@ from app.crud.pressure_gauges.models import PressureGaugeModel
 from app.crud.pressure_gauges.repositories import PressureGaugeRepository
 from app.crud.pressure_gauges.schemas import PressureGaugeStatus, PressureGaugeType
 from app.crud.reservations.repositories import ReservationRepository
-from app.crud.reservations.schemas import Reservation, ReservationStatus
+from app.crud.reservations.schemas import ReservationCreate, ReservationStatus
 from app.crud.reservations.services import ReservationServices
 
 
@@ -135,7 +135,7 @@ class TestDashboardEndpoints(unittest.TestCase):
         self.ext_model = ExtractorModel(brand="Acme", company_id=self.company.id)
         self.ext_model.save()
 
-        res1 = Reservation(
+        res1 = ReservationCreate(
             customer_id="cus1",
             address_id="add1",
             beer_dispenser_ids=[str(self.disp1.id)],
@@ -143,13 +143,17 @@ class TestDashboardEndpoints(unittest.TestCase):
             extractor_ids=[str(self.ext_model.id)],
             pressure_gauge_ids=[str(self.pg_model.id)],
             cylinder_ids=[str(self.cyl_model.id)],
+            freight_value=Decimal("0"),
+            additional_value=Decimal("0"),
+            discount=Decimal("0"),
             delivery_date=self.fixed_now + timedelta(days=1),
             pickup_date=self.fixed_now + timedelta(days=2),
             payments=[],
             total_value=Decimal("100.0"),
+            total_cost=Decimal("50.0"),
             status=ReservationStatus.RESERVED,
         )
-        res2 = Reservation(
+        res2 = ReservationCreate(
             customer_id="cus2",
             address_id="add1",
             beer_dispenser_ids=[str(self.disp2.id)],
@@ -157,10 +161,14 @@ class TestDashboardEndpoints(unittest.TestCase):
             extractor_ids=[str(self.ext_model.id)],
             pressure_gauge_ids=[str(self.pg_model.id)],
             cylinder_ids=[str(self.cyl_model.id)],
+            freight_value=Decimal("0"),
+            additional_value=Decimal("0"),
+            discount=Decimal("0"),
             delivery_date=self.fixed_now + timedelta(days=40),
             pickup_date=self.fixed_now + timedelta(days=41),
             payments=[],
             total_value=Decimal("200.0"),
+            total_cost=Decimal("120.0"),
             status=ReservationStatus.RESERVED,
         )
         self.res1 = asyncio.run(self.reservation_repo.create(res1, self.company.id))

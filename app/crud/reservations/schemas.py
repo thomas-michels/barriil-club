@@ -1,4 +1,3 @@
-from decimal import Decimal
 from enum import Enum
 from typing import List
 from decimal import Decimal
@@ -19,6 +18,9 @@ class ReservationStatus(str, Enum):
 
 
 class Reservation(GenericModel):
+    model_config = GenericModel.model_config.copy()
+    model_config["extra"] = "forbid"
+
     customer_id: str = Field(example="cus_123")
     address_id: str = Field(example="add_123")
     beer_dispenser_ids: List[str] = Field(..., min_length=1, example=["bsd_123"])
@@ -32,8 +34,25 @@ class Reservation(GenericModel):
     delivery_date: UTCDateTimeType = Field(example=str(UTCDateTime.now()))
     pickup_date: UTCDateTimeType = Field(example=str(UTCDateTime.now()))
     payments: List[Payment] = Field(default_factory=list)
-    total_value: Decimal | None = Field(default=None, example=200.0)
-    status: ReservationStatus | None = Field(default=None, example=ReservationStatus.RESERVED)
+
+
+class ReservationCreate(GenericModel):
+    customer_id: str = Field(example="cus_123")
+    address_id: str = Field(example="add_123")
+    beer_dispenser_ids: List[str] = Field(..., min_length=1, example=["bsd_123"])
+    keg_ids: List[str] = Field(..., min_length=1, example=["keg_1"])
+    extractor_ids: List[str] = Field(..., min_length=1, example=["ext_1"])
+    pressure_gauge_ids: List[str] = Field(..., min_length=1, example=["prg_1"])
+    cylinder_ids: List[str] = Field(..., min_length=1, example=["cyl_1"])
+    freight_value: Decimal = Field(example=10.0)
+    additional_value: Decimal = Field(example=0.0)
+    discount: Decimal = Field(example=0.0)
+    delivery_date: UTCDateTimeType = Field(example=str(UTCDateTime.now()))
+    pickup_date: UTCDateTimeType = Field(example=str(UTCDateTime.now()))
+    payments: List[Payment] = Field(default_factory=list)
+    total_value: Decimal = Field(example=200.0)
+    total_cost: Decimal = Field(example=150.0)
+    status: ReservationStatus = Field(example=ReservationStatus.RESERVED)
 
 
 class ReservationInDB(DatabaseModel):
@@ -51,6 +70,7 @@ class ReservationInDB(DatabaseModel):
     pickup_date: UTCDateTimeType = Field(example=str(UTCDateTime.now()))
     payments: List[Payment] = Field(default_factory=list)
     total_value: Decimal = Field(example=200.0)
+    total_cost: Decimal = Field(default=0, example=150.0)
     status: ReservationStatus = Field(example=ReservationStatus.RESERVED)
     company_id: str = Field(example="com_123")
 
@@ -69,3 +89,4 @@ class UpdateReservation(GenericModel):
     payments: List[Payment] | None = Field(default=None)
     status: ReservationStatus | None = Field(default=None)
     total_value: Decimal | None = Field(default=None)
+    total_cost: Decimal | None = Field(default=None)

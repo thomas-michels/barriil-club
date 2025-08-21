@@ -8,7 +8,7 @@ from app.crud.payments.models import PaymentModel
 from app.crud.payments.schemas import Payment
 
 from .models import ReservationModel
-from .schemas import Reservation, ReservationInDB, ReservationStatus
+from .schemas import ReservationCreate, ReservationInDB, ReservationStatus
 
 _logger = get_logger(__name__)
 
@@ -17,10 +17,11 @@ class ReservationRepository(Repository):
     def __init__(self) -> None:
         super().__init__()
 
-    async def create(self, reservation: Reservation, company_id: str) -> ReservationInDB:
+    async def create(self, reservation: ReservationCreate, company_id: str) -> ReservationInDB:
         try:
             payments = [PaymentModel(**p.model_dump()) for p in reservation.payments]
             json = reservation.model_dump(exclude={"payments"})
+            json["status"] = reservation.status.value
             json["delivery_date"] = UTCDateTime.validate_datetime(
                 json["delivery_date"]
             )
