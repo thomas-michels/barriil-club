@@ -198,6 +198,64 @@ class ReservationRepository(Repository):
             _logger.error(f"Error on find_cylinder_conflict: {str(error)}")
             raise NotFoundError(message="Error on find cylinder conflict")
 
+    async def find_extractor_conflict(
+        self,
+        company_id: str,
+        extractor_ids: List[str],
+        delivery_date: UTCDateTime,
+        pickup_date: UTCDateTime,
+    ) -> ReservationInDB | None:
+        try:
+            start = UTCDateTime.validate_datetime(delivery_date)
+            end = UTCDateTime.validate_datetime(pickup_date)
+            model = ReservationModel.objects(
+                extractor_ids__in=extractor_ids,
+                company_id=company_id,
+                is_active=True,
+                status__ne=ReservationStatus.COMPLETED.value,
+                delivery_date__lte=end,
+                pickup_date__gte=start,
+            ).first()
+
+            return ReservationInDB.model_validate(model) if model else None
+
+        except Exception as error:
+            _logger.error(
+                f"Error on find_extractor_conflict: {str(error)}"
+            )
+            raise NotFoundError(
+                message="Error on find extractor conflict"
+            )
+
+    async def find_pressure_gauge_conflict(
+        self,
+        company_id: str,
+        pressure_gauge_ids: List[str],
+        delivery_date: UTCDateTime,
+        pickup_date: UTCDateTime,
+    ) -> ReservationInDB | None:
+        try:
+            start = UTCDateTime.validate_datetime(delivery_date)
+            end = UTCDateTime.validate_datetime(pickup_date)
+            model = ReservationModel.objects(
+                pressure_gauge_ids__in=pressure_gauge_ids,
+                company_id=company_id,
+                is_active=True,
+                status__ne=ReservationStatus.COMPLETED.value,
+                delivery_date__lte=end,
+                pickup_date__gte=start,
+            ).first()
+
+            return ReservationInDB.model_validate(model) if model else None
+
+        except Exception as error:
+            _logger.error(
+                f"Error on find_pressure_gauge_conflict: {str(error)}"
+            )
+            raise NotFoundError(
+                message="Error on find pressure gauge conflict"
+            )
+
     async def find_active_by_beer_dispenser_id(
         self, company_id: str, dispenser_id: str
     ) -> ReservationInDB | None:

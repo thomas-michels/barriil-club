@@ -2,6 +2,7 @@ from typing import List
 
 from .repositories import KegRepository
 from .schemas import Keg, KegInDB, UpdateKeg, KegStatus
+from .models import KegModel
 
 
 class KegServices:
@@ -9,6 +10,11 @@ class KegServices:
         self.__repository = keg_repository
 
     async def create(self, keg: Keg, company_id: str) -> KegInDB:
+        existing = KegModel.objects(
+            number__startswith=keg.number, company_id=company_id
+        ).count()
+        if existing > 0:
+            keg.number = f"{keg.number}{existing}"
         return await self.__repository.create(keg=keg, company_id=company_id)
 
     async def update(self, id: str, company_id: str, keg: UpdateKeg) -> KegInDB:

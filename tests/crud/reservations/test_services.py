@@ -151,13 +151,22 @@ class TestReservationServices(unittest.TestCase):
             company_id=self.company_id,
         )
         new_cylinder.save()
+        new_ext = ExtractorModel(brand="Acme2", company_id=self.company_id)
+        new_ext.save()
+        new_pg = PressureGaugeModel(
+            brand="Acme",
+            type=PressureGaugeType.SIMPLE.value,
+            status=PressureGaugeStatus.ACTIVE.value,
+            company_id=self.company_id,
+        )
+        new_pg.save()
         reservation2 = Reservation(
             customer_id="cus2",
             address_id="add3",
             beer_dispenser_ids=[str(self.dispenser.id)],
             keg_ids=[str(new_keg.id)],
-            extractor_ids=[str(self.extractor.id)],
-            pressure_gauge_ids=[str(self.pg.id)],
+            extractor_ids=[str(new_ext.id)],
+            pressure_gauge_ids=[str(new_pg.id)],
             cylinder_ids=[str(new_cylinder.id)],
             freight_value=Decimal("0"),
             additional_value=Decimal("0"),
@@ -203,14 +212,152 @@ class TestReservationServices(unittest.TestCase):
             company_id=self.company_id,
         )
         new_dispenser.save()
+        new_ext = ExtractorModel(brand="Acme2", company_id=self.company_id)
+        new_ext.save()
+        new_pg = PressureGaugeModel(
+            brand="Acme",
+            type=PressureGaugeType.SIMPLE.value,
+            status=PressureGaugeStatus.ACTIVE.value,
+            company_id=self.company_id,
+        )
+        new_pg.save()
+        reservation2 = Reservation(
+            customer_id="cus2",
+            address_id="add3",
+            beer_dispenser_ids=[str(new_dispenser.id)],
+            keg_ids=[str(new_keg.id)],
+            extractor_ids=[str(new_ext.id)],
+            pressure_gauge_ids=[str(new_pg.id)],
+            cylinder_ids=[str(self.cylinder.id)],
+            freight_value=Decimal("0"),
+            additional_value=Decimal("0"),
+            discount=Decimal("0"),
+            delivery_date=datetime.now() + timedelta(days=1),
+            pickup_date=datetime.now() + timedelta(days=2),
+            payments=[],
+        )
+        with self.assertRaises(BadRequestError):
+            asyncio.run(self.services.create(reservation2, self.company_id))
+
+    def test_create_reservation_extractor_conflict(self):
+        reservation = Reservation(
+            customer_id="cus1",
+            address_id="add2",
+            beer_dispenser_ids=[str(self.dispenser.id)],
+            keg_ids=[str(self.keg.id)],
+            extractor_ids=[str(self.extractor.id)],
+            pressure_gauge_ids=[str(self.pg.id)],
+            cylinder_ids=[str(self.cylinder.id)],
+            freight_value=Decimal("0"),
+            additional_value=Decimal("0"),
+            discount=Decimal("0"),
+            delivery_date=datetime.now() + timedelta(days=1),
+            pickup_date=datetime.now() + timedelta(days=2),
+            payments=[],
+        )
+        asyncio.run(self.services.create(reservation, self.company_id))
+        new_keg = KegModel(
+            number="4",
+            size_l=50,
+            beer_type_id="bty1",
+            cost_price_per_l=5.0,
+            sale_price_per_l=8.0,
+            status=KegStatus.AVAILABLE.value,
+            company_id=self.company_id,
+        )
+        new_keg.save()
+        new_dispenser = BeerDispenserModel(
+            brand="Acme",
+            status=DispenserStatus.ACTIVE.value,
+            voltage=Voltage.V110.value,
+            company_id=self.company_id,
+        )
+        new_dispenser.save()
+        new_pg = PressureGaugeModel(
+            brand="Acme",
+            type=PressureGaugeType.SIMPLE.value,
+            status=PressureGaugeStatus.ACTIVE.value,
+            company_id=self.company_id,
+        )
+        new_pg.save()
+        new_cylinder = CylinderModel(
+            brand="Acme",
+            weight_kg=10,
+            number="C3",
+            status=CylinderStatus.AVAILABLE.value,
+            company_id=self.company_id,
+        )
+        new_cylinder.save()
         reservation2 = Reservation(
             customer_id="cus2",
             address_id="add3",
             beer_dispenser_ids=[str(new_dispenser.id)],
             keg_ids=[str(new_keg.id)],
             extractor_ids=[str(self.extractor.id)],
+            pressure_gauge_ids=[str(new_pg.id)],
+            cylinder_ids=[str(new_cylinder.id)],
+            freight_value=Decimal("0"),
+            additional_value=Decimal("0"),
+            discount=Decimal("0"),
+            delivery_date=datetime.now() + timedelta(days=1),
+            pickup_date=datetime.now() + timedelta(days=2),
+            payments=[],
+        )
+        with self.assertRaises(BadRequestError):
+            asyncio.run(self.services.create(reservation2, self.company_id))
+
+    def test_create_reservation_pressure_gauge_conflict(self):
+        reservation = Reservation(
+            customer_id="cus1",
+            address_id="add2",
+            beer_dispenser_ids=[str(self.dispenser.id)],
+            keg_ids=[str(self.keg.id)],
+            extractor_ids=[str(self.extractor.id)],
             pressure_gauge_ids=[str(self.pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
+            freight_value=Decimal("0"),
+            additional_value=Decimal("0"),
+            discount=Decimal("0"),
+            delivery_date=datetime.now() + timedelta(days=1),
+            pickup_date=datetime.now() + timedelta(days=2),
+            payments=[],
+        )
+        asyncio.run(self.services.create(reservation, self.company_id))
+        new_keg = KegModel(
+            number="5",
+            size_l=50,
+            beer_type_id="bty1",
+            cost_price_per_l=5.0,
+            sale_price_per_l=8.0,
+            status=KegStatus.AVAILABLE.value,
+            company_id=self.company_id,
+        )
+        new_keg.save()
+        new_dispenser = BeerDispenserModel(
+            brand="Acme",
+            status=DispenserStatus.ACTIVE.value,
+            voltage=Voltage.V110.value,
+            company_id=self.company_id,
+        )
+        new_dispenser.save()
+        new_ext = ExtractorModel(brand="Acme2", company_id=self.company_id)
+        new_ext.save()
+        new_cylinder = CylinderModel(
+            brand="Acme",
+            weight_kg=10,
+            number="C4",
+            status=CylinderStatus.AVAILABLE.value,
+            company_id=self.company_id,
+        )
+        new_cylinder.save()
+        reservation2 = Reservation(
+            customer_id="cus2",
+            address_id="add3",
+            beer_dispenser_ids=[str(new_dispenser.id)],
+            keg_ids=[str(new_keg.id)],
+            extractor_ids=[str(new_ext.id)],
+            pressure_gauge_ids=[str(self.pg.id)],
+            cylinder_ids=[str(new_cylinder.id)],
             freight_value=Decimal("0"),
             additional_value=Decimal("0"),
             discount=Decimal("0"),
@@ -394,13 +541,22 @@ class TestReservationServices(unittest.TestCase):
             company_id=self.company_id,
         )
         new_keg.save()
+        new_ext = ExtractorModel(brand="Acme2", company_id=self.company_id)
+        new_ext.save()
+        new_pg = PressureGaugeModel(
+            brand="Acme",
+            type=PressureGaugeType.SIMPLE.value,
+            status=PressureGaugeStatus.ACTIVE.value,
+            company_id=self.company_id,
+        )
+        new_pg.save()
         reservation2 = Reservation(
             customer_id="cus2",
             address_id="add3",
             beer_dispenser_ids=[str(disp2.id)],
             keg_ids=[str(new_keg.id)],
-            extractor_ids=[str(self.extractor.id)],
-            pressure_gauge_ids=[str(self.pg.id)],
+            extractor_ids=[str(new_ext.id)],
+            pressure_gauge_ids=[str(new_pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
             freight_value=Decimal("0"),
             additional_value=Decimal("0"),

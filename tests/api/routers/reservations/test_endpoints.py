@@ -279,9 +279,27 @@ class TestReservationEndpoints(unittest.TestCase):
                 company_id=str(self.company.id),
             )
         )
+        new_ext = asyncio.run(
+            self.extractor_services.create(
+                Extractor(brand="Acme2"),
+                company_id=str(self.company.id),
+            )
+        )
+        new_pg = asyncio.run(
+            self.pressure_gauge_services.create(
+                PressureGauge(
+                    brand="Acme",
+                    type=PressureGaugeType.SIMPLE,
+                    status=PressureGaugeStatus.ACTIVE,
+                ),
+                company_id=str(self.company.id),
+            )
+        )
         payload = self._payload()
         payload["kegIds"] = [new_keg.id]
         payload["cylinderIds"] = [new_cyl.id]
+        payload["extractorIds"] = [new_ext.id]
+        payload["pressureGaugeIds"] = [new_pg.id]
         resp2 = self.client.post("/api/reservations", json=payload)
         self.assertEqual(resp2.status_code, 400)
 
@@ -331,9 +349,151 @@ class TestReservationEndpoints(unittest.TestCase):
                 company_id=str(self.company.id),
             )
         )
+        new_ext = asyncio.run(
+            self.extractor_services.create(
+                Extractor(brand="Acme2"),
+                company_id=str(self.company.id),
+            )
+        )
+        new_pg = asyncio.run(
+            self.pressure_gauge_services.create(
+                PressureGauge(
+                    brand="Acme",
+                    type=PressureGaugeType.SIMPLE,
+                    status=PressureGaugeStatus.ACTIVE,
+                ),
+                company_id=str(self.company.id),
+            )
+        )
         payload = self._payload()
         payload["kegIds"] = [new_keg.id]
         payload["beerDispenserIds"] = [new_dispenser.id]
+        payload["extractorIds"] = [new_ext.id]
+        payload["pressureGaugeIds"] = [new_pg.id]
+        resp2 = self.client.post("/api/reservations", json=payload)
+        self.assertEqual(resp2.status_code, 400)
+
+    def test_create_reservation_extractor_conflict(self):
+        resp1 = self.client.post("/api/reservations", json=self._payload())
+        self.assertEqual(resp1.status_code, 201)
+        new_keg = asyncio.run(
+            self.keg_services.create(
+                Keg(
+                    number="4",
+                    size_l=50,
+                    beer_type_id="bty1",
+                    cost_price_per_l=5.0,
+                    sale_price_per_l=8.0,
+                    lot="L1",
+                    expiration_date=None,
+                    current_volume_l=25.0,
+                    status=KegStatus.AVAILABLE,
+                    notes="",
+                ),
+                company_id=str(self.company.id),
+            )
+        )
+        new_dispenser = asyncio.run(
+            self.dispenser_services.create(
+                BeerDispenser(
+                    brand="Acme",
+                    model="X3",
+                    serial_number="SN3",
+                    taps_count=4,
+                    voltage=Voltage.V110,
+                    status=DispenserStatus.ACTIVE,
+                    notes="",
+                ),
+                company_id=str(self.company.id),
+            )
+        )
+        new_pg = asyncio.run(
+            self.pressure_gauge_services.create(
+                PressureGauge(
+                    brand="Acme",
+                    type=PressureGaugeType.SIMPLE,
+                    status=PressureGaugeStatus.ACTIVE,
+                ),
+                company_id=str(self.company.id),
+            )
+        )
+        new_cyl = asyncio.run(
+            self.cylinder_services.create(
+                Cylinder(
+                    brand="Acme",
+                    weight_kg=10,
+                    number="C3",
+                    status=CylinderStatus.AVAILABLE,
+                ),
+                company_id=str(self.company.id),
+            )
+        )
+        payload = self._payload()
+        payload["kegIds"] = [new_keg.id]
+        payload["beerDispenserIds"] = [new_dispenser.id]
+        payload["pressureGaugeIds"] = [new_pg.id]
+        payload["cylinderIds"] = [new_cyl.id]
+        # use same extractor to trigger conflict
+        resp2 = self.client.post("/api/reservations", json=payload)
+        self.assertEqual(resp2.status_code, 400)
+
+    def test_create_reservation_pressure_gauge_conflict(self):
+        resp1 = self.client.post("/api/reservations", json=self._payload())
+        self.assertEqual(resp1.status_code, 201)
+        new_keg = asyncio.run(
+            self.keg_services.create(
+                Keg(
+                    number="5",
+                    size_l=50,
+                    beer_type_id="bty1",
+                    cost_price_per_l=5.0,
+                    sale_price_per_l=8.0,
+                    lot="L1",
+                    expiration_date=None,
+                    current_volume_l=25.0,
+                    status=KegStatus.AVAILABLE,
+                    notes="",
+                ),
+                company_id=str(self.company.id),
+            )
+        )
+        new_dispenser = asyncio.run(
+            self.dispenser_services.create(
+                BeerDispenser(
+                    brand="Acme",
+                    model="X4",
+                    serial_number="SN4",
+                    taps_count=4,
+                    voltage=Voltage.V110,
+                    status=DispenserStatus.ACTIVE,
+                    notes="",
+                ),
+                company_id=str(self.company.id),
+            )
+        )
+        new_ext = asyncio.run(
+            self.extractor_services.create(
+                Extractor(brand="Acme2"),
+                company_id=str(self.company.id),
+            )
+        )
+        new_cyl = asyncio.run(
+            self.cylinder_services.create(
+                Cylinder(
+                    brand="Acme",
+                    weight_kg=10,
+                    number="C4",
+                    status=CylinderStatus.AVAILABLE,
+                ),
+                company_id=str(self.company.id),
+            )
+        )
+        payload = self._payload()
+        payload["kegIds"] = [new_keg.id]
+        payload["beerDispenserIds"] = [new_dispenser.id]
+        payload["extractorIds"] = [new_ext.id]
+        payload["cylinderIds"] = [new_cyl.id]
+        # use same pressure gauge to trigger conflict
         resp2 = self.client.post("/api/reservations", json=payload)
         self.assertEqual(resp2.status_code, 400)
 
