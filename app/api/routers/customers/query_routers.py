@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends
 
 from app.api.composers.customer_composite import customer_composer
 from app.api.dependencies import build_response, require_user_company
@@ -29,15 +29,15 @@ async def get_customer_by_id(
 
 @router.get(
     "/customers",
-    responses={200: {"model": CustomerListResponse}, 204: {"description": "No Content"}},
+    responses={200: {"model": CustomerListResponse}},
 )
 async def get_customers(
     customer_services: CustomerServices = Depends(customer_composer),
     company: CompanyInDB = Depends(require_user_company),
 ):
     customers = await customer_services.search_all(company_id=str(company.id))
-    if customers:
-        return build_response(
-            status_code=200, message="Customers found with success", data=customers
-        )
-    return Response(status_code=204)
+    return build_response(
+        status_code=200,
+        message="Customers found with success",
+        data=customers or [],
+    )

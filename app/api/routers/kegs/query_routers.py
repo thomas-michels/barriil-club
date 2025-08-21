@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends
 
 from app.api.composers.keg_composite import keg_composer
 from app.api.dependencies import build_response, require_user_company
@@ -27,7 +27,7 @@ async def get_keg_by_id(
 
 @router.get(
     "/kegs",
-    responses={200: {"model": KegListResponse}, 204: {"description": "No Content"}},
+    responses={200: {"model": KegListResponse}},
 )
 async def get_kegs(
     status: KegStatus | None = None,
@@ -35,8 +35,6 @@ async def get_kegs(
     company: CompanyInDB = Depends(require_user_company),
 ):
     kegs = await services.search_all(company_id=str(company.id), status=status)
-    if kegs:
-        return build_response(
-            status_code=200, message="Kegs found with success", data=kegs
-        )
-    return Response(status_code=204)
+    return build_response(
+        status_code=200, message="Kegs found with success", data=kegs or []
+    )

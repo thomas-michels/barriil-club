@@ -14,10 +14,8 @@ def build_response(
     if isinstance(data, int):
         raw_response = Response(message=message, data=None)
         raw_response.data = data
-
-    elif data:
+    elif data is not None:
         raw_response = Response(message=message, data=data)
-
     else:
         raw_response = MessageResponse(message=message)
 
@@ -30,13 +28,12 @@ def build_response(
 def build_list_response(
     status_code: status, message: str, pagination: dict, data: BaseModel | List[BaseModel] = None
 ) -> JSONResponse:
-    if data:
+    if data is not None:
         raw_response = ListResponseSchema(
             message=message,
             pagination=pagination,
             data=data
         )
-
     else:
         raw_response = MessageResponse(message=message)
 

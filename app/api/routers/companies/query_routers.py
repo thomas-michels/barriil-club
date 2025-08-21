@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends
 
 from app.api.composers.company_composite import company_composer
 from app.api.dependencies import build_response, require_company_member, require_user_company
@@ -44,15 +44,13 @@ async def get_company_subscription(
 
 @router.get(
     "/companies",
-    responses={200: {"model": CompanyListResponse}, 204: {"description": "No Content"}},
+    responses={200: {"model": CompanyListResponse}},
 )
 async def get_companies(
     company_services: CompanyServices = Depends(company_composer),
     _: CompanyInDB = Depends(require_user_company),
 ):
     companies = await company_services.search_all()
-    if companies:
-        return build_response(
-            status_code=200, message="Companies found with success", data=companies
-        )
-    return Response(status_code=204)
+    return build_response(
+        status_code=200, message="Companies found with success", data=companies or []
+    )
