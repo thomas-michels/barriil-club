@@ -155,13 +155,14 @@ class TestCylinderEndpoints(unittest.TestCase):
         )
         self.assertEqual(resp.status_code, 400)
 
-    def test_list_cylinders_returns_204_when_not_found(self):
+    def test_list_cylinders_returns_empty_list_when_not_found(self):
         async def fake_search_all(company_id):
             raise NotFoundError("Cylinders not found")
 
         self.services.search_all = fake_search_all
         resp = self.client.get("/api/cylinders")
-        self.assertEqual(resp.status_code, 204)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["data"], [])
 
     def test_create_cylinder_appends_suffix_when_duplicate(self):
         resp = self.client.post(

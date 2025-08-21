@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Security, Response
+from fastapi import APIRouter, Depends, Security
 
 from app.api.composers.user_composite import user_composer
 from app.api.composers.company_composite import company_composer
@@ -94,7 +94,6 @@ async def get_user_by_email(
     "/users",
     responses={
         200: {"model": GetUsersResponse},
-        204: {"description": "No Content"},
     },
 )
 async def get_users(
@@ -103,10 +102,6 @@ async def get_users(
 ):
     users = await user_services.search_all()
 
-    if users:
-        return build_response(
-            status_code=200, message="Users found with success", data=users
-        )
-
-    else:
-        return Response(status_code=204)
+    return build_response(
+        status_code=200, message="Users found with success", data=users or []
+    )

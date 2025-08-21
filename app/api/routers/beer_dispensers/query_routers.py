@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends
 
 from app.api.composers.beer_dispenser_composite import beer_dispenser_composer
 from app.api.dependencies import build_response, require_user_company
@@ -29,17 +29,15 @@ async def get_beer_dispenser_by_id(
 
 @router.get(
     "/beer-dispensers",
-    responses={200: {"model": BeerDispenserListResponse}, 204: {"description": "No Content"}},
+    responses={200: {"model": BeerDispenserListResponse}},
 )
 async def get_beer_dispensers(
     services: BeerDispenserServices = Depends(beer_dispenser_composer),
     company: CompanyInDB = Depends(require_user_company),
 ):
     dispensers = await services.search_all(company_id=str(company.id))
-    if dispensers:
-        return build_response(
-            status_code=200,
-            message="Beer dispensers found with success",
-            data=dispensers,
-        )
-    return Response(status_code=204)
+    return build_response(
+        status_code=200,
+        message="Beer dispensers found with success",
+        data=dispensers or [],
+    )

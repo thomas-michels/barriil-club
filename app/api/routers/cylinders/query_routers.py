@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends
 from app.core.exceptions import NotFoundError
 
 from app.api.composers.cylinder_composite import cylinder_composer
@@ -32,7 +32,7 @@ async def get_cylinder_by_id(
 
 @router.get(
     "/cylinders",
-    responses={200: {"model": CylinderListResponse}, 204: {"description": "No Content"}},
+    responses={200: {"model": CylinderListResponse}},
 )
 async def get_cylinders(
     services: CylinderServices = Depends(cylinder_composer),
@@ -41,11 +41,9 @@ async def get_cylinders(
     try:
         cylinders = await services.search_all(company_id=str(company.id))
     except NotFoundError:
-        return Response(status_code=204)
-    if cylinders:
-        return build_response(
-            status_code=200,
-            message="Cylinders found with success",
-            data=cylinders,
-        )
-    return Response(status_code=204)
+        cylinders = []
+    return build_response(
+        status_code=200,
+        message="Cylinders found with success",
+        data=cylinders,
+    )

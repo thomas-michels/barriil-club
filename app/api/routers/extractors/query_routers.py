@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends
 
 from app.api.composers.extractor_composite import extractor_composer
 from app.api.dependencies import build_response, require_user_company
@@ -29,15 +29,15 @@ async def get_extractor_by_id(
 
 @router.get(
     "/extractors",
-    responses={200: {"model": ExtractorListResponse}, 204: {"description": "No Content"}},
+    responses={200: {"model": ExtractorListResponse}},
 )
 async def get_extractors(
     extractor_services: ExtractorServices = Depends(extractor_composer),
     company: CompanyInDB = Depends(require_user_company),
 ):
     extractors = await extractor_services.search_all(company_id=str(company.id))
-    if extractors:
-        return build_response(
-            status_code=200, message="Extractors found with success", data=extractors
-        )
-    return Response(status_code=204)
+    return build_response(
+        status_code=200,
+        message="Extractors found with success",
+        data=extractors or [],
+    )

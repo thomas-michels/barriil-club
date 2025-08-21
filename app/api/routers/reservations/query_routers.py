@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends
 
 from app.api.composers.reservation_composite import reservation_composer
 from app.api.dependencies import build_response, require_user_company
@@ -30,7 +30,7 @@ async def get_reservation_by_id(
 
 @router.get(
     "/reservations",
-    responses={200: {"model": ReservationListResponse}, 204: {"description": "No Content"}},
+    responses={200: {"model": ReservationListResponse}},
 )
 async def get_reservations(
     start_date: UTCDateTimeType | None = None,
@@ -45,10 +45,8 @@ async def get_reservations(
         end_date=end_date,
         status=status,
     )
-    if reservations:
-        return build_response(
-            status_code=200,
-            message="Reservations found with success",
-            data=reservations,
-        )
-    return Response(status_code=204)
+    return build_response(
+        status_code=200,
+        message="Reservations found with success",
+        data=reservations or [],
+    )

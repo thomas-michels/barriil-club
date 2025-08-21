@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends
 
 from app.api.composers.dashboard_composite import dashboard_composer
 from app.api.dependencies import build_response, require_user_company
@@ -33,20 +33,18 @@ async def get_monthly_revenue(
 
 @router.get(
     "/dashboard/upcoming-reservations",
-    responses={200: {"model": ReservationListResponse}, 204: {"description": "No Content"}},
+    responses={200: {"model": ReservationListResponse}},
 )
 async def get_upcoming_reservations(
     services: DashboardServices = Depends(dashboard_composer),
     company: CompanyInDB = Depends(require_user_company),
 ):
     reservations = await services.upcoming_reservations(company_id=str(company.id))
-    if reservations:
-        return build_response(
-            status_code=200,
-            message="Reservations found with success",
-            data=reservations,
-        )
-    return Response(status_code=204)
+    return build_response(
+        status_code=200,
+        message="Reservations found with success",
+        data=reservations or [],
+    )
 
 
 @router.get(
