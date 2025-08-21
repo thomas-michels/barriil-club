@@ -23,17 +23,20 @@ class TestPressureGaugeServices(unittest.TestCase):
             host="mongodb://localhost",
             mongo_client_class=mongomock.MongoClient,
         )
+        PressureGaugeModel.drop_collection()
         self.repository = PressureGaugeRepository()
         self.services = PressureGaugeServices(self.repository)
 
     def tearDown(self) -> None:
         disconnect()
 
-    def _build_gauge(self, brand: str = "Acme") -> PressureGauge:
+    def _build_gauge(
+        self, brand: str = "Acme", serial_number: str = "SN1"
+    ) -> PressureGauge:
         return PressureGauge(
             brand=brand,
             type=PressureGaugeType.SIMPLE,
-            serial_number="SN1",
+            serial_number=serial_number,
             last_calibration_date=None,
             status=PressureGaugeStatus.ACTIVE,
             notes="",
@@ -42,6 +45,16 @@ class TestPressureGaugeServices(unittest.TestCase):
     def test_create_gauge(self):
         result = asyncio.run(self.services.create(self._build_gauge(), "com1"))
         self.assertEqual(result.brand, "Acme")
+
+    def test_create_gauge_with_automatic_suffix(self):
+        first = asyncio.run(
+            self.services.create(self._build_gauge(serial_number="SN"), "com1")
+        )
+        self.assertEqual(first.serial_number, "SN")
+        second = asyncio.run(
+            self.services.create(self._build_gauge(serial_number="SN"), "com1")
+        )
+        self.assertEqual(second.serial_number, "SN1")
 
     def test_search_by_id(self):
         doc = PressureGaugeModel(**self._build_gauge().model_dump(), company_id="com1")

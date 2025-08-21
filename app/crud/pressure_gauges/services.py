@@ -2,6 +2,7 @@ from typing import List
 
 from .repositories import PressureGaugeRepository
 from .schemas import PressureGauge, PressureGaugeInDB, UpdatePressureGauge
+from .models import PressureGaugeModel
 
 
 class PressureGaugeServices:
@@ -9,6 +10,12 @@ class PressureGaugeServices:
         self.__repository = repository
 
     async def create(self, gauge: PressureGauge, company_id: str) -> PressureGaugeInDB:
+        if gauge.serial_number is not None:
+            existing = PressureGaugeModel.objects(
+                serial_number__startswith=gauge.serial_number, company_id=company_id
+            ).count()
+            if existing > 0:
+                gauge.serial_number = f"{gauge.serial_number}{existing}"
         return await self.__repository.create(gauge=gauge, company_id=company_id)
 
     async def update(
