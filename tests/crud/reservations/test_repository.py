@@ -17,7 +17,7 @@ from app.crud.payments.schemas import Payment
 from app.crud.pressure_gauges.models import PressureGaugeModel
 from app.crud.pressure_gauges.schemas import PressureGaugeStatus, PressureGaugeType
 from app.crud.reservations.repositories import ReservationRepository
-from app.crud.reservations.schemas import Reservation, ReservationStatus
+from app.crud.reservations.schemas import ReservationCreate, ReservationStatus
 
 
 class TestReservationRepository(unittest.TestCase):
@@ -68,7 +68,7 @@ class TestReservationRepository(unittest.TestCase):
         disconnect()
 
     def test_create_reservation(self):
-        reservation = Reservation(
+        reservation = ReservationCreate(
             customer_id="cus1",
             address_id="add2",
             beer_dispenser_ids=[str(self.dispenser.id)],
@@ -83,13 +83,14 @@ class TestReservationRepository(unittest.TestCase):
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
             total_value=Decimal("400.00"),
+            total_cost=Decimal("250.00"),
             status=ReservationStatus.RESERVED,
         )
         res = asyncio.run(self.repository.create(reservation, self.company_id))
         self.assertIsNotNone(res.id)
 
     def test_add_update_delete_payment(self):
-        reservation = Reservation(
+        reservation = ReservationCreate(
             customer_id="cus1",
             address_id="add2",
             beer_dispenser_ids=[str(self.dispenser.id)],
@@ -104,6 +105,7 @@ class TestReservationRepository(unittest.TestCase):
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
             total_value=Decimal("400.00"),
+            total_cost=Decimal("250.00"),
             status=ReservationStatus.RESERVED,
         )
         res = asyncio.run(self.repository.create(reservation, self.company_id))
@@ -121,7 +123,7 @@ class TestReservationRepository(unittest.TestCase):
         self.assertEqual(len(updated.payments), 0)
 
     def test_find_active_by_beer_dispenser_id_within_period(self):
-        reservation = Reservation(
+        reservation = ReservationCreate(
             customer_id="cus1",
             address_id="add2",
             beer_dispenser_ids=[str(self.dispenser.id)],
@@ -136,6 +138,7 @@ class TestReservationRepository(unittest.TestCase):
             pickup_date=datetime.now() + timedelta(hours=1),
             payments=[],
             total_value=Decimal("400.00"),
+            total_cost=Decimal("250.00"),
             status=ReservationStatus.RESERVED,
         )
         res = asyncio.run(self.repository.create(reservation, self.company_id))
@@ -147,7 +150,7 @@ class TestReservationRepository(unittest.TestCase):
         self.assertEqual(found.id, res.id)
 
     def test_find_active_by_beer_dispenser_id_outside_period(self):
-        reservation = Reservation(
+        reservation = ReservationCreate(
             customer_id="cus1",
             address_id="add2",
             beer_dispenser_ids=[str(self.dispenser.id)],
@@ -162,6 +165,7 @@ class TestReservationRepository(unittest.TestCase):
             pickup_date=datetime.now() + timedelta(days=2),
             payments=[],
             total_value=Decimal("400.00"),
+            total_cost=Decimal("250.00"),
             status=ReservationStatus.RESERVED,
         )
         asyncio.run(self.repository.create(reservation, self.company_id))
@@ -173,7 +177,7 @@ class TestReservationRepository(unittest.TestCase):
         self.assertIsNone(found)
 
     def test_find_active_by_beer_dispenser_id_completed(self):
-        reservation = Reservation(
+        reservation = ReservationCreate(
             customer_id="cus1",
             address_id="add2",
             beer_dispenser_ids=[str(self.dispenser.id)],
@@ -188,6 +192,7 @@ class TestReservationRepository(unittest.TestCase):
             pickup_date=datetime.now() + timedelta(hours=1),
             payments=[],
             total_value=Decimal("400.00"),
+            total_cost=Decimal("250.00"),
             status=ReservationStatus.COMPLETED,
         )
         asyncio.run(self.repository.create(reservation, self.company_id))

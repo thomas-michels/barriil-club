@@ -26,6 +26,7 @@ class ReservationModel(BaseDocument):
     pickup_date = DateTimeField(required=True)
     payments = EmbeddedDocumentListField(PaymentModel, default=list)
     total_value = DecimalField(required=True, precision=2)
+    total_cost = DecimalField(default=0, precision=2)
     status = StringField(required=True, choices=[s.value for s in ReservationStatus])
     company_id = StringField(required=True)
 

@@ -20,6 +20,7 @@ EXAMPLE_RESERVATION = {
     "pickup_date": "2024-01-02T10:00:00Z",
     "payments": [],
     "total_value": 200.0,
+    "total_cost": 150.0,
     "status": ReservationStatus.RESERVED,
     "company_id": "com_123",
     "created_at": "2024-01-01T00:00:00Z",

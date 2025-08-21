@@ -206,6 +206,7 @@ class TestReservationEndpoints(unittest.TestCase):
         resp = self.client.post("/api/reservations", json=self._payload())
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(resp.json()["data"]["status"], "RESERVED")
+        self.assertEqual(resp.json()["data"]["total_cost"], 250.0)
         keg = asyncio.run(
             self.keg_services.search_by_id(self.keg.id, str(self.company.id))
         )
@@ -240,6 +241,7 @@ class TestReservationEndpoints(unittest.TestCase):
         resp = self.client.post("/api/reservations", json=payload)
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(resp.json()["data"]["total_value"], 440.0)
+        self.assertEqual(resp.json()["data"]["total_cost"], 250.0)
 
     def test_create_reservation_missing_extractor(self):
         payload = self._payload()
@@ -547,6 +549,18 @@ class TestReservationEndpoints(unittest.TestCase):
             self.cylinder_services.search_by_id(self.cylinder.id, str(self.company.id))
         )
         self.assertEqual(cyl.status, CylinderStatus.TO_VERIFY)
+        dispenser = asyncio.run(
+            self.dispenser_services.search_by_id(
+                self.dispenser.id, str(self.company.id)
+            )
+        )
+        self.assertEqual(dispenser.status, DispenserStatus.ACTIVE)
+
+    def test_create_reservation_rejects_status_field(self):
+        payload = self._payload()
+        payload["status"] = "COMPLETED"
+        resp = self.client.post("/api/reservations", json=payload)
+        self.assertEqual(resp.status_code, 422)
 
     def test_payment_endpoints(self):
         resp = self.client.post("/api/reservations", json=self._payload())

@@ -57,6 +57,7 @@ class TestPaymentServices(unittest.TestCase):
                 PaymentModel(amount=Decimal("100.0"), method="cash", paid_at=date.today())
             ],
             total_value=Decimal("100.0"),
+            total_cost=Decimal("0.0"),
             status=ReservationStatus.COMPLETED.value,
             company_id="com1",
         ).save()
@@ -78,6 +79,7 @@ class TestPaymentServices(unittest.TestCase):
                 PaymentModel(amount=Decimal("50.0"), method="cash", paid_at=date.today())
             ],
             total_value=Decimal("100.0"),
+            total_cost=Decimal("0.0"),
             status=ReservationStatus.DELIVERED.value,
             company_id="com1",
         ).save()

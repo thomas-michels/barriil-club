@@ -101,6 +101,7 @@ class TestReservationServices(unittest.TestCase):
         res = asyncio.run(self.services.create(reservation, self.company_id))
         self.assertEqual(res.status, ReservationStatus.RESERVED)
         self.assertEqual(res.total_value, Decimal("400.00"))
+        self.assertEqual(res.total_cost, Decimal("250.00"))
         updated = asyncio.run(
             self.services.update(
                 res.id,
@@ -115,6 +116,8 @@ class TestReservationServices(unittest.TestCase):
         self.assertEqual(pg.status, PressureGaugeStatus.TO_VERIFY.value)
         cyl = CylinderModel.objects(id=self.cylinder.id).first()
         self.assertEqual(cyl.status, CylinderStatus.TO_VERIFY.value)
+        dispenser = BeerDispenserModel.objects(id=self.dispenser.id).first()
+        self.assertEqual(dispenser.status, DispenserStatus.ACTIVE.value)
 
     def test_create_reservation_conflict(self):
         reservation = Reservation(
@@ -505,6 +508,7 @@ class TestReservationServices(unittest.TestCase):
         )
         res = asyncio.run(self.services.create(reservation, self.company_id))
         self.assertEqual(res.total_value, Decimal("440.00"))
+        self.assertEqual(res.total_cost, Decimal("250.00"))
 
     def test_create_with_multiple_dispensers(self):
         disp2 = BeerDispenserModel(
