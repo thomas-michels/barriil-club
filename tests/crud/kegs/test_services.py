@@ -23,7 +23,6 @@ class TestKegServices(unittest.TestCase):
         self.services = KegServices(self.repository)
         self.beer_type = BeerTypeModel(
             name="Pale Ale",
-            default_sale_price_per_l=10.0,
             company_id="com1",
         )
         self.beer_type.save()

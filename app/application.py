@@ -1,40 +1,40 @@
-from asgi_correlation_id import CorrelationIdMiddleware
 import sentry_sdk
+from asgi_correlation_id import CorrelationIdMiddleware
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
+
 from app.api.dependencies.response import build_response
 from app.api.middleware.rate_limiting import RateLimitMiddleware
 from app.api.routers import (
-    user_router,
-    extractor_router,
-    company_router,
     address_router,
-    customer_router,
-    beer_type_router,
-    keg_router,
     beer_dispenser_router,
-    pressure_gauge_router,
+    beer_type_router,
+    company_router,
+    customer_router,
     cylinder_router,
-    reservation_router,
     dashboard_router,
+    extraction_kit_router,
+    keg_router,
     payment_router,
+    reservation_router,
+    user_router,
 )
 from app.api.routers.exception_handlers import (
-    unprocessable_entity_error_422,
+    generic_error_400,
     generic_error_500,
     not_found_error_404,
-    generic_error_400,
+    unprocessable_entity_error_422,
 )
 from app.api.routers.exception_handlers.generic_errors import http_exception_handler
+from app.core.configs import get_environment
 from app.core.db.connection import lifespan
 from app.core.exceptions import (
-    UnprocessableEntity,
-    NotFoundError,
-    InvalidPassword,
     BadRequestError,
+    InvalidPassword,
+    NotFoundError,
+    UnprocessableEntity,
 )
-from app.core.configs import get_environment
 
 _env = get_environment()
 
@@ -51,11 +51,7 @@ _env = get_environment()
 # )
 
 
-app = FastAPI(
-    title=_env.APPLICATION_NAME,
-    lifespan=lifespan,
-    version=_env.RELEASE
-)
+app = FastAPI(title=_env.APPLICATION_NAME, lifespan=lifespan, version=_env.RELEASE)
 
 app.add_middleware(
     CORSMiddleware,
@@ -69,14 +65,13 @@ app.add_middleware(CorrelationIdMiddleware)
 app.add_middleware(RateLimitMiddleware, limit=250, window=60)
 
 app.include_router(user_router, prefix="/api")
-app.include_router(extractor_router, prefix="/api")
 app.include_router(company_router, prefix="/api")
 app.include_router(address_router, prefix="/api")
 app.include_router(customer_router, prefix="/api")
 app.include_router(beer_type_router, prefix="/api")
 app.include_router(keg_router, prefix="/api")
 app.include_router(beer_dispenser_router, prefix="/api")
-app.include_router(pressure_gauge_router, prefix="/api")
+app.include_router(extraction_kit_router, prefix="/api")
 app.include_router(cylinder_router, prefix="/api")
 app.include_router(reservation_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api")

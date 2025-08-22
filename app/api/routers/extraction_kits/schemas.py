@@ -1,20 +1,21 @@
 from typing import List
-from pydantic import Field, ConfigDict
+
+from pydantic import ConfigDict, Field
 
 from app.api.shared_schemas.responses import Response
-from app.crud.pressure_gauges.schemas import (
-    PressureGaugeInDB,
-    PressureGaugeType,
-    PressureGaugeStatus,
+from app.crud.extraction_kits.schemas import (
+    ExtractionKitInDB,
+    ExtractionKitStatus,
+    ExtractionKitType,
 )
 
 EXAMPLE_GAUGE = {
     "id": "pga_12345678",
     "brand": "Acme",
-    "type": PressureGaugeType.SIMPLE,
+    "type": ExtractionKitType.SIMPLE,
     "serial_number": "SN123",
     "last_calibration_date": "2024-01-01",
-    "status": PressureGaugeStatus.ACTIVE,
+    "status": ExtractionKitStatus.ACTIVE,
     "notes": "notes",
     "company_id": "com_123",
     "created_at": "2024-01-01T00:00:00Z",
@@ -22,26 +23,26 @@ EXAMPLE_GAUGE = {
 }
 
 
-class PressureGaugeResponse(Response):
-    data: PressureGaugeInDB | None = Field()
+class ExtractionKitResponse(Response):
+    data: ExtractionKitInDB | None = Field()
 
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "message": "Pressure gauge processed with success",
+                "message": "Extraction kit processed with success",
                 "data": EXAMPLE_GAUGE,
             }
         }
     )
 
 
-class PressureGaugeListResponse(Response):
-    data: List[PressureGaugeInDB] = Field()
+class ExtractionKitListResponse(Response):
+    data: List[ExtractionKitInDB] = Field()
 
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "message": "Pressure gauges found with success",
+                "message": "Extraction kits found with success",
                 "data": [EXAMPLE_GAUGE],
             }
         }

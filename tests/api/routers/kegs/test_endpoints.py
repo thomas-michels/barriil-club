@@ -69,7 +69,6 @@ class TestKegEndpoints(unittest.TestCase):
 
         self.beer_type = BeerTypeModel(
             name="Pale Ale",
-            default_sale_price_per_l=10.0,
             company_id=str(self.company.id),
         )
         self.beer_type.save()

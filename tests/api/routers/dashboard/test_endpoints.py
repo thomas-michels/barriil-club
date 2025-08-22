@@ -21,13 +21,12 @@ from app.crud.cylinders.models import CylinderModel
 from app.crud.cylinders.repositories import CylinderRepository
 from app.crud.cylinders.schemas import CylinderStatus
 from app.crud.dashboard.services import DashboardServices
-from app.crud.extractors.models import ExtractorModel
+from app.crud.extraction_kits.models import ExtractionKitModel
+from app.crud.extraction_kits.repositories import ExtractionKitRepository
+from app.crud.extraction_kits.schemas import ExtractionKitStatus, ExtractionKitType
 from app.crud.kegs.repositories import KegRepository
 from app.crud.kegs.schemas import Keg, KegStatus
 from app.crud.kegs.services import KegServices
-from app.crud.pressure_gauges.models import PressureGaugeModel
-from app.crud.pressure_gauges.repositories import PressureGaugeRepository
-from app.crud.pressure_gauges.schemas import PressureGaugeStatus, PressureGaugeType
 from app.crud.reservations.repositories import ReservationRepository
 from app.crud.reservations.schemas import ReservationCreate, ReservationStatus
 from app.crud.reservations.services import ReservationServices
@@ -46,7 +45,7 @@ class TestDashboardEndpoints(unittest.TestCase):
 
         self.reservation_repo = ReservationRepository()
         self.keg_repo = KegRepository()
-        self.pg_repo = PressureGaugeRepository()
+        self.pg_repo = ExtractionKitRepository()
         self.cyl_repo = CylinderRepository()
         self.reservation_services = ReservationServices(
             self.reservation_repo, self.keg_repo, self.pg_repo, self.cyl_repo
@@ -117,10 +116,10 @@ class TestDashboardEndpoints(unittest.TestCase):
             company_id=self.company.id,
         )
         self.disp2.save()
-        self.pg_model = PressureGaugeModel(
+        self.pg_model = ExtractionKitModel(
             brand="Acme",
-            type=PressureGaugeType.SIMPLE.value,
-            status=PressureGaugeStatus.ACTIVE.value,
+            type=ExtractionKitType.SIMPLE.value,
+            status=ExtractionKitStatus.ACTIVE.value,
             company_id=self.company.id,
         )
         self.pg_model.save()
@@ -132,16 +131,13 @@ class TestDashboardEndpoints(unittest.TestCase):
             company_id=self.company.id,
         )
         self.cyl_model.save()
-        self.ext_model = ExtractorModel(brand="Acme", company_id=self.company.id)
-        self.ext_model.save()
 
         res1 = ReservationCreate(
             customer_id="cus1",
             address_id="add1",
             beer_dispenser_ids=[str(self.disp1.id)],
             keg_ids=[str(self.keg1.id)],
-            extractor_ids=[str(self.ext_model.id)],
-            pressure_gauge_ids=[str(self.pg_model.id)],
+            extraction_kit_ids=[str(self.pg_model.id)],
             cylinder_ids=[str(self.cyl_model.id)],
             freight_value=Decimal("0"),
             additional_value=Decimal("0"),
@@ -158,8 +154,7 @@ class TestDashboardEndpoints(unittest.TestCase):
             address_id="add1",
             beer_dispenser_ids=[str(self.disp2.id)],
             keg_ids=[str(self.keg2.id)],
-            extractor_ids=[str(self.ext_model.id)],
-            pressure_gauge_ids=[str(self.pg_model.id)],
+            extraction_kit_ids=[str(self.pg_model.id)],
             cylinder_ids=[str(self.cyl_model.id)],
             freight_value=Decimal("0"),
             additional_value=Decimal("0"),

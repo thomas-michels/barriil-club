@@ -5,16 +5,16 @@ import mongomock
 from mongoengine import connect, disconnect
 
 from app.core.exceptions import NotFoundError
-from app.crud.pressure_gauges.models import PressureGaugeModel
-from app.crud.pressure_gauges.repositories import PressureGaugeRepository
-from app.crud.pressure_gauges.schemas import (
-    PressureGauge,
-    PressureGaugeStatus,
-    PressureGaugeType,
+from app.crud.extraction_kits.models import ExtractionKitModel
+from app.crud.extraction_kits.repositories import ExtractionKitRepository
+from app.crud.extraction_kits.schemas import (
+    ExtractionKit,
+    ExtractionKitStatus,
+    ExtractionKitType,
 )
 
 
-class TestPressureGaugeRepository(unittest.TestCase):
+class TestExtractionKitRepository(unittest.TestCase):
     def setUp(self) -> None:
         connect(
             "mongoenginetest",
@@ -25,65 +25,65 @@ class TestPressureGaugeRepository(unittest.TestCase):
     def tearDown(self) -> None:
         disconnect()
 
-    def _build_gauge(self, brand: str = "Acme") -> PressureGauge:
-        return PressureGauge(
+    def _build_gauge(self, brand: str = "Acme") -> ExtractionKit:
+        return ExtractionKit(
             brand=brand,
-            type=PressureGaugeType.SIMPLE,
+            type=ExtractionKitType.SIMPLE,
             serial_number="SN1",
             last_calibration_date=None,
-            status=PressureGaugeStatus.ACTIVE,
+            status=ExtractionKitStatus.ACTIVE,
             notes="",
         )
 
     def test_create_gauge(self):
-        repository = PressureGaugeRepository()
+        repository = ExtractionKitRepository()
         gauge = self._build_gauge()
         result = asyncio.run(repository.create(gauge, "com1"))
         self.assertEqual(result.brand, "Acme")
-        self.assertEqual(PressureGaugeModel.objects.count(), 1)
+        self.assertEqual(ExtractionKitModel.objects.count(), 1)
 
     def test_select_by_id_found(self):
-        doc = PressureGaugeModel(**self._build_gauge().model_dump(), company_id="com1")
+        doc = ExtractionKitModel(**self._build_gauge().model_dump(), company_id="com1")
         doc.save()
-        repository = PressureGaugeRepository()
+        repository = ExtractionKitRepository()
         res = asyncio.run(repository.select_by_id(doc.id, doc.company_id))
         self.assertEqual(res.id, doc.id)
 
     def test_select_by_id_not_found(self):
-        repository = PressureGaugeRepository()
+        repository = ExtractionKitRepository()
         with self.assertRaises(NotFoundError):
             asyncio.run(repository.select_by_id("invalid", "com1"))
 
     def test_select_all(self):
-        PressureGaugeModel(
+        ExtractionKitModel(
             **self._build_gauge("A").model_dump(), company_id="com1"
         ).save()
-        PressureGaugeModel(
+        ExtractionKitModel(
             **self._build_gauge("B").model_dump(), company_id="com1"
         ).save()
-        repository = PressureGaugeRepository()
+        repository = ExtractionKitRepository()
         res = asyncio.run(repository.select_all("com1"))
         self.assertEqual(len(res), 2)
 
     def test_update_gauge(self):
-        doc = PressureGaugeModel(**self._build_gauge().model_dump(), company_id="com1")
+        doc = ExtractionKitModel(**self._build_gauge().model_dump(), company_id="com1")
         doc.save()
-        repository = PressureGaugeRepository()
+        repository = ExtractionKitRepository()
         updated = asyncio.run(
             repository.update(doc.id, doc.company_id, {"brand": "New"})
         )
         self.assertEqual(updated.brand, "New")
 
     def test_delete_gauge(self):
-        doc = PressureGaugeModel(**self._build_gauge().model_dump(), company_id="com1")
+        doc = ExtractionKitModel(**self._build_gauge().model_dump(), company_id="com1")
         doc.save()
-        repository = PressureGaugeRepository()
+        repository = ExtractionKitRepository()
         result = asyncio.run(repository.delete_by_id(doc.id, doc.company_id))
         self.assertEqual(result.id, doc.id)
-        self.assertFalse(PressureGaugeModel.objects(id=doc.id).first().is_active)
+        self.assertFalse(ExtractionKitModel.objects(id=doc.id).first().is_active)
 
     def test_delete_gauge_not_found(self):
-        repository = PressureGaugeRepository()
+        repository = ExtractionKitRepository()
         with self.assertRaises(NotFoundError):
             asyncio.run(repository.delete_by_id("invalid", "com1"))
 

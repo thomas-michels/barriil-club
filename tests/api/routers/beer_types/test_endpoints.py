@@ -72,7 +72,6 @@ class TestBeerTypeEndpoints(unittest.TestCase):
             abv=5.0,
             ibu=40.0,
             description="Tasty",
-            default_sale_price_per_l=10.0,
         )
         self.beer_type = asyncio.run(
             self.services.create(beer_type, company_id=str(self.company.id))
@@ -89,7 +88,6 @@ class TestBeerTypeEndpoints(unittest.TestCase):
             "abv": 4.5,
             "ibu": 20.0,
             "description": "Desc",
-            "defaultSalePricePerL": 9.0,
         }
 
     def test_create_beer_type_endpoint(self):

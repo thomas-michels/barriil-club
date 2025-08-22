@@ -11,7 +11,6 @@ class BeerType(GenericModel):
     abv: Decimal | None = Field(default=None, example=5.0)
     ibu: Decimal | None = Field(default=None, example=40.0)
     description: str | None = Field(default=None, example="Tasty beer")
-    default_sale_price_per_l: Decimal = Field(example=10.5)
 
 
 class BeerTypeInDB(DatabaseModel):
@@ -20,7 +19,6 @@ class BeerTypeInDB(DatabaseModel):
     abv: Decimal | None = Field(default=None, example=5.0)
     ibu: Decimal | None = Field(default=None, example=40.0)
     description: str | None = Field(default=None, example="Tasty beer")
-    default_sale_price_per_l: Decimal = Field(example=10.5)
     company_id: str = Field(example="com_123")
 
 
@@ -30,4 +28,3 @@ class UpdateBeerType(GenericModel):
     abv: Decimal | None = Field(default=None)
     ibu: Decimal | None = Field(default=None)
     description: str | None = Field(default=None)
-    default_sale_price_per_l: Decimal | None = Field(default=None)

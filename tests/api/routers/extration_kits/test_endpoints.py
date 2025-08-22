@@ -6,25 +6,25 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from mongoengine import connect, disconnect
 
-from app.api.composers.pressure_gauge_composite import pressure_gauge_composer
+from app.api.composers.extraction_kit_composite import extraction_kit_composer
 from app.api.dependencies.company import require_user_company
-from app.api.routers.pressure_gauges import pressure_gauge_router
+from app.api.routers.extraction_kits import extraction_kit_router
 from app.core.exceptions import NotFoundError
 from app.crud.addresses.models import AddressModel
 from app.crud.addresses.repositories import AddressRepository
 from app.crud.companies.repositories import CompanyRepository
 from app.crud.companies.schemas import Company
 from app.crud.companies.services import CompanyServices
-from app.crud.pressure_gauges.repositories import PressureGaugeRepository
-from app.crud.pressure_gauges.schemas import (
-    PressureGauge,
-    PressureGaugeStatus,
-    PressureGaugeType,
+from app.crud.extraction_kits.repositories import ExtractionKitRepository
+from app.crud.extraction_kits.schemas import (
+    ExtractionKit,
+    ExtractionKitStatus,
+    ExtractionKitType,
 )
-from app.crud.pressure_gauges.services import PressureGaugeServices
+from app.crud.extraction_kits.services import ExtractionKitServices
 
 
-class TestPressureGaugeEndpoints(unittest.TestCase):
+class TestExtractionKitEndpoints(unittest.TestCase):
     def setUp(self) -> None:
         connect(
             "mongoenginetest",
@@ -34,10 +34,10 @@ class TestPressureGaugeEndpoints(unittest.TestCase):
         self.company_repo = CompanyRepository()
         self.address_repo = AddressRepository()
         self.company_services = CompanyServices(self.company_repo, self.address_repo)
-        self.repository = PressureGaugeRepository()
-        self.services = PressureGaugeServices(self.repository)
+        self.repository = ExtractionKitRepository()
+        self.services = ExtractionKitServices(self.repository)
         self.app = FastAPI()
-        self.app.include_router(pressure_gauge_router, prefix="/api")
+        self.app.include_router(extraction_kit_router, prefix="/api")
 
         async def override_require_user_company():
             return self.company
@@ -48,7 +48,7 @@ class TestPressureGaugeEndpoints(unittest.TestCase):
         self.app.dependency_overrides[require_user_company] = (
             override_require_user_company
         )
-        self.app.dependency_overrides[pressure_gauge_composer] = override_gauge_composer
+        self.app.dependency_overrides[extraction_kit_composer] = override_gauge_composer
         self.client = TestClient(self.app)
 
         seed_address = AddressModel(
@@ -70,12 +70,12 @@ class TestPressureGaugeEndpoints(unittest.TestCase):
         )
         self.company = asyncio.run(self.company_services.create(company))
 
-        gauge = PressureGauge(
+        gauge = ExtractionKit(
             brand="Acme",
-            type=PressureGaugeType.SIMPLE,
+            type=ExtractionKitType.SIMPLE,
             serial_number="SN1",
             last_calibration_date=None,
-            status=PressureGaugeStatus.ACTIVE,
+            status=ExtractionKitStatus.ACTIVE,
             notes="",
         )
         self.gauge = asyncio.run(
@@ -95,30 +95,30 @@ class TestPressureGaugeEndpoints(unittest.TestCase):
         }
 
     def test_create_gauge_endpoint(self):
-        resp = self.client.post("/api/pressure-gauges", json=self._payload("BrandX"))
+        resp = self.client.post("/api/extraction-kits", json=self._payload("BrandX"))
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(resp.json()["data"]["brand"], "BrandX")
 
     def test_get_gauge_by_id(self):
-        resp = self.client.get(f"/api/pressure-gauges/{self.gauge.id}")
+        resp = self.client.get(f"/api/extraction-kits/{self.gauge.id}")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["data"]["id"], self.gauge.id)
 
     def test_list_gauges(self):
-        resp = self.client.get("/api/pressure-gauges")
+        resp = self.client.get("/api/extraction-kits")
         self.assertEqual(resp.status_code, 200)
         self.assertGreaterEqual(len(resp.json()["data"]), 1)
 
     def test_update_gauge_endpoint(self):
         resp = self.client.put(
-            f"/api/pressure-gauges/{self.gauge.id}",
+            f"/api/extraction-kits/{self.gauge.id}",
             json={"brand": "Updated"},
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["data"]["brand"], "Updated")
 
     def test_delete_gauge_endpoint(self):
-        resp = self.client.delete(f"/api/pressure-gauges/{self.gauge.id}")
+        resp = self.client.delete(f"/api/extraction-kits/{self.gauge.id}")
         self.assertEqual(resp.status_code, 200)
         with self.assertRaises(NotFoundError):
             asyncio.run(self.services.search_by_id(self.gauge.id, str(self.company.id)))
@@ -128,7 +128,7 @@ class TestPressureGaugeEndpoints(unittest.TestCase):
             return None
 
         self.services.create = fake_create
-        resp = self.client.post("/api/pressure-gauges", json=self._payload("Fail"))
+        resp = self.client.post("/api/extraction-kits", json=self._payload("Fail"))
         self.assertEqual(resp.status_code, 400)
 
     def test_update_gauge_returns_400_when_not_updated(self):
@@ -137,7 +137,7 @@ class TestPressureGaugeEndpoints(unittest.TestCase):
 
         self.services.update = fake_update
         resp = self.client.put(
-            f"/api/pressure-gauges/{self.gauge.id}",
+            f"/api/extraction-kits/{self.gauge.id}",
             json={"brand": "Fail"},
         )
         self.assertEqual(resp.status_code, 400)
@@ -147,7 +147,7 @@ class TestPressureGaugeEndpoints(unittest.TestCase):
             return None
 
         self.services.delete_by_id = fake_delete
-        resp = self.client.delete(f"/api/pressure-gauges/{self.gauge.id}")
+        resp = self.client.delete(f"/api/extraction-kits/{self.gauge.id}")
         self.assertEqual(resp.status_code, 400)
 
 
