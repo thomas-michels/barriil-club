@@ -28,7 +28,6 @@ class TestBeerTypeRepository(unittest.TestCase):
             abv=5.0,
             ibu=40.0,
             description="Tasty",
-            default_sale_price_per_l=10.0,
         )
 
     def test_create_beer_type(self):

@@ -11,7 +11,6 @@ EXAMPLE_BEER_TYPE = {
     "abv": 5.0,
     "ibu": 40.0,
     "description": "Tasty beer",
-    "default_sale_price_per_l": 10.5,
     "company_id": "com_123",
     "created_at": "2024-01-01T00:00:00Z",
     "updated_at": "2024-01-01T00:00:00Z",
