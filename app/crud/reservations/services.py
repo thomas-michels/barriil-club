@@ -1,16 +1,16 @@
-from typing import List
 from decimal import Decimal
+from typing import List
 
 from app.core.exceptions import BadRequestError
 from app.core.utils.utc_datetime import UTCDateTime
-from app.crud.kegs.repositories import KegRepository
-from app.crud.kegs.schemas import KegStatus
-from app.crud.pressure_gauges.repositories import PressureGaugeRepository
-from app.crud.pressure_gauges.schemas import PressureGaugeStatus
-from app.crud.cylinders.repositories import CylinderRepository
-from app.crud.cylinders.schemas import CylinderStatus
 from app.crud.beer_dispensers.repositories import BeerDispenserRepository
 from app.crud.beer_dispensers.schemas import DispenserStatus
+from app.crud.cylinders.repositories import CylinderRepository
+from app.crud.cylinders.schemas import CylinderStatus
+from app.crud.extraction_kits.repositories import ExtractionKitRepository
+from app.crud.extraction_kits.schemas import ExtractionKitStatus
+from app.crud.kegs.repositories import KegRepository
+from app.crud.kegs.schemas import KegStatus
 from app.crud.payments.schemas import Payment
 
 from .repositories import ReservationRepository
@@ -18,8 +18,8 @@ from .schemas import (
     Reservation,
     ReservationCreate,
     ReservationInDB,
-    UpdateReservation,
     ReservationStatus,
+    UpdateReservation,
 )
 
 
@@ -28,36 +28,34 @@ class ReservationServices:
         self,
         reservation_repository: ReservationRepository,
         keg_repository: KegRepository,
-        pressure_gauge_repository: PressureGaugeRepository,
+        extraction_kit_repository: ExtractionKitRepository,
         cylinder_repository: CylinderRepository,
         beer_dispenser_repository: BeerDispenserRepository | None = None,
     ) -> None:
         self.__repository = reservation_repository
         self.__keg_repository = keg_repository
-        self.__pg_repository = pressure_gauge_repository
+        self.__pg_repository = extraction_kit_repository
         self.__cylinder_repository = cylinder_repository
         self.__dispenser_repository = (
             beer_dispenser_repository or BeerDispenserRepository()
         )
 
-    async def create(self, reservation: Reservation, company_id: str) -> ReservationInDB:
+    async def create(
+        self, reservation: Reservation, company_id: str
+    ) -> ReservationInDB:
         if not reservation.beer_dispenser_ids:
             raise BadRequestError(message="At least one beer dispenser is required")
         if not reservation.keg_ids:
             raise BadRequestError(message="At least one keg is required")
-        if not reservation.extractor_ids:
-            raise BadRequestError(message="At least one extractor is required")
-        if not reservation.pressure_gauge_ids:
-            raise BadRequestError(message="At least one pressure gauge is required")
+        if not reservation.extraction_kit_ids:
+            raise BadRequestError(message="At least one Extraction kit is required")
         if not reservation.cylinder_ids:
             raise BadRequestError(message="At least one cylinder is required")
 
         total = Decimal("0")
         cost_total = Decimal("0")
         for keg_id in reservation.keg_ids:
-            keg = await self.__keg_repository.select_by_id(
-                keg_id, company_id
-            )
+            keg = await self.__keg_repository.select_by_id(keg_id, company_id)
             if keg.status in [KegStatus.EMPTY, KegStatus.IN_USE]:
                 raise BadRequestError(message=f"Keg #{keg_id} not available")
             price = keg.sale_price_per_l or Decimal("0")
@@ -70,13 +68,9 @@ class ReservationServices:
                 cylinder_id, company_id
             )
             if cylinder.status != CylinderStatus.AVAILABLE:
-                raise BadRequestError(
-                    message=f"Cylinder #{cylinder_id} not available"
-                )
+                raise BadRequestError(message=f"Cylinder #{cylinder_id} not available")
             if cylinder.weight_kg <= Decimal("0"):
-                raise BadRequestError(
-                    message=f"Cylinder #{cylinder_id} empty"
-                )
+                raise BadRequestError(message=f"Cylinder #{cylinder_id} empty")
 
         conflict = await self.__repository.find_beer_dispenser_conflict(
             company_id=company_id,
@@ -96,19 +90,17 @@ class ReservationServices:
             pickup_date=reservation.pickup_date,
         )
         if conflict:
-            raise BadRequestError(
-                message="Extractor already reserved for this period"
-            )
+            raise BadRequestError(message="Extractor already reserved for this period")
 
-        conflict = await self.__repository.find_pressure_gauge_conflict(
+        conflict = await self.__repository.find_extraction_kit_conflict(
             company_id=company_id,
-            pressure_gauge_ids=reservation.pressure_gauge_ids,
+            extraction_kit_ids=reservation.extraction_kit_ids,
             delivery_date=reservation.delivery_date,
             pickup_date=reservation.pickup_date,
         )
         if conflict:
             raise BadRequestError(
-                message="Pressure gauge already reserved for this period"
+                message="Extraction kit already reserved for this period"
             )
 
         conflict = await self.__repository.find_cylinder_conflict(
@@ -118,9 +110,7 @@ class ReservationServices:
             pickup_date=reservation.pickup_date,
         )
         if conflict:
-            raise BadRequestError(
-                message="Cylinder already reserved for this period"
-            )
+            raise BadRequestError(message="Cylinder already reserved for this period")
 
         total += reservation.freight_value
         total += reservation.additional_value
@@ -159,9 +149,9 @@ class ReservationServices:
                 await self.__keg_repository.update(
                     keg_id, company_id, {"status": KegStatus.EMPTY.value}
                 )
-            for pg_id in updated.pressure_gauge_ids:
+            for pg_id in updated.extraction_kit_ids:
                 await self.__pg_repository.update(
-                    pg_id, company_id, {"status": PressureGaugeStatus.TO_VERIFY.value}
+                    pg_id, company_id, {"status": ExtractionKitStatus.TO_VERIFY.value}
                 )
             for cyl_id in updated.cylinder_ids:
                 await self.__cylinder_repository.update(

@@ -1,14 +1,15 @@
 from mongoengine import (
-    StringField,
-    ListField,
-    EmbeddedDocumentListField,
-    DecimalField,
     DateTimeField,
+    DecimalField,
+    EmbeddedDocumentListField,
+    ListField,
+    StringField,
 )
 
 from app.core.models.base_document import BaseDocument
-from .schemas import ReservationStatus
 from app.crud.payments.models import PaymentModel
+
+from .schemas import ReservationStatus
 
 
 class ReservationModel(BaseDocument):
@@ -17,7 +18,7 @@ class ReservationModel(BaseDocument):
     beer_dispenser_ids = ListField(StringField())
     keg_ids = ListField(StringField())
     extractor_ids = ListField(StringField())
-    pressure_gauge_ids = ListField(StringField())
+    extraction_kit_ids = ListField(StringField())
     cylinder_ids = ListField(StringField())
     freight_value = DecimalField(default=0, precision=2)
     additional_value = DecimalField(default=0, precision=2)

@@ -12,14 +12,13 @@ from app.crud.beer_dispensers.schemas import DispenserStatus, Voltage
 from app.crud.cylinders.models import CylinderModel
 from app.crud.cylinders.repositories import CylinderRepository
 from app.crud.cylinders.schemas import CylinderStatus
-from app.crud.extractors.models import ExtractorModel
+from app.crud.extraction_kits.models import ExtractionKitModel
+from app.crud.extraction_kits.repositories import ExtractionKitRepository
+from app.crud.extraction_kits.schemas import ExtractionKitStatus, ExtractionKitType
 from app.crud.kegs.models import KegModel
 from app.crud.kegs.repositories import KegRepository
 from app.crud.kegs.schemas import KegStatus
 from app.crud.payments.schemas import Payment
-from app.crud.pressure_gauges.models import PressureGaugeModel
-from app.crud.pressure_gauges.repositories import PressureGaugeRepository
-from app.crud.pressure_gauges.schemas import PressureGaugeStatus, PressureGaugeType
 from app.crud.reservations.repositories import ReservationRepository
 from app.crud.reservations.schemas import (
     Reservation,
@@ -38,7 +37,7 @@ class TestReservationServices(unittest.TestCase):
         )
         reservation_repo = ReservationRepository()
         self.keg_repo = KegRepository()
-        self.pg_repo = PressureGaugeRepository()
+        self.pg_repo = ExtractionKitRepository()
         self.cyl_repo = CylinderRepository()
         self.services = ReservationServices(
             reservation_repo, self.keg_repo, self.pg_repo, self.cyl_repo
@@ -61,10 +60,10 @@ class TestReservationServices(unittest.TestCase):
             company_id=self.company_id,
         )
         self.keg.save()
-        self.pg = PressureGaugeModel(
+        self.pg = ExtractionKitModel(
             brand="Acme",
-            type=PressureGaugeType.SIMPLE.value,
-            status=PressureGaugeStatus.ACTIVE.value,
+            type=ExtractionKitType.SIMPLE.value,
+            status=ExtractionKitStatus.ACTIVE.value,
             company_id=self.company_id,
         )
         self.pg.save()
@@ -76,8 +75,6 @@ class TestReservationServices(unittest.TestCase):
             company_id=self.company_id,
         )
         self.cylinder.save()
-        self.extractor = ExtractorModel(brand="Acme", company_id=self.company_id)
-        self.extractor.save()
 
     def tearDown(self) -> None:
         disconnect()
@@ -88,8 +85,7 @@ class TestReservationServices(unittest.TestCase):
             address_id="add2",
             beer_dispenser_ids=[str(self.dispenser.id)],
             keg_ids=[str(self.keg.id)],
-            extractor_ids=[str(self.extractor.id)],
-            pressure_gauge_ids=[str(self.pg.id)],
+            extraction_kit_ids=[str(self.pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
             freight_value=Decimal("0"),
             additional_value=Decimal("0"),
@@ -112,8 +108,8 @@ class TestReservationServices(unittest.TestCase):
         self.assertEqual(updated.status, ReservationStatus.COMPLETED)
         keg = KegModel.objects(id=self.keg.id).first()
         self.assertEqual(keg.status, KegStatus.EMPTY.value)
-        pg = PressureGaugeModel.objects(id=self.pg.id).first()
-        self.assertEqual(pg.status, PressureGaugeStatus.TO_VERIFY.value)
+        pg = ExtractionKitModel.objects(id=self.pg.id).first()
+        self.assertEqual(pg.status, ExtractionKitStatus.TO_VERIFY.value)
         cyl = CylinderModel.objects(id=self.cylinder.id).first()
         self.assertEqual(cyl.status, CylinderStatus.TO_VERIFY.value)
         dispenser = BeerDispenserModel.objects(id=self.dispenser.id).first()
@@ -125,8 +121,7 @@ class TestReservationServices(unittest.TestCase):
             address_id="add2",
             beer_dispenser_ids=[str(self.dispenser.id)],
             keg_ids=[str(self.keg.id)],
-            extractor_ids=[str(self.extractor.id)],
-            pressure_gauge_ids=[str(self.pg.id)],
+            extraction_kit_ids=[str(self.pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
             freight_value=Decimal("0"),
             additional_value=Decimal("0"),
@@ -154,12 +149,10 @@ class TestReservationServices(unittest.TestCase):
             company_id=self.company_id,
         )
         new_cylinder.save()
-        new_ext = ExtractorModel(brand="Acme2", company_id=self.company_id)
-        new_ext.save()
-        new_pg = PressureGaugeModel(
+        new_pg = ExtractionKitModel(
             brand="Acme",
-            type=PressureGaugeType.SIMPLE.value,
-            status=PressureGaugeStatus.ACTIVE.value,
+            type=ExtractionKitType.SIMPLE.value,
+            status=ExtractionKitStatus.ACTIVE.value,
             company_id=self.company_id,
         )
         new_pg.save()
@@ -168,8 +161,7 @@ class TestReservationServices(unittest.TestCase):
             address_id="add3",
             beer_dispenser_ids=[str(self.dispenser.id)],
             keg_ids=[str(new_keg.id)],
-            extractor_ids=[str(new_ext.id)],
-            pressure_gauge_ids=[str(new_pg.id)],
+            extraction_kit_ids=[str(new_pg.id)],
             cylinder_ids=[str(new_cylinder.id)],
             freight_value=Decimal("0"),
             additional_value=Decimal("0"),
@@ -187,8 +179,7 @@ class TestReservationServices(unittest.TestCase):
             address_id="add2",
             beer_dispenser_ids=[str(self.dispenser.id)],
             keg_ids=[str(self.keg.id)],
-            extractor_ids=[str(self.extractor.id)],
-            pressure_gauge_ids=[str(self.pg.id)],
+            extraction_kit_ids=[str(self.pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
             freight_value=Decimal("0"),
             additional_value=Decimal("0"),
@@ -215,12 +206,10 @@ class TestReservationServices(unittest.TestCase):
             company_id=self.company_id,
         )
         new_dispenser.save()
-        new_ext = ExtractorModel(brand="Acme2", company_id=self.company_id)
-        new_ext.save()
-        new_pg = PressureGaugeModel(
+        new_pg = ExtractionKitModel(
             brand="Acme",
-            type=PressureGaugeType.SIMPLE.value,
-            status=PressureGaugeStatus.ACTIVE.value,
+            type=ExtractionKitType.SIMPLE.value,
+            status=ExtractionKitStatus.ACTIVE.value,
             company_id=self.company_id,
         )
         new_pg.save()
@@ -229,8 +218,7 @@ class TestReservationServices(unittest.TestCase):
             address_id="add3",
             beer_dispenser_ids=[str(new_dispenser.id)],
             keg_ids=[str(new_keg.id)],
-            extractor_ids=[str(new_ext.id)],
-            pressure_gauge_ids=[str(new_pg.id)],
+            extraction_kit_ids=[str(new_pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
             freight_value=Decimal("0"),
             additional_value=Decimal("0"),
@@ -248,8 +236,7 @@ class TestReservationServices(unittest.TestCase):
             address_id="add2",
             beer_dispenser_ids=[str(self.dispenser.id)],
             keg_ids=[str(self.keg.id)],
-            extractor_ids=[str(self.extractor.id)],
-            pressure_gauge_ids=[str(self.pg.id)],
+            extraction_kit_ids=[str(self.pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
             freight_value=Decimal("0"),
             additional_value=Decimal("0"),
@@ -276,10 +263,10 @@ class TestReservationServices(unittest.TestCase):
             company_id=self.company_id,
         )
         new_dispenser.save()
-        new_pg = PressureGaugeModel(
+        new_pg = ExtractionKitModel(
             brand="Acme",
-            type=PressureGaugeType.SIMPLE.value,
-            status=PressureGaugeStatus.ACTIVE.value,
+            type=ExtractionKitType.SIMPLE.value,
+            status=ExtractionKitStatus.ACTIVE.value,
             company_id=self.company_id,
         )
         new_pg.save()
@@ -296,8 +283,7 @@ class TestReservationServices(unittest.TestCase):
             address_id="add3",
             beer_dispenser_ids=[str(new_dispenser.id)],
             keg_ids=[str(new_keg.id)],
-            extractor_ids=[str(self.extractor.id)],
-            pressure_gauge_ids=[str(new_pg.id)],
+            extraction_kit_ids=[str(new_pg.id)],
             cylinder_ids=[str(new_cylinder.id)],
             freight_value=Decimal("0"),
             additional_value=Decimal("0"),
@@ -309,14 +295,13 @@ class TestReservationServices(unittest.TestCase):
         with self.assertRaises(BadRequestError):
             asyncio.run(self.services.create(reservation2, self.company_id))
 
-    def test_create_reservation_pressure_gauge_conflict(self):
+    def test_create_reservation_extraction_kit_conflict(self):
         reservation = Reservation(
             customer_id="cus1",
             address_id="add2",
             beer_dispenser_ids=[str(self.dispenser.id)],
             keg_ids=[str(self.keg.id)],
-            extractor_ids=[str(self.extractor.id)],
-            pressure_gauge_ids=[str(self.pg.id)],
+            extraction_kit_ids=[str(self.pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
             freight_value=Decimal("0"),
             additional_value=Decimal("0"),
@@ -343,8 +328,6 @@ class TestReservationServices(unittest.TestCase):
             company_id=self.company_id,
         )
         new_dispenser.save()
-        new_ext = ExtractorModel(brand="Acme2", company_id=self.company_id)
-        new_ext.save()
         new_cylinder = CylinderModel(
             brand="Acme",
             weight_kg=10,
@@ -358,8 +341,7 @@ class TestReservationServices(unittest.TestCase):
             address_id="add3",
             beer_dispenser_ids=[str(new_dispenser.id)],
             keg_ids=[str(new_keg.id)],
-            extractor_ids=[str(new_ext.id)],
-            pressure_gauge_ids=[str(self.pg.id)],
+            extraction_kit_ids=[str(self.pg.id)],
             cylinder_ids=[str(new_cylinder.id)],
             freight_value=Decimal("0"),
             additional_value=Decimal("0"),
@@ -379,8 +361,7 @@ class TestReservationServices(unittest.TestCase):
             address_id="add2",
             beer_dispenser_ids=[str(self.dispenser.id)],
             keg_ids=[str(self.keg.id)],
-            extractor_ids=[str(self.extractor.id)],
-            pressure_gauge_ids=[str(self.pg.id)],
+            extraction_kit_ids=[str(self.pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
             freight_value=Decimal("0"),
             additional_value=Decimal("0"),
@@ -406,8 +387,7 @@ class TestReservationServices(unittest.TestCase):
             address_id="add2",
             beer_dispenser_ids=[str(self.dispenser.id)],
             keg_ids=[str(self.keg.id)],
-            extractor_ids=[str(self.extractor.id)],
-            pressure_gauge_ids=[str(self.pg.id)],
+            extraction_kit_ids=[str(self.pg.id)],
             cylinder_ids=[str(empty_cyl.id)],
             freight_value=Decimal("0"),
             additional_value=Decimal("0"),
@@ -425,8 +405,7 @@ class TestReservationServices(unittest.TestCase):
             address_id="add2",
             beer_dispenser_ids=[str(self.dispenser.id)],
             keg_ids=[str(self.keg.id)],
-            extractor_ids=[str(self.extractor.id)],
-            pressure_gauge_ids=[str(self.pg.id)],
+            extraction_kit_ids=[str(self.pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
             freight_value=Decimal("0"),
             additional_value=Decimal("0"),
@@ -449,8 +428,7 @@ class TestReservationServices(unittest.TestCase):
             address_id="add3",
             beer_dispenser_ids=[str(new_dispenser.id)],
             keg_ids=[str(self.keg.id)],
-            extractor_ids=[str(self.extractor.id)],
-            pressure_gauge_ids=[str(self.pg.id)],
+            extraction_kit_ids=[str(self.pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
             freight_value=Decimal("0"),
             additional_value=Decimal("0"),
@@ -468,8 +446,7 @@ class TestReservationServices(unittest.TestCase):
             address_id="add2",
             beer_dispenser_ids=[str(self.dispenser.id)],
             keg_ids=[str(self.keg.id)],
-            extractor_ids=[str(self.extractor.id)],
-            pressure_gauge_ids=[str(self.pg.id)],
+            extraction_kit_ids=[str(self.pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
             freight_value=Decimal("0"),
             additional_value=Decimal("0"),
@@ -496,8 +473,7 @@ class TestReservationServices(unittest.TestCase):
             address_id="add2",
             beer_dispenser_ids=[str(self.dispenser.id)],
             keg_ids=[str(self.keg.id)],
-            extractor_ids=[str(self.extractor.id)],
-            pressure_gauge_ids=[str(self.pg.id)],
+            extraction_kit_ids=[str(self.pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
             freight_value=Decimal("50.00"),
             additional_value=Decimal("10.00"),
@@ -523,8 +499,7 @@ class TestReservationServices(unittest.TestCase):
             address_id="add2",
             beer_dispenser_ids=[str(self.dispenser.id), str(disp2.id)],
             keg_ids=[str(self.keg.id)],
-            extractor_ids=[str(self.extractor.id)],
-            pressure_gauge_ids=[str(self.pg.id)],
+            extraction_kit_ids=[str(self.pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
             freight_value=Decimal("0"),
             additional_value=Decimal("0"),
@@ -545,12 +520,10 @@ class TestReservationServices(unittest.TestCase):
             company_id=self.company_id,
         )
         new_keg.save()
-        new_ext = ExtractorModel(brand="Acme2", company_id=self.company_id)
-        new_ext.save()
-        new_pg = PressureGaugeModel(
+        new_pg = ExtractionKitModel(
             brand="Acme",
-            type=PressureGaugeType.SIMPLE.value,
-            status=PressureGaugeStatus.ACTIVE.value,
+            type=ExtractionKitType.SIMPLE.value,
+            status=ExtractionKitStatus.ACTIVE.value,
             company_id=self.company_id,
         )
         new_pg.save()
@@ -559,8 +532,7 @@ class TestReservationServices(unittest.TestCase):
             address_id="add3",
             beer_dispenser_ids=[str(disp2.id)],
             keg_ids=[str(new_keg.id)],
-            extractor_ids=[str(new_ext.id)],
-            pressure_gauge_ids=[str(new_pg.id)],
+            extraction_kit_ids=[str(new_pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
             freight_value=Decimal("0"),
             additional_value=Decimal("0"),

@@ -1,9 +1,9 @@
 from typing import List
+
 from app.core.configs import get_logger
 from app.core.exceptions import NotFoundError
 from app.core.repositories.base_repository import Repository
 from app.core.utils.utc_datetime import UTCDateTime
-
 from app.crud.payments.models import PaymentModel
 from app.crud.payments.schemas import Payment
 
@@ -17,17 +17,15 @@ class ReservationRepository(Repository):
     def __init__(self) -> None:
         super().__init__()
 
-    async def create(self, reservation: ReservationCreate, company_id: str) -> ReservationInDB:
+    async def create(
+        self, reservation: ReservationCreate, company_id: str
+    ) -> ReservationInDB:
         try:
             payments = [PaymentModel(**p.model_dump()) for p in reservation.payments]
             json = reservation.model_dump(exclude={"payments"})
             json["status"] = reservation.status.value
-            json["delivery_date"] = UTCDateTime.validate_datetime(
-                json["delivery_date"]
-            )
-            json["pickup_date"] = UTCDateTime.validate_datetime(
-                json["pickup_date"]
-            )
+            json["delivery_date"] = UTCDateTime.validate_datetime(json["delivery_date"])
+            json["pickup_date"] = UTCDateTime.validate_datetime(json["pickup_date"])
 
             model = ReservationModel(
                 **json,
@@ -45,7 +43,9 @@ class ReservationRepository(Repository):
             _logger.error(f"Error on create_reservation: {str(error)}")
             raise NotFoundError(message="Error on create reservation")
 
-    async def update(self, id: str, company_id: str, reservation: dict) -> ReservationInDB:
+    async def update(
+        self, id: str, company_id: str, reservation: dict
+    ) -> ReservationInDB:
         try:
             model: ReservationModel = ReservationModel.objects(
                 id=id, company_id=company_id, is_active=True
@@ -55,7 +55,9 @@ class ReservationRepository(Repository):
                 raise NotFoundError(message=f"Reservation #{id} not found")
 
             if reservation.get("payments") is not None:
-                reservation["payments"] = [PaymentModel(**p) for p in reservation["payments"]]
+                reservation["payments"] = [
+                    PaymentModel(**p) for p in reservation["payments"]
+                ]
 
             model.update(**reservation)
             model.save()
@@ -167,12 +169,8 @@ class ReservationRepository(Repository):
             return ReservationInDB.model_validate(model) if model else None
 
         except Exception as error:
-            _logger.error(
-                f"Error on find_beer_dispenser_conflict: {str(error)}"
-            )
-            raise NotFoundError(
-                message="Error on find beer dispenser conflict"
-            )
+            _logger.error(f"Error on find_beer_dispenser_conflict: {str(error)}")
+            raise NotFoundError(message="Error on find beer dispenser conflict")
 
     async def find_cylinder_conflict(
         self,
@@ -221,17 +219,13 @@ class ReservationRepository(Repository):
             return ReservationInDB.model_validate(model) if model else None
 
         except Exception as error:
-            _logger.error(
-                f"Error on find_extractor_conflict: {str(error)}"
-            )
-            raise NotFoundError(
-                message="Error on find extractor conflict"
-            )
+            _logger.error(f"Error on find_extractor_conflict: {str(error)}")
+            raise NotFoundError(message="Error on find extractor conflict")
 
-    async def find_pressure_gauge_conflict(
+    async def find_extraction_kit_conflict(
         self,
         company_id: str,
-        pressure_gauge_ids: List[str],
+        extraction_kit_ids: List[str],
         delivery_date: UTCDateTime,
         pickup_date: UTCDateTime,
     ) -> ReservationInDB | None:
@@ -239,7 +233,7 @@ class ReservationRepository(Repository):
             start = UTCDateTime.validate_datetime(delivery_date)
             end = UTCDateTime.validate_datetime(pickup_date)
             model = ReservationModel.objects(
-                pressure_gauge_ids__in=pressure_gauge_ids,
+                extraction_kit_ids__in=extraction_kit_ids,
                 company_id=company_id,
                 is_active=True,
                 status__ne=ReservationStatus.COMPLETED.value,
@@ -250,12 +244,8 @@ class ReservationRepository(Repository):
             return ReservationInDB.model_validate(model) if model else None
 
         except Exception as error:
-            _logger.error(
-                f"Error on find_pressure_gauge_conflict: {str(error)}"
-            )
-            raise NotFoundError(
-                message="Error on find pressure gauge conflict"
-            )
+            _logger.error(f"Error on find_extraction_kit_conflict: {str(error)}")
+            raise NotFoundError(message="Error on find Extraction kit conflict")
 
     async def find_active_by_beer_dispenser_id(
         self, company_id: str, dispenser_id: str
@@ -274,12 +264,8 @@ class ReservationRepository(Repository):
             return ReservationInDB.model_validate(model) if model else None
 
         except Exception as error:
-            _logger.error(
-                f"Error on find_active_by_beer_dispenser_id: {str(error)}"
-            )
-            raise NotFoundError(
-                message="Error on find reservation by beer dispenser"
-            )
+            _logger.error(f"Error on find_active_by_beer_dispenser_id: {str(error)}")
+            raise NotFoundError(message="Error on find reservation by beer dispenser")
 
     def _auto_update_status(self, model: ReservationModel) -> None:
         # ``ReservationModel`` stores datetimes without timezone information,
@@ -292,10 +278,7 @@ class ReservationRepository(Repository):
         pickup_date = UTCDateTime.validate_datetime(model.pickup_date)
 
         changed = False
-        if (
-            model.status == ReservationStatus.RESERVED.value
-            and now >= delivery_date
-        ):
+        if model.status == ReservationStatus.RESERVED.value and now >= delivery_date:
             model.status = ReservationStatus.TO_DELIVER.value
             changed = True
         if (

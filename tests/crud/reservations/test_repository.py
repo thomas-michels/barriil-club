@@ -10,12 +10,11 @@ from app.crud.beer_dispensers.models import BeerDispenserModel
 from app.crud.beer_dispensers.schemas import DispenserStatus, Voltage
 from app.crud.cylinders.models import CylinderModel
 from app.crud.cylinders.schemas import CylinderStatus
-from app.crud.extractors.models import ExtractorModel
+from app.crud.extraction_kits.models import ExtractionKitModel
+from app.crud.extraction_kits.schemas import ExtractionKitStatus, ExtractionKitType
 from app.crud.kegs.models import KegModel
 from app.crud.kegs.schemas import KegStatus
 from app.crud.payments.schemas import Payment
-from app.crud.pressure_gauges.models import PressureGaugeModel
-from app.crud.pressure_gauges.schemas import PressureGaugeStatus, PressureGaugeType
 from app.crud.reservations.repositories import ReservationRepository
 from app.crud.reservations.schemas import ReservationCreate, ReservationStatus
 
@@ -46,10 +45,10 @@ class TestReservationRepository(unittest.TestCase):
             company_id=self.company_id,
         )
         self.keg.save()
-        self.pg = PressureGaugeModel(
+        self.pg = ExtractionKitModel(
             brand="Acme",
-            type=PressureGaugeType.SIMPLE.value,
-            status=PressureGaugeStatus.ACTIVE.value,
+            type=ExtractionKitType.SIMPLE.value,
+            status=ExtractionKitStatus.ACTIVE.value,
             company_id=self.company_id,
         )
         self.pg.save()
@@ -61,8 +60,6 @@ class TestReservationRepository(unittest.TestCase):
             company_id=self.company_id,
         )
         self.cylinder.save()
-        self.extractor = ExtractorModel(brand="Acme", company_id=self.company_id)
-        self.extractor.save()
 
     def tearDown(self) -> None:
         disconnect()
@@ -73,8 +70,7 @@ class TestReservationRepository(unittest.TestCase):
             address_id="add2",
             beer_dispenser_ids=[str(self.dispenser.id)],
             keg_ids=[str(self.keg.id)],
-            extractor_ids=[str(self.extractor.id)],
-            pressure_gauge_ids=[str(self.pg.id)],
+            extraction_kit_ids=[str(self.pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
             freight_value=Decimal("0"),
             additional_value=Decimal("0"),
@@ -95,8 +91,7 @@ class TestReservationRepository(unittest.TestCase):
             address_id="add2",
             beer_dispenser_ids=[str(self.dispenser.id)],
             keg_ids=[str(self.keg.id)],
-            extractor_ids=[str(self.extractor.id)],
-            pressure_gauge_ids=[str(self.pg.id)],
+            extraction_kit_ids=[str(self.pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
             freight_value=Decimal("0"),
             additional_value=Decimal("0"),
@@ -128,8 +123,7 @@ class TestReservationRepository(unittest.TestCase):
             address_id="add2",
             beer_dispenser_ids=[str(self.dispenser.id)],
             keg_ids=[str(self.keg.id)],
-            extractor_ids=[str(self.extractor.id)],
-            pressure_gauge_ids=[str(self.pg.id)],
+            extraction_kit_ids=[str(self.pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
             freight_value=Decimal("0"),
             additional_value=Decimal("0"),
@@ -155,8 +149,7 @@ class TestReservationRepository(unittest.TestCase):
             address_id="add2",
             beer_dispenser_ids=[str(self.dispenser.id)],
             keg_ids=[str(self.keg.id)],
-            extractor_ids=[str(self.extractor.id)],
-            pressure_gauge_ids=[str(self.pg.id)],
+            extraction_kit_ids=[str(self.pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
             freight_value=Decimal("0"),
             additional_value=Decimal("0"),
@@ -182,8 +175,7 @@ class TestReservationRepository(unittest.TestCase):
             address_id="add2",
             beer_dispenser_ids=[str(self.dispenser.id)],
             keg_ids=[str(self.keg.id)],
-            extractor_ids=[str(self.extractor.id)],
-            pressure_gauge_ids=[str(self.pg.id)],
+            extraction_kit_ids=[str(self.pg.id)],
             cylinder_ids=[str(self.cylinder.id)],
             freight_value=Decimal("0"),
             additional_value=Decimal("0"),

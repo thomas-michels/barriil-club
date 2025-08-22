@@ -1,10 +1,11 @@
+from decimal import Decimal
 from enum import Enum
 from typing import List
-from decimal import Decimal
+
 from pydantic import Field
 
-from app.core.models.base_schema import GenericModel
 from app.core.models.base_model import DatabaseModel
+from app.core.models.base_schema import GenericModel
 from app.core.utils.utc_datetime import UTCDateTime, UTCDateTimeType
 from app.crud.payments.schemas import Payment
 
@@ -26,7 +27,7 @@ class Reservation(GenericModel):
     beer_dispenser_ids: List[str] = Field(..., min_length=1, example=["bsd_123"])
     keg_ids: List[str] = Field(..., min_length=1, example=["keg_1"])
     extractor_ids: List[str] = Field(..., min_length=1, example=["ext_1"])
-    pressure_gauge_ids: List[str] = Field(..., min_length=1, example=["prg_1"])
+    extraction_kit_ids: List[str] = Field(..., min_length=1, example=["prg_1"])
     cylinder_ids: List[str] = Field(..., min_length=1, example=["cyl_1"])
     freight_value: Decimal = Field(default=0, example=10.0)
     additional_value: Decimal = Field(default=0, example=0.0)
@@ -42,7 +43,7 @@ class ReservationCreate(GenericModel):
     beer_dispenser_ids: List[str] = Field(..., min_length=1, example=["bsd_123"])
     keg_ids: List[str] = Field(..., min_length=1, example=["keg_1"])
     extractor_ids: List[str] = Field(..., min_length=1, example=["ext_1"])
-    pressure_gauge_ids: List[str] = Field(..., min_length=1, example=["prg_1"])
+    extraction_kit_ids: List[str] = Field(..., min_length=1, example=["prg_1"])
     cylinder_ids: List[str] = Field(..., min_length=1, example=["cyl_1"])
     freight_value: Decimal = Field(example=10.0)
     additional_value: Decimal = Field(example=0.0)
@@ -61,7 +62,7 @@ class ReservationInDB(DatabaseModel):
     beer_dispenser_ids: List[str] = Field(..., min_length=1, example=["bsd_123"])
     keg_ids: List[str] = Field(..., min_length=1, example=["keg_1"])
     extractor_ids: List[str] = Field(..., min_length=1, example=["ext_1"])
-    pressure_gauge_ids: List[str] = Field(..., min_length=1, example=["prg_1"])
+    extraction_kit_ids: List[str] = Field(..., min_length=1, example=["prg_1"])
     cylinder_ids: List[str] = Field(..., min_length=1, example=["cyl_1"])
     freight_value: Decimal = Field(example=10.0)
     additional_value: Decimal = Field(example=0.0)
@@ -79,7 +80,7 @@ class UpdateReservation(GenericModel):
     beer_dispenser_ids: List[str] | None = Field(default=None)
     keg_ids: List[str] | None = Field(default=None)
     extractor_ids: List[str] | None = Field(default=None)
-    pressure_gauge_ids: List[str] | None = Field(default=None)
+    extraction_kit_ids: List[str] | None = Field(default=None)
     cylinder_ids: List[str] | None = Field(default=None)
     freight_value: Decimal | None = Field(default=None)
     additional_value: Decimal | None = Field(default=None)

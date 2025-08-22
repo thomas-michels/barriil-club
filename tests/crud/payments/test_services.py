@@ -1,18 +1,18 @@
 import asyncio
 import unittest
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
 
 import mongomock
 from mongoengine import connect, disconnect
 
-from app.crud.payments.services import PaymentServices
-from app.crud.payments.schemas import PaymentStatus
-from app.crud.reservations.repositories import ReservationRepository
+from app.crud.customers.models import CustomerModel
 from app.crud.customers.repositories import CustomerRepository
 from app.crud.payments.models import PaymentModel
+from app.crud.payments.schemas import PaymentStatus
+from app.crud.payments.services import PaymentServices
 from app.crud.reservations.models import ReservationModel
-from app.crud.customers.models import CustomerModel
+from app.crud.reservations.repositories import ReservationRepository
 from app.crud.reservations.schemas import ReservationStatus
 
 
@@ -46,7 +46,7 @@ class TestPaymentServices(unittest.TestCase):
             beer_dispenser_ids=["bsd1"],
             keg_ids=["keg1"],
             extractor_ids=["ext1"],
-            pressure_gauge_ids=["prg1"],
+            extraction_kit_ids=["prg1"],
             cylinder_ids=["cyl1"],
             freight_value=0,
             additional_value=0,
@@ -54,7 +54,9 @@ class TestPaymentServices(unittest.TestCase):
             delivery_date=datetime.now(),
             pickup_date=datetime.now(),
             payments=[
-                PaymentModel(amount=Decimal("100.0"), method="cash", paid_at=date.today())
+                PaymentModel(
+                    amount=Decimal("100.0"), method="cash", paid_at=date.today()
+                )
             ],
             total_value=Decimal("100.0"),
             total_cost=Decimal("0.0"),
@@ -68,7 +70,7 @@ class TestPaymentServices(unittest.TestCase):
             beer_dispenser_ids=["bsd1"],
             keg_ids=["keg1"],
             extractor_ids=["ext1"],
-            pressure_gauge_ids=["prg1"],
+            extraction_kit_ids=["prg1"],
             cylinder_ids=["cyl1"],
             freight_value=0,
             additional_value=0,
@@ -76,7 +78,9 @@ class TestPaymentServices(unittest.TestCase):
             delivery_date=datetime.now(),
             pickup_date=datetime.now(),
             payments=[
-                PaymentModel(amount=Decimal("50.0"), method="cash", paid_at=date.today())
+                PaymentModel(
+                    amount=Decimal("50.0"), method="cash", paid_at=date.today()
+                )
             ],
             total_value=Decimal("100.0"),
             total_cost=Decimal("0.0"),

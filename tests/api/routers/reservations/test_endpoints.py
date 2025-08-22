@@ -9,9 +9,9 @@ from mongoengine import connect, disconnect
 
 from app.api.composers.reservation_composite import reservation_composer
 from app.api.dependencies.company import require_user_company
-from app.api.routers.exception_handlers import not_found_error_404, generic_error_400
+from app.api.routers.exception_handlers import generic_error_400, not_found_error_404
 from app.api.routers.reservations import reservation_router
-from app.core.exceptions import NotFoundError, BadRequestError
+from app.core.exceptions import BadRequestError, NotFoundError
 from app.crud.addresses.models import AddressModel
 from app.crud.addresses.repositories import AddressRepository
 from app.crud.beer_dispensers.repositories import BeerDispenserRepository
@@ -23,19 +23,20 @@ from app.crud.companies.services import CompanyServices
 from app.crud.cylinders.repositories import CylinderRepository
 from app.crud.cylinders.schemas import Cylinder, CylinderStatus, UpdateCylinder
 from app.crud.cylinders.services import CylinderServices
-from app.crud.extractors.repositories import ExtractorRepository
-from app.crud.extractors.schemas import Extractor
-from app.crud.extractors.services import ExtractorServices
+from app.crud.extraction_kits.repositories import (
+    ExtractionKitRepository
+)
+from app.crud.extraction_kits.schemas import (
+    ExtractionKit,
+    ExtractionKitStatus,
+    ExtractionKitType,
+)
+from app.crud.extraction_kits.services import (
+    ExtractionKitServices,
+)
 from app.crud.kegs.repositories import KegRepository
 from app.crud.kegs.schemas import Keg, KegStatus, UpdateKeg
 from app.crud.kegs.services import KegServices
-from app.crud.pressure_gauges.repositories import PressureGaugeRepository
-from app.crud.pressure_gauges.schemas import (
-    PressureGauge,
-    PressureGaugeStatus,
-    PressureGaugeType,
-)
-from app.crud.pressure_gauges.services import PressureGaugeServices
 from app.crud.reservations.repositories import ReservationRepository
 from app.crud.reservations.services import ReservationServices
 
@@ -51,7 +52,7 @@ class TestReservationEndpoints(unittest.TestCase):
         self.address_repo = AddressRepository()
         self.company_services = CompanyServices(self.company_repo, self.address_repo)
         self.keg_repo = KegRepository()
-        self.pg_repo = PressureGaugeRepository()
+        self.pg_repo = ExtractionKitRepository()
         self.cyl_repo = CylinderRepository()
         self.reservation_repo = ReservationRepository()
         self.reservation_services = ReservationServices(
@@ -60,8 +61,7 @@ class TestReservationEndpoints(unittest.TestCase):
         self.keg_services = KegServices(self.keg_repo)
         self.dispenser_repo = BeerDispenserRepository()
         self.dispenser_services = BeerDispenserServices(self.dispenser_repo)
-        self.extractor_services = ExtractorServices(ExtractorRepository())
-        self.pressure_gauge_services = PressureGaugeServices(self.pg_repo)
+        self.extraction_kit_services = ExtractionKitServices(self.pg_repo)
         self.cylinder_services = CylinderServices(self.cyl_repo)
 
         self.app = FastAPI()
@@ -147,19 +147,12 @@ class TestReservationEndpoints(unittest.TestCase):
             )
         )
 
-        self.extractor = asyncio.run(
-            self.extractor_services.create(
-                Extractor(brand="Acme"),
-                company_id=str(self.company.id),
-            )
-        )
-
-        self.pressure_gauge = asyncio.run(
-            self.pressure_gauge_services.create(
-                PressureGauge(
+        self.extraction_kit = asyncio.run(
+            self.extraction_kit_services.create(
+                ExtractionKit(
                     brand="Acme",
-                    type=PressureGaugeType.SIMPLE,
-                    status=PressureGaugeStatus.ACTIVE,
+                    type=ExtractionKitType.SIMPLE,
+                    status=ExtractionKitStatus.ACTIVE,
                 ),
                 company_id=str(self.company.id),
             )
@@ -190,7 +183,7 @@ class TestReservationEndpoints(unittest.TestCase):
             "beerDispenserIds": [self.dispenser.id],
             "kegIds": [self.keg.id],
             "extractorIds": [self.extractor.id],
-            "pressureGaugeIds": [self.pressure_gauge.id],
+            "ExtractionKitIds": [self.extraction_kit.id],
             "cylinderIds": [self.cylinder.id],
             "freightValue": 0.0,
             "additionalValue": 0.0,
@@ -281,18 +274,12 @@ class TestReservationEndpoints(unittest.TestCase):
                 company_id=str(self.company.id),
             )
         )
-        new_ext = asyncio.run(
-            self.extractor_services.create(
-                Extractor(brand="Acme2"),
-                company_id=str(self.company.id),
-            )
-        )
         new_pg = asyncio.run(
-            self.pressure_gauge_services.create(
-                PressureGauge(
+            self.extraction_kit_services.create(
+                ExtractionKit(
                     brand="Acme",
-                    type=PressureGaugeType.SIMPLE,
-                    status=PressureGaugeStatus.ACTIVE,
+                    type=ExtractionKitType.SIMPLE,
+                    status=ExtractionKitStatus.ACTIVE,
                 ),
                 company_id=str(self.company.id),
             )
@@ -300,8 +287,7 @@ class TestReservationEndpoints(unittest.TestCase):
         payload = self._payload()
         payload["kegIds"] = [new_keg.id]
         payload["cylinderIds"] = [new_cyl.id]
-        payload["extractorIds"] = [new_ext.id]
-        payload["pressureGaugeIds"] = [new_pg.id]
+        payload["ExtractionKitIds"] = [new_pg.id]
         resp2 = self.client.post("/api/reservations", json=payload)
         self.assertEqual(resp2.status_code, 400)
 
@@ -351,18 +337,12 @@ class TestReservationEndpoints(unittest.TestCase):
                 company_id=str(self.company.id),
             )
         )
-        new_ext = asyncio.run(
-            self.extractor_services.create(
-                Extractor(brand="Acme2"),
-                company_id=str(self.company.id),
-            )
-        )
         new_pg = asyncio.run(
-            self.pressure_gauge_services.create(
-                PressureGauge(
+            self.extraction_kit_services.create(
+                ExtractionKit(
                     brand="Acme",
-                    type=PressureGaugeType.SIMPLE,
-                    status=PressureGaugeStatus.ACTIVE,
+                    type=ExtractionKitType.SIMPLE,
+                    status=ExtractionKitStatus.ACTIVE,
                 ),
                 company_id=str(self.company.id),
             )
@@ -370,8 +350,7 @@ class TestReservationEndpoints(unittest.TestCase):
         payload = self._payload()
         payload["kegIds"] = [new_keg.id]
         payload["beerDispenserIds"] = [new_dispenser.id]
-        payload["extractorIds"] = [new_ext.id]
-        payload["pressureGaugeIds"] = [new_pg.id]
+        payload["ExtractionKitIds"] = [new_pg.id]
         resp2 = self.client.post("/api/reservations", json=payload)
         self.assertEqual(resp2.status_code, 400)
 
@@ -410,11 +389,11 @@ class TestReservationEndpoints(unittest.TestCase):
             )
         )
         new_pg = asyncio.run(
-            self.pressure_gauge_services.create(
-                PressureGauge(
+            self.extraction_kit_services.create(
+                ExtractionKit(
                     brand="Acme",
-                    type=PressureGaugeType.SIMPLE,
-                    status=PressureGaugeStatus.ACTIVE,
+                    type=ExtractionKitType.SIMPLE,
+                    status=ExtractionKitStatus.ACTIVE,
                 ),
                 company_id=str(self.company.id),
             )
@@ -433,13 +412,13 @@ class TestReservationEndpoints(unittest.TestCase):
         payload = self._payload()
         payload["kegIds"] = [new_keg.id]
         payload["beerDispenserIds"] = [new_dispenser.id]
-        payload["pressureGaugeIds"] = [new_pg.id]
+        payload["ExtractionKitIds"] = [new_pg.id]
         payload["cylinderIds"] = [new_cyl.id]
         # use same extractor to trigger conflict
         resp2 = self.client.post("/api/reservations", json=payload)
         self.assertEqual(resp2.status_code, 400)
 
-    def test_create_reservation_pressure_gauge_conflict(self):
+    def test_create_reservation_extraction_kit_conflict(self):
         resp1 = self.client.post("/api/reservations", json=self._payload())
         self.assertEqual(resp1.status_code, 201)
         new_keg = asyncio.run(
@@ -473,12 +452,6 @@ class TestReservationEndpoints(unittest.TestCase):
                 company_id=str(self.company.id),
             )
         )
-        new_ext = asyncio.run(
-            self.extractor_services.create(
-                Extractor(brand="Acme2"),
-                company_id=str(self.company.id),
-            )
-        )
         new_cyl = asyncio.run(
             self.cylinder_services.create(
                 Cylinder(
@@ -493,9 +466,8 @@ class TestReservationEndpoints(unittest.TestCase):
         payload = self._payload()
         payload["kegIds"] = [new_keg.id]
         payload["beerDispenserIds"] = [new_dispenser.id]
-        payload["extractorIds"] = [new_ext.id]
         payload["cylinderIds"] = [new_cyl.id]
-        # use same pressure gauge to trigger conflict
+        # use same Extraction kit to trigger conflict
         resp2 = self.client.post("/api/reservations", json=payload)
         self.assertEqual(resp2.status_code, 400)
 
@@ -540,11 +512,11 @@ class TestReservationEndpoints(unittest.TestCase):
         )
         self.assertEqual(keg.status, KegStatus.EMPTY)
         pg = asyncio.run(
-            self.pressure_gauge_services.search_by_id(
-                self.pressure_gauge.id, str(self.company.id)
+            self.extraction_kit_services.search_by_id(
+                self.extraction_kit.id, str(self.company.id)
             )
         )
-        self.assertEqual(pg.status, PressureGaugeStatus.TO_VERIFY)
+        self.assertEqual(pg.status, ExtractionKitStatus.TO_VERIFY)
         cyl = asyncio.run(
             self.cylinder_services.search_by_id(self.cylinder.id, str(self.company.id))
         )

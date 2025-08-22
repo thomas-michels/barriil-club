@@ -1,5 +1,6 @@
 from typing import List
-from pydantic import Field, ConfigDict
+
+from pydantic import ConfigDict, Field
 
 from app.api.shared_schemas.responses import Response
 from app.crud.reservations.schemas import ReservationInDB, ReservationStatus
@@ -11,7 +12,7 @@ EXAMPLE_RESERVATION = {
     "beer_dispenser_ids": ["bsd_123"],
     "keg_ids": ["keg_1"],
     "extractor_ids": ["ext_1"],
-    "pressure_gauge_ids": ["prg_1"],
+    "extraction_kit_ids": ["prg_1"],
     "cylinder_ids": ["cyl_1"],
     "freight_value": 10.0,
     "additional_value": 0.0,
