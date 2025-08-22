@@ -21,7 +21,6 @@ class TestKegRepository(unittest.TestCase):
         # create beer type for reference
         self.beer_type = BeerTypeModel(
             name="Pale Ale",
-            default_sale_price_per_l=10.0,
             company_id="com1",
         )
         self.beer_type.save()

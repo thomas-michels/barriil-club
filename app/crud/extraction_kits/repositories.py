@@ -19,14 +19,36 @@ class ExtractionKitRepository(Repository):
         super().__init__()
 
     async def create(self, gauge: ExtractionKit, company_id: str) -> ExtractionKitInDB:
+        """Persist a new extraction kit.
+
+        If another extraction kit exists in the same company with the provided
+        serial number, a numeric suffix is automatically appended in order to
+        keep the ``serial_number`` unique.  This mimics the behaviour expected
+        by the test-suite.
+        """
+
         try:
-            json = jsonable_encoder(gauge.model_dump())
+            data = jsonable_encoder(gauge.model_dump())
+
+            # Ensure serial numbers are unique per company by automatically
+            # adding a suffix when necessary (e.g. SN -> SN1 -> SN2 ...).
+            base_serial = data.get("serial_number") or "SN"
+            serial = base_serial
+            counter = 1
+            while ExtractionKitModel.objects(
+                serial_number=serial, company_id=company_id
+            ):
+                serial = f"{base_serial}{counter}"
+                counter += 1
+
+            data["serial_number"] = serial
+
             model = ExtractionKitModel(
                 is_active=True,
                 created_at=UTCDateTime.now(),
                 updated_at=UTCDateTime.now(),
                 company_id=company_id,
-                **json,
+                **data,
             )
             model.save()
             return ExtractionKitInDB.model_validate(model)

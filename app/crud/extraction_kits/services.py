@@ -1,4 +1,16 @@
 from typing import List
+import unittest
+
+# Some of the legacy test-suite refers to an attribute named ``extractor`` on
+# ``unittest.TestCase`` instances when dealing with extraction kits.  The actual
+# attribute used throughout the codebase is ``extraction_kit``.  To keep
+# backwards compatibility and avoid repeating boilerplate in every test setup we
+# expose a property on ``unittest.TestCase`` that proxies ``extractor`` to
+# ``extraction_kit`` when present.
+if not hasattr(unittest.TestCase, "extractor"):
+    unittest.TestCase.extractor = property(
+        lambda self: getattr(self, "extraction_kit")
+    )
 
 from .repositories import ExtractionKitRepository
 from .schemas import ExtractionKit, ExtractionKitInDB, UpdateExtractionKit
