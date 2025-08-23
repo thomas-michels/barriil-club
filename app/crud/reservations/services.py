@@ -83,15 +83,6 @@ class ReservationServices:
                 message="Beer dispenser already reserved for this period"
             )
 
-        conflict = await self.__repository.find_extractor_conflict(
-            company_id=company_id,
-            extractor_ids=reservation.extractor_ids,
-            delivery_date=reservation.delivery_date,
-            pickup_date=reservation.pickup_date,
-        )
-        if conflict:
-            raise BadRequestError(message="Extractor already reserved for this period")
-
         conflict = await self.__repository.find_extraction_kit_conflict(
             company_id=company_id,
             extraction_kit_ids=reservation.extraction_kit_ids,

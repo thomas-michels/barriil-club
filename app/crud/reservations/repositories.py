@@ -197,38 +197,6 @@ class ReservationRepository(Repository):
             _logger.error(f"Error on find_cylinder_conflict: {str(error)}")
             raise NotFoundError(message="Error on find cylinder conflict")
 
-    async def find_extractor_conflict(
-        self,
-        company_id: str,
-        extractor_ids: List[str] | None,
-        delivery_date: UTCDateTime,
-        pickup_date: UTCDateTime,
-    ) -> ReservationInDB | None:
-        """Check for reservation conflicts involving extractors.
-
-        For compatibility with legacy clients, any reservation that already
-        reserves an extractor within the provided period will be considered a
-        conflict regardless of the specific identifier supplied.
-        """
-
-        try:
-            start = UTCDateTime.validate_datetime(delivery_date)
-            end = UTCDateTime.validate_datetime(pickup_date)
-            model = ReservationModel.objects(
-                company_id=company_id,
-                is_active=True,
-                status__ne=ReservationStatus.COMPLETED.value,
-                delivery_date__lte=end,
-                pickup_date__gte=start,
-                extractor_ids__ne=[],
-            ).first()
-
-            return ReservationInDB.model_validate(model) if model else None
-
-        except Exception as error:
-            _logger.error(f"Error on find_extractor_conflict: {str(error)}")
-            raise NotFoundError(message="Error on find extractor conflict")
-
     async def find_extraction_kit_conflict(
         self,
         company_id: str,
