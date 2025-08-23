@@ -143,7 +143,7 @@ class TestReservationRepository(unittest.TestCase):
         )
         self.assertEqual(found.id, res.id)
 
-    def test_find_active_by_beer_dispenser_id_outside_period(self):
+    def test_find_active_by_beer_dispenser_id_future_period(self):
         reservation = ReservationCreate(
             customer_id="cus1",
             address_id="add2",
@@ -161,13 +161,13 @@ class TestReservationRepository(unittest.TestCase):
             total_cost=Decimal("250.00"),
             status=ReservationStatus.RESERVED,
         )
-        asyncio.run(self.repository.create(reservation, self.company_id))
+        res = asyncio.run(self.repository.create(reservation, self.company_id))
         found = asyncio.run(
             self.repository.find_active_by_beer_dispenser_id(
                 self.company_id, str(self.dispenser.id)
             )
         )
-        self.assertIsNone(found)
+        self.assertEqual(found.id, res.id)
 
     def test_find_active_by_beer_dispenser_id_completed(self):
         reservation = ReservationCreate(
