@@ -1,5 +1,7 @@
 import asyncio
 import unittest
+from datetime import datetime, timedelta
+from decimal import Decimal
 
 import mongomock
 from fastapi import FastAPI
@@ -18,6 +20,7 @@ from app.crud.beer_dispensers.repositories import BeerDispenserRepository
 from app.crud.beer_dispensers.services import BeerDispenserServices
 from app.crud.beer_dispensers.schemas import BeerDispenser, DispenserStatus, Voltage
 from app.crud.reservations.repositories import ReservationRepository
+from app.crud.reservations.schemas import ReservationCreate, ReservationStatus
 from app.core.exceptions import NotFoundError
 
 
@@ -133,6 +136,34 @@ class TestBeerDispenserEndpoints(unittest.TestCase):
         resp = self.client.get("/api/beer-dispensers")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["data"][0]["reservation_id"], "res_123")
+
+    def test_list_dispensers_shows_reservation_id_when_future_reservation_exists(
+        self,
+    ):
+        reservation = ReservationCreate(
+            customer_id="cus1",
+            address_id="add1",
+            beer_dispenser_ids=[str(self.dispenser.id)],
+            keg_ids=["keg1"],
+            extraction_kit_ids=["kit1"],
+            cylinder_ids=["cyl1"],
+            freight_value=Decimal("0"),
+            additional_value=Decimal("0"),
+            discount=Decimal("0"),
+            delivery_date=datetime.now() + timedelta(days=1),
+            pickup_date=datetime.now() + timedelta(days=2),
+            payments=[],
+            total_value=Decimal("100.00"),
+            total_cost=Decimal("80.00"),
+            status=ReservationStatus.RESERVED,
+        )
+        res = asyncio.run(
+            self.reservation_repository.create(reservation, str(self.company.id))
+        )
+
+        resp = self.client.get("/api/beer-dispensers")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["data"][0]["reservation_id"], res.id)
 
     def test_update_dispenser_endpoint(self):
         resp = self.client.put(

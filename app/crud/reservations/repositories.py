@@ -227,14 +227,17 @@ class ReservationRepository(Repository):
     ) -> ReservationInDB | None:
         try:
             now = UTCDateTime.now()
-            model = ReservationModel.objects(
-                beer_dispenser_ids=dispenser_id,
-                company_id=company_id,
-                is_active=True,
-                status__ne=ReservationStatus.COMPLETED.value,
-                delivery_date__lte=now,
-                pickup_date__gte=now,
-            ).first()
+            model = (
+                ReservationModel.objects(
+                    beer_dispenser_ids=dispenser_id,
+                    company_id=company_id,
+                    is_active=True,
+                    status__ne=ReservationStatus.COMPLETED.value,
+                    pickup_date__gte=now,
+                )
+                .order_by("delivery_date")
+                .first()
+            )
 
             return ReservationInDB.model_validate(model) if model else None
 
