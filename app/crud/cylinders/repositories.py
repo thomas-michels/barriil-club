@@ -20,16 +20,6 @@ class CylinderRepository(Repository):
 
     async def create(self, cylinder: Cylinder, company_id: str) -> CylinderInDB:
         try:
-            exists = CylinderModel.objects(
-                number=cylinder.number,
-                company_id=company_id,
-                is_active=True,
-            ).first()
-            if exists:
-                raise NotFoundError(
-                    message=f"Cylinder #{cylinder.number} already exists"
-                )
-
             json = jsonable_encoder(cylinder.model_dump())
             model = CylinderModel(
                 is_active=True,
@@ -40,8 +30,6 @@ class CylinderRepository(Repository):
             )
             model.save()
             return CylinderInDB.model_validate(model)
-        except NotFoundError:
-            raise
         except Exception as error:
             _logger.error(f"Error on create_cylinder: {str(error)}")
             raise NotFoundError(message="Error on create new cylinder")

@@ -2,7 +2,6 @@ from typing import List
 
 from .repositories import BeerDispenserRepository
 from .schemas import BeerDispenser, BeerDispenserInDB, UpdateBeerDispenser
-from .models import BeerDispenserModel
 from app.crud.reservations.repositories import ReservationRepository
 
 
@@ -16,13 +15,6 @@ class BeerDispenserServices:
         self.__reservation_repository = reservation_repository or ReservationRepository()
 
     async def create(self, dispenser: BeerDispenser, company_id: str) -> BeerDispenserInDB:
-        if dispenser.serial_number is not None:
-            existing = BeerDispenserModel.objects(
-                serial_number__startswith=dispenser.serial_number,
-                company_id=company_id,
-            ).count()
-            if existing > 0:
-                dispenser.serial_number = f"{dispenser.serial_number}{existing}"
         return await self.__repository.create(dispenser=dispenser, company_id=company_id)
 
     async def update(
