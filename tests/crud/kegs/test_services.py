@@ -48,11 +48,12 @@ class TestKegServices(unittest.TestCase):
         result = asyncio.run(self.services.create(self._build_keg(), "com1"))
         self.assertEqual(result.number, "1")
 
-    def test_create_keg_with_automatic_suffix(self):
+    def test_create_keg_allows_duplicate_number(self):
         first = asyncio.run(self.services.create(self._build_keg("10"), "com1"))
-        self.assertEqual(first.number, "10")
         second = asyncio.run(self.services.create(self._build_keg("10"), "com1"))
-        self.assertEqual(second.number, "101")
+        self.assertEqual(first.number, "10")
+        self.assertEqual(second.number, "10")
+        self.assertNotEqual(first.id, second.id)
 
     def test_search_by_id(self):
         doc = KegModel(**self._build_keg().model_dump(), company_id="com1")

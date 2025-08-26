@@ -46,15 +46,16 @@ class TestBeerDispenserServices(unittest.TestCase):
         result = asyncio.run(self.services.create(self._build_dispenser(), "com1"))
         self.assertEqual(result.brand, "Acme")
 
-    def test_create_dispenser_with_automatic_suffix(self):
+    def test_create_dispenser_allows_duplicate_serial_number(self):
         first = asyncio.run(
             self.services.create(self._build_dispenser(serial_number="SN"), "com1")
         )
-        self.assertEqual(first.serial_number, "SN")
         second = asyncio.run(
             self.services.create(self._build_dispenser(serial_number="SN"), "com1")
         )
-        self.assertEqual(second.serial_number, "SN1")
+        self.assertEqual(first.serial_number, "SN")
+        self.assertEqual(second.serial_number, "SN")
+        self.assertNotEqual(first.id, second.id)
 
     def test_search_by_id(self):
         doc = BeerDispenserModel(**self._build_dispenser().model_dump(), company_id="com1")

@@ -40,15 +40,16 @@ class TestCylinderServices(unittest.TestCase):
         )
         self.assertEqual(result.brand, "Acme")
 
-    def test_create_cylinder_with_automatic_suffix(self):
+    def test_create_cylinder_allows_duplicate_number(self):
         first = asyncio.run(
             self.services.create(self._build_cylinder(number="CY"), "com1")
         )
-        self.assertEqual(first.number, "CY")
         second = asyncio.run(
             self.services.create(self._build_cylinder(number="CY"), "com1")
         )
-        self.assertEqual(second.number, "CY1")
+        self.assertEqual(first.number, "CY")
+        self.assertEqual(second.number, "CY")
+        self.assertNotEqual(first.id, second.id)
 
     def test_search_by_id(self):
         doc = CylinderModel(
