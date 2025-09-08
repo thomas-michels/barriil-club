@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends
 from app.api.composers.extraction_kit_composite import extraction_kit_composer
 from app.api.dependencies import build_response, require_user_company
 from app.api.shared_schemas.responses import MessageResponse
+from app.core.exceptions import NotFoundError
 from app.crud.companies.schemas import CompanyInDB
 from app.crud.extraction_kits import ExtractionKitServices
 
@@ -36,9 +37,12 @@ async def get_extraction_kits(
     services: ExtractionKitServices = Depends(extraction_kit_composer),
     company: CompanyInDB = Depends(require_user_company),
 ):
-    gauges = await services.search_all(company_id=str(company.id))
+    try:
+        gauges = await services.search_all(company_id=str(company.id))
+    except NotFoundError:
+        gauges = []
     return build_response(
         status_code=200,
         message="Extraction kits found with success",
-        data=gauges or [],
+        data=gauges,
     )

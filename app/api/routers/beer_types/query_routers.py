@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends
 from app.api.composers.beer_type_composite import beer_type_composer
 from app.api.dependencies import build_response, require_user_company
 from app.api.shared_schemas.responses import MessageResponse
+from app.core.exceptions import NotFoundError
 from .schemas import BeerTypeResponse, BeerTypeListResponse
 from app.crud.beer_types import BeerTypeServices
 from app.crud.companies.schemas import CompanyInDB
@@ -35,9 +36,12 @@ async def get_beer_types(
     services: BeerTypeServices = Depends(beer_type_composer),
     company: CompanyInDB = Depends(require_user_company),
 ):
-    beer_types = await services.search_all(company_id=str(company.id))
+    try:
+        beer_types = await services.search_all(company_id=str(company.id))
+    except NotFoundError:
+        beer_types = []
     return build_response(
         status_code=200,
         message="Beer types found with success",
-        data=beer_types or [],
+        data=beer_types,
     )

@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends
 from app.api.composers.customer_composite import customer_composer
 from app.api.dependencies import build_response, require_user_company
 from app.api.shared_schemas.responses import MessageResponse
+from app.core.exceptions import NotFoundError
 from .schemas import CustomerResponse, CustomerListResponse
 from app.crud.customers import CustomerServices
 from app.crud.companies.schemas import CompanyInDB
@@ -35,9 +36,12 @@ async def get_customers(
     customer_services: CustomerServices = Depends(customer_composer),
     company: CompanyInDB = Depends(require_user_company),
 ):
-    customers = await customer_services.search_all(company_id=str(company.id))
+    try:
+        customers = await customer_services.search_all(company_id=str(company.id))
+    except NotFoundError:
+        customers = []
     return build_response(
         status_code=200,
         message="Customers found with success",
-        data=customers or [],
+        data=customers,
     )
