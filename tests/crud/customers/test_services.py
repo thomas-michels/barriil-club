@@ -51,6 +51,15 @@ class TestCustomerServices(unittest.TestCase):
                 self.services.create(self._build_customer("10000000019"), company_id="com1")
             )
 
+    def test_create_customer_same_document_different_company(self):
+        asyncio.run(
+            self.services.create(self._build_customer("10000000019"), company_id="com1")
+        )
+        result = asyncio.run(
+            self.services.create(self._build_customer("10000000019"), company_id="com2")
+        )
+        self.assertEqual(result.document, "10000000019")
+
     def test_search_by_id(self):
         doc = CustomerModel(**self._build_customer().model_dump(), company_id="com1")
         doc.save()

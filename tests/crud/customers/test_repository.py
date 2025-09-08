@@ -49,6 +49,17 @@ class TestCustomerRepository(unittest.TestCase):
                 repository.create(self._build_customer("10000000019"), company_id="com1")
             )
 
+    def test_create_customer_same_document_different_company(self):
+        repository = CustomerRepository()
+        asyncio.run(
+            repository.create(self._build_customer("10000000019"), company_id="com1")
+        )
+        result = asyncio.run(
+            repository.create(self._build_customer("10000000019"), company_id="com2")
+        )
+        self.assertEqual(result.document, "10000000019")
+        self.assertEqual(CustomerModel.objects.count(), 2)
+
     def test_create_customer_more_than_five_addresses(self):
         repository = CustomerRepository()
         customer = self._build_customer()
