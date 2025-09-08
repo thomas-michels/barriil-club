@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends
 from app.api.composers.reservation_composite import reservation_composer
 from app.api.dependencies import build_response, require_user_company
 from app.api.shared_schemas.responses import MessageResponse
+from app.core.exceptions import NotFoundError
 from app.core.utils.utc_datetime import UTCDateTimeType
 from .schemas import ReservationResponse, ReservationListResponse
 from app.crud.reservations import ReservationServices, ReservationStatus
@@ -39,14 +40,17 @@ async def get_reservations(
     services: ReservationServices = Depends(reservation_composer),
     company: CompanyInDB = Depends(require_user_company),
 ):
-    reservations = await services.search_all(
-        company_id=str(company.id),
-        start_date=start_date,
-        end_date=end_date,
-        status=status,
-    )
+    try:
+        reservations = await services.search_all(
+            company_id=str(company.id),
+            start_date=start_date,
+            end_date=end_date,
+            status=status,
+        )
+    except NotFoundError:
+        reservations = []
     return build_response(
         status_code=200,
         message="Reservations found with success",
-        data=reservations or [],
+        data=reservations,
     )

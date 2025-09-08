@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends
 from app.api.composers.address_composite import address_composer
 from app.api.dependencies import build_response, require_user_company
 from app.api.shared_schemas.responses import MessageResponse
+from app.core.exceptions import NotFoundError
 from .schemas import AddressResponse, AddressListResponse
 from app.crud.addresses import AddressServices
 from app.crud.companies.schemas import CompanyInDB
@@ -35,11 +36,14 @@ async def get_addresses(
     address_services: AddressServices = Depends(address_composer),
     company: CompanyInDB = Depends(require_user_company),
 ):
-    addresses = await address_services.search_all(company_id=str(company.id))
+    try:
+        addresses = await address_services.search_all(company_id=str(company.id))
+    except NotFoundError:
+        addresses = []
     return build_response(
         status_code=200,
         message="Addresses found with success",
-        data=addresses or [],
+        data=addresses,
     )
 
 

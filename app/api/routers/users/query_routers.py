@@ -100,8 +100,11 @@ async def get_users(
     current_user: UserInDB = Security(decode_jwt, scopes=["user:get"]),
     user_services: UserServices = Depends(user_composer),
 ):
-    users = await user_services.search_all()
+    try:
+        users = await user_services.search_all()
+    except NotFoundError:
+        users = []
 
     return build_response(
-        status_code=200, message="Users found with success", data=users or []
+        status_code=200, message="Users found with success", data=users
     )

@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends
 from app.api.composers.keg_composite import keg_composer
 from app.api.dependencies import build_response, require_user_company
 from app.api.shared_schemas.responses import MessageResponse
+from app.core.exceptions import NotFoundError
 from .schemas import KegResponse, KegListResponse
 from app.crud.kegs import KegServices, KegStatus
 from app.crud.companies.schemas import CompanyInDB
@@ -34,7 +35,12 @@ async def get_kegs(
     services: KegServices = Depends(keg_composer),
     company: CompanyInDB = Depends(require_user_company),
 ):
-    kegs = await services.search_all(company_id=str(company.id), status=status)
+    try:
+        kegs = await services.search_all(
+            company_id=str(company.id), status=status
+        )
+    except NotFoundError:
+        kegs = []
     return build_response(
-        status_code=200, message="Kegs found with success", data=kegs or []
+        status_code=200, message="Kegs found with success", data=kegs
     )

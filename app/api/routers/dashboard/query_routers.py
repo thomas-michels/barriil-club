@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends
 from app.api.composers.dashboard_composite import dashboard_composer
 from app.api.dependencies import build_response, require_user_company
 from app.api.routers.reservations.schemas import ReservationListResponse
+from app.core.exceptions import NotFoundError
 from app.crud.dashboard.services import DashboardServices
 from app.crud.companies.schemas import CompanyInDB
 
@@ -39,11 +40,16 @@ async def get_upcoming_reservations(
     services: DashboardServices = Depends(dashboard_composer),
     company: CompanyInDB = Depends(require_user_company),
 ):
-    reservations = await services.upcoming_reservations(company_id=str(company.id))
+    try:
+        reservations = await services.upcoming_reservations(
+            company_id=str(company.id)
+        )
+    except NotFoundError:
+        reservations = []
     return build_response(
         status_code=200,
         message="Reservations found with success",
-        data=reservations or [],
+        data=reservations,
     )
 
 
