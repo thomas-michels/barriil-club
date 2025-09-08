@@ -7,7 +7,7 @@ from app.core.utils.validate_document import validate_cpf, validate_cnpj
 
 class CustomerModel(BaseDocument):
     name = StringField(required=True)
-    document = StringField(required=True, unique=True)
+    document = StringField(required=True)
     email = StringField()
     mobile = StringField()
     birth_date = StringField()
@@ -17,6 +17,10 @@ class CustomerModel(BaseDocument):
 
     meta = {
         "collection": "customers",
+        "indexes": [
+            "company_id",
+            {"fields": ["document", "company_id"], "unique": True},
+        ],
     }
 
     def clean(self):

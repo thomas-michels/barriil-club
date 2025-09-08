@@ -32,7 +32,9 @@ class CustomerRepository(Repository):
             customer_model.save()
             return CustomerInDB.model_validate(customer_model)
         except NotUniqueError:
-            raise UnprocessableEntity(message="Customer document should be unique")
+            raise UnprocessableEntity(
+                message="Customer document should be unique for the company"
+            )
         except Exception as error:
             _logger.error(f"Error on create_customer: {str(error)}")
             raise UnprocessableEntity(message="Error on create new customer")
