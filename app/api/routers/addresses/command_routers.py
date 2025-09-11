@@ -23,7 +23,7 @@ async def create_address(
         address=address, company_id=str(company.id)
     )
     if not address_in_db:
-        raise HTTPException(status_code=400, detail="Address not created")
+        raise HTTPException(status_code=400, detail="Endereço não criado")
     return build_response(
         status_code=201, message="Address created with success", data=address_in_db
     )
@@ -43,7 +43,7 @@ async def update_address(
         id=address_id, company_id=str(company.id), address=address
     )
     if not address_in_db:
-        raise HTTPException(status_code=400, detail="Address not updated")
+        raise HTTPException(status_code=400, detail="Endereço não atualizado")
     return build_response(
         status_code=200, message="Address updated with success", data=address_in_db
     )
@@ -62,7 +62,7 @@ async def delete_address(
         id=address_id, company_id=str(company.id)
     )
     if not address_in_db:
-        raise HTTPException(status_code=400, detail="Address not deleted")
+        raise HTTPException(status_code=400, detail="Endereço não excluído")
     return build_response(
         status_code=200, message="Address deleted with success", data=address_in_db
     )

@@ -19,7 +19,7 @@ async def ensure_user_without_company(
         return current_user
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
-        detail="User already belongs to a company",
+        detail="Usuário já pertence a uma empresa",
     )
 
 
@@ -33,7 +33,7 @@ async def require_user_company(
     except NotFoundError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="User does not belong to any company",
+            detail="Usuário não pertence a nenhuma empresa",
         )
 
 
@@ -46,14 +46,14 @@ async def require_company_member(
     try:
         company = await company_services.search_by_id(id=company_id)
     except NotFoundError:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Empresa não encontrada")
 
     if any(member.user_id == current_user.user_id for member in company.members):
         return company
 
     raise HTTPException(
         status_code=status.HTTP_403_FORBIDDEN,
-        detail="User is not member of this company",
+        detail="Usuário não é membro desta empresa",
     )
 
 
@@ -66,7 +66,7 @@ async def require_company_owner(
     try:
         company = await company_services.search_by_id(id=company_id)
     except NotFoundError:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Empresa não encontrada")
 
     for member in company.members:
         if member.user_id == current_user.user_id:
@@ -76,5 +76,5 @@ async def require_company_owner(
 
     raise HTTPException(
         status_code=status.HTTP_403_FORBIDDEN,
-        detail="User is not owner of this company",
+        detail="Usuário não é proprietário desta empresa",
     )

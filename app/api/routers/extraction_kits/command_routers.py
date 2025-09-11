@@ -26,7 +26,7 @@ async def create_extraction_kit(
 ):
     gauge_in_db = await services.create(gauge=gauge, company_id=str(company.id))
     if not gauge_in_db:
-        raise HTTPException(status_code=400, detail="Extraction kit not created")
+        raise HTTPException(status_code=400, detail="Kit de extração não criado")
     return build_response(
         status_code=201, message="Extraction kit created with success", data=gauge_in_db
     )
@@ -50,7 +50,7 @@ async def update_extraction_kit(
         id=gauge_id, company_id=str(company.id), gauge=gauge
     )
     if not gauge_in_db:
-        raise HTTPException(status_code=400, detail="Extraction kit not updated")
+        raise HTTPException(status_code=400, detail="Kit de extração não atualizado")
     return build_response(
         status_code=200, message="Extraction kit updated with success", data=gauge_in_db
     )
@@ -71,7 +71,7 @@ async def delete_extraction_kit(
 ):
     gauge_in_db = await services.delete_by_id(id=gauge_id, company_id=str(company.id))
     if not gauge_in_db:
-        raise HTTPException(status_code=400, detail="Extraction kit not deleted")
+        raise HTTPException(status_code=400, detail="Kit de extração não excluído")
     return build_response(
         status_code=200, message="Extraction kit deleted with success", data=gauge_in_db
     )

@@ -10,14 +10,14 @@ class UnauthorizedException(HTTPException):
 class UnauthenticatedException(HTTPException):
     def __init__(self):
         super().__init__(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Requires authentication"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Requer autenticação"
         )
 
 
 class InternalErrorException(HTTPException):
     def __init__(self, detail: str = None) -> None:
         if not detail:
-            detail = "An unexpected error occurred"
+            detail = "Ocorreu um erro inesperado"
 
         super().__init__(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail
@@ -27,7 +27,7 @@ class InternalErrorException(HTTPException):
 class UnprocessableEntityException(HTTPException):
     def __init__(self, detail: str = None) -> None:
         if not detail:
-            detail = "Unprocessable Entity"
+            detail = "Entidade não processável"
 
         super().__init__(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=detail
@@ -37,7 +37,7 @@ class UnprocessableEntityException(HTTPException):
 class BadRequestException(HTTPException):
     def __init__(self, detail: str = None) -> None:
         if not detail:
-            detail = "Bad request"
+            detail = "Requisição inválida"
 
         super().__init__(
             status_code=status.HTTP_400_BAD_REQUEST, detail=detail
@@ -47,7 +47,7 @@ class BadRequestException(HTTPException):
 class TooManyRequestException(HTTPException):
     def __init__(self, detail: str = None) -> None:
         if not detail:
-            detail = "Too many requests"
+            detail = "Muitas requisições"
 
         super().__init__(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=detail
@@ -57,7 +57,7 @@ class TooManyRequestException(HTTPException):
 class PaymentRequiredException(HTTPException):
     def __init__(self, detail: str = None) -> None:
         if not detail:
-            detail = "Payment required"
+            detail = "Pagamento necessário"
 
         super().__init__(
             status_code=status.HTTP_402_PAYMENT_REQUIRED, detail=detail

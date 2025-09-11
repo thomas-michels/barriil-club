@@ -10,4 +10,4 @@ def test_nonexistent_endpoint_returns_not_found_message():
     client = TestClient(app)
     response = client.get("/api/nonexistent")
     assert response.status_code == 404
-    assert response.json() == {"message": "Not Found"}
+    assert response.json() == {"message": "Não encontrado"}

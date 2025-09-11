@@ -13,7 +13,7 @@ async def validate_image_file(image: UploadFile) -> str:
 
     size_mb = size_bytes / (1024 * 1024)
     if size_mb > MAX_FILE_SIZE_MB:
-        raise HTTPException(status_code=400, detail=f"File exceeds {MAX_FILE_SIZE_MB} MB limit")
+        raise HTTPException(status_code=400, detail=f"Arquivo excede o limite de {MAX_FILE_SIZE_MB} MB")
 
     # 2) Abre direto do stream (sem copiar pra bytes)
     try:
@@ -22,19 +22,19 @@ async def validate_image_file(image: UploadFile) -> str:
 
             # valida formato
             if fmt not in ALLOWED_IMAGE_FORMATS:
-                raise HTTPException(status_code=400, detail="Invalid image format")
+                raise HTTPException(status_code=400, detail="Formato de imagem inválido")
 
             # valida megapixels para evitar explosão de memória na decodificação
             w, h = img.size
             mega_pixels = (w * h) / 1_000_000
             if mega_pixels > MAX_MEGA_PIXELS:
-                raise HTTPException(status_code=400, detail="Image too large (pixels)")
+                raise HTTPException(status_code=400, detail="Imagem muito grande (pixels)")
 
             # força leitura mínima pra validar integridade (sem img.verify(), que descarta o objeto)
             ImageFile.LOAD_TRUNCATED_IMAGES = False
             img.load()  # carrega os tiles necessários
     except UnidentifiedImageError:
-        raise HTTPException(status_code=400, detail="Invalid image format")
+        raise HTTPException(status_code=400, detail="Formato de imagem inválido")
 
     # 3) reposiciona para quem for ler depois
     image.file.seek(0)

@@ -15,7 +15,13 @@ _logger = get_logger(__name__)
 
 
 def http_exception_handler(request: Request, exc: HTTPException):
-    error = MessageResponse(message=exc.detail)
+    message = exc.detail
+    if isinstance(message, str):
+        translations = {
+            "Not Found": "Não encontrado",
+        }
+        message = translations.get(message, message)
+    error = MessageResponse(message=message)
 
     return JSONResponse(
         status_code=exc.status_code,
@@ -58,7 +64,7 @@ def generic_error_500(request: Request, exc: Exception):
 
     else:
         _logger.error(f"Internal error - {str(exc)} - URL: {request.url.path}")
-        error = MessageResponse(message="An unexpected error happen")
+        error = MessageResponse(message="Ocorreu um erro inesperado")
         status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
 
     return JSONResponse(

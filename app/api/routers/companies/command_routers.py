@@ -105,7 +105,7 @@ async def leave_company(
     ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Owner cannot leave the company",
+            detail="Proprietário não pode sair da empresa",
         )
 
     company_in_db = await company_services.remove_member(

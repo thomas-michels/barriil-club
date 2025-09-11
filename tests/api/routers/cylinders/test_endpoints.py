@@ -157,7 +157,7 @@ class TestCylinderEndpoints(unittest.TestCase):
 
     def test_list_cylinders_returns_empty_list_when_not_found(self):
         async def fake_search_all(company_id):
-            raise NotFoundError("Cylinders not found")
+            raise NotFoundError("Cilindros não encontrados")
 
         self.services.search_all = fake_search_all
         resp = self.client.get("/api/cylinders")

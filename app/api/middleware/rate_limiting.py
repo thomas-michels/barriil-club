@@ -25,10 +25,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             self.cache[client_ip] = count
 
         if count > self.limit:
-            return build_response(
-                status_code=429,
-                message="Too many requests"
-            )
+              return build_response(
+                  status_code=429,
+                  message="Muitas requisições"
+              )
 
         response = await call_next(request)
         return response

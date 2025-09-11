@@ -24,7 +24,7 @@ class Paginator:
         self._pages = ceil(self._total / self._page_size)
 
         if self._pages < self._page and self._page > 1:
-            raise InvalidPageAccess("Invalid Page Access")
+            raise InvalidPageAccess("Acesso à página inválido")
 
     @property
     def page_size(self):

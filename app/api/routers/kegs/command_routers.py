@@ -21,7 +21,7 @@ async def create_keg(
 ):
     keg_in_db = await services.create(keg=keg, company_id=str(company.id))
     if not keg_in_db:
-        raise HTTPException(status_code=400, detail="Keg not created")
+        raise HTTPException(status_code=400, detail="Barril não criado")
     return build_response(
         status_code=201, message="Keg created with success", data=keg_in_db
     )
@@ -41,7 +41,7 @@ async def update_keg(
         id=keg_id, company_id=str(company.id), keg=keg
     )
     if not keg_in_db:
-        raise HTTPException(status_code=400, detail="Keg not updated")
+        raise HTTPException(status_code=400, detail="Barril não atualizado")
     return build_response(
         status_code=200, message="Keg updated with success", data=keg_in_db
     )
@@ -60,7 +60,7 @@ async def delete_keg(
         id=keg_id, company_id=str(company.id)
     )
     if not keg_in_db:
-        raise HTTPException(status_code=400, detail="Keg not deleted")
+        raise HTTPException(status_code=400, detail="Barril não excluído")
     return build_response(
         status_code=200, message="Keg deleted with success", data=keg_in_db
     )
