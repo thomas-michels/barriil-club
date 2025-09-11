@@ -35,7 +35,7 @@ async def decode_jwt(
         if not current_user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not validate credentials",
+                detail="Não foi possível validar as credenciais",
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
@@ -53,7 +53,7 @@ async def decode_jwt(
     except (JWTError, ValidationError, NotFoundError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
+            detail="Não foi possível validar as credenciais",
             headers={"WWW-Authenticate": "Bearer"},
         )
 

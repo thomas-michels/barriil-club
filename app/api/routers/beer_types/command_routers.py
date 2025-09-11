@@ -23,7 +23,7 @@ async def create_beer_type(
         beer_type=beer_type, company_id=str(company.id)
     )
     if not beer_type_in_db:
-        raise HTTPException(status_code=400, detail="Beer type not created")
+        raise HTTPException(status_code=400, detail="Tipo de cerveja não criado")
     return build_response(
         status_code=201, message="Beer type created with success", data=beer_type_in_db
     )
@@ -43,7 +43,7 @@ async def update_beer_type(
         id=beer_type_id, company_id=str(company.id), beer_type=beer_type
     )
     if not beer_type_in_db:
-        raise HTTPException(status_code=400, detail="Beer type not updated")
+        raise HTTPException(status_code=400, detail="Tipo de cerveja não atualizado")
     return build_response(
         status_code=200, message="Beer type updated with success", data=beer_type_in_db
     )
@@ -62,7 +62,7 @@ async def delete_beer_type(
         id=beer_type_id, company_id=str(company.id)
     )
     if not beer_type_in_db:
-        raise HTTPException(status_code=400, detail="Beer type not deleted")
+        raise HTTPException(status_code=400, detail="Tipo de cerveja não excluído")
     return build_response(
         status_code=200, message="Beer type deleted with success", data=beer_type_in_db
     )

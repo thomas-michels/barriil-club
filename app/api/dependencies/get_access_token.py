@@ -58,4 +58,4 @@ def generate_new_access_token() -> dict:
             logger.error(f"payload: {payload}")
             logger.error(f"url: {_env.AUTH0_DOMAIN}/oauth/token")
             logger.error(f"status_code: {status_code} - response: {response}")
-            raise InternalErrorException(message="Internal authentication error!")
+            raise InternalErrorException(message="Erro interno de autenticação!")

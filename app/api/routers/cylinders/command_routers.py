@@ -30,7 +30,7 @@ async def create_cylinder(
     except NotFoundError as error:
         raise HTTPException(status_code=400, detail=error.message)
     if not cylinder_in_db:
-        raise HTTPException(status_code=400, detail="Cylinder not created")
+        raise HTTPException(status_code=400, detail="Cilindro não criado")
     return build_response(
         status_code=201, message="Cylinder created with success", data=cylinder_in_db
     )
@@ -50,7 +50,7 @@ async def update_cylinder(
         id=cylinder_id, company_id=str(company.id), cylinder=cylinder
     )
     if not cylinder_in_db:
-        raise HTTPException(status_code=400, detail="Cylinder not updated")
+        raise HTTPException(status_code=400, detail="Cilindro não atualizado")
     return build_response(
         status_code=200, message="Cylinder updated with success", data=cylinder_in_db
     )
@@ -69,7 +69,7 @@ async def delete_cylinder(
         id=cylinder_id, company_id=str(company.id)
     )
     if not cylinder_in_db:
-        raise HTTPException(status_code=400, detail="Cylinder not deleted")
+        raise HTTPException(status_code=400, detail="Cilindro não excluído")
     return build_response(
         status_code=200, message="Cylinder deleted with success", data=cylinder_in_db
     )

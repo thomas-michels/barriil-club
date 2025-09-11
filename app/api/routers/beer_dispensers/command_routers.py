@@ -27,7 +27,7 @@ async def create_beer_dispenser(
         dispenser=dispenser, company_id=str(company.id)
     )
     if not dispenser_in_db:
-        raise HTTPException(status_code=400, detail="Beer dispenser not created")
+        raise HTTPException(status_code=400, detail="Chopeira não criada")
     return build_response(
         status_code=201, message="Beer dispenser created with success", data=dispenser_in_db
     )
@@ -47,7 +47,7 @@ async def update_beer_dispenser(
         id=dispenser_id, company_id=str(company.id), dispenser=dispenser
     )
     if not dispenser_in_db:
-        raise HTTPException(status_code=400, detail="Beer dispenser not updated")
+        raise HTTPException(status_code=400, detail="Chopeira não atualizada")
     return build_response(
         status_code=200, message="Beer dispenser updated with success", data=dispenser_in_db
     )
@@ -66,7 +66,7 @@ async def delete_beer_dispenser(
         id=dispenser_id, company_id=str(company.id)
     )
     if not dispenser_in_db:
-        raise HTTPException(status_code=400, detail="Beer dispenser not deleted")
+        raise HTTPException(status_code=400, detail="Chopeira não excluída")
     return build_response(
         status_code=200, message="Beer dispenser deleted with success", data=dispenser_in_db
     )

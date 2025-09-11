@@ -23,7 +23,7 @@ async def create_customer(
         customer=customer, company_id=str(company.id)
     )
     if not customer_in_db:
-        raise HTTPException(status_code=400, detail="Customer not created")
+        raise HTTPException(status_code=400, detail="Cliente não criado")
     return build_response(
         status_code=201, message="Customer created with success", data=customer_in_db
     )
@@ -43,7 +43,7 @@ async def update_customer(
         id=customer_id, company_id=str(company.id), customer=customer
     )
     if not customer_in_db:
-        raise HTTPException(status_code=400, detail="Customer not updated")
+        raise HTTPException(status_code=400, detail="Cliente não atualizado")
     return build_response(
         status_code=200, message="Customer updated with success", data=customer_in_db
     )
@@ -62,7 +62,7 @@ async def delete_customer(
         id=customer_id, company_id=str(company.id)
     )
     if not customer_in_db:
-        raise HTTPException(status_code=400, detail="Customer not deleted")
+        raise HTTPException(status_code=400, detail="Cliente não excluído")
     return build_response(
         status_code=200, message="Customer deleted with success", data=customer_in_db
     )

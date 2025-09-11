@@ -59,7 +59,7 @@ async def update_user(
 
     else:
         return build_response(
-            status_code=400, message="Some error happened on update a user", data=None
+            status_code=400, message="Ocorreu um erro ao atualizar um usuário", data=None
         )
 
 
@@ -85,7 +85,7 @@ async def update_user(
 
     else:
         return build_response(
-            status_code=400, message="Some error happened on update a user", data=None
+            status_code=400, message="Ocorreu um erro ao atualizar um usuário", data=None
         )
 
 
@@ -110,7 +110,7 @@ async def delete_user(
 
     else:
         return build_response(
-            status_code=404, message=f"User {user_id} not found", data=None
+            status_code=404, message=f"Usuário {user_id} não encontrado", data=None
         )
 
 
@@ -134,5 +134,5 @@ async def delete_user(
 
     else:
         return build_response(
-            status_code=404, message=f"User {current_user.id} not found", data=None
+            status_code=404, message=f"Usuário {current_user.id} não encontrado", data=None
         )

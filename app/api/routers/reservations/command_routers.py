@@ -28,7 +28,7 @@ async def create_reservation(
         reservation=reservation, company_id=str(company.id)
     )
     if not reservation_in_db:
-        raise HTTPException(status_code=400, detail="Reservation not created")
+        raise HTTPException(status_code=400, detail="Reserva não criada")
     return build_response(
         status_code=201, message="Reservation created with success", data=reservation_in_db
     )
@@ -48,7 +48,7 @@ async def update_reservation(
         id=reservation_id, company_id=str(company.id), reservation=reservation
     )
     if not reservation_in_db:
-        raise HTTPException(status_code=400, detail="Reservation not updated")
+        raise HTTPException(status_code=400, detail="Reserva não atualizada")
     return build_response(
         status_code=200, message="Reservation updated with success", data=reservation_in_db
     )
@@ -67,7 +67,7 @@ async def delete_reservation(
         id=reservation_id, company_id=str(company.id)
     )
     if not reservation_in_db:
-        raise HTTPException(status_code=400, detail="Reservation not deleted")
+        raise HTTPException(status_code=400, detail="Reserva não excluída")
     return build_response(
         status_code=200, message="Reservation deleted with success", data=reservation_in_db
     )
